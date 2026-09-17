@@ -84,6 +84,13 @@ READ_ONLY_CLOSED = (
 )
 
 
+# ── Staff, on a student's workspace (I2.4) ──────────────────────────────────────────────
+# Staff-facing, but written to the same rule: it says what is true, not how the work is going.
+
+def viewing_students_books(student_name: str) -> str:
+    return f"Viewing {student_name}'s books. This is read-only."
+
+
 # ── Checkpoints ─────────────────────────────────────────────────────────────────────────
 
 CHECKPOINT_PASSED = "Checkpoint passed."

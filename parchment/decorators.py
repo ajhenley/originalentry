@@ -11,7 +11,7 @@ from flask_login import current_user, login_required
 
 from . import messages
 from .extensions import db
-from .models import ROLE_GRADER, ROLE_INSTRUCTOR, ContentPack, PackVersion, Workspace
+from .models import ROLE_GRADER, ROLE_INSTRUCTOR, ContentPack, PackVersion, User, Workspace
 from .presentation import build_company
 
 STAFF_ROLES = frozenset({ROLE_GRADER, ROLE_INSTRUCTOR})
@@ -44,7 +44,15 @@ def workspace_view(view):
         g.pack_version = pv
         g.company = company
         g.read_only = is_staff or ws.status == "submitted"
-        g.read_only_message = messages.READ_ONLY_SUBMITTED if ws.status == "submitted" else None
+        if is_staff and not is_owner:
+            # Staff see whose books these are, on every page of them (I2.4).
+            student = db.session.get(User, ws.student_id)
+            name = f"{student.given_name} {student.family_name}".strip() or student.email
+            g.read_only_message = messages.viewing_students_books(name)
+        elif ws.status == "submitted":
+            g.read_only_message = messages.READ_ONLY_SUBMITTED
+        else:
+            g.read_only_message = None
 
         # A slug that is not this workspace's company shows a mismatch page — never a silent
         # redirect (M3.4).

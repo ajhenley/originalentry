@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-17 · 10 commits · 144 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-17 · 11 commits · 157 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -22,9 +22,11 @@ full marks) and **A9** (one mis-journalised document, handled properly afterward
 
 Grading results are **stored** now: a run is immutable, an override carries a reason and survives
 a regrade (**A12**), and a student sees their marks once the instructor releases them. What is
-missing is the instructor's side of it — the staff console — along with the multi-company UI, the
-JavaScript layer (`save.js`/pickers), real magic-link auth, document images, deployment config and
-CI. Details below.
+missing is most of the instructor's side of it. The console has begun: an instructor signs in,
+sees their assignments, reads a **Progress** screen that says where every student is and what
+their last refused save was, and can open any student's books read-only. Grading screens, the
+catalogue, the multi-company UI, the JavaScript layer (`save.js`/pickers), real magic-link auth,
+document images, deployment config and CI are what remain. Details below.
 
 ## How to run and test
 
@@ -34,7 +36,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 144 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 157 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -129,7 +131,19 @@ flask db upgrade
       awarded per component, any instructor's reason, and the comment (S6.6): a faithful replay scores 100/100; one
       mis-journalised document, handled properly afterwards, scores 88.3%
 
-### Guards and tests (144 in all)
+### Instructor console (phase 6, begun)
+- [x] `staff/` blueprint with `staff_view` (404, not 403, for anyone else) and a guard test that
+      every `/staff/` route carries it
+- [x] **Assignments** screen: each assignment with its section, company, mode and student count
+- [x] **Progress** screen (I2.1–I2.3, I2.5): stage reached, documents handled, journals posted,
+      how the work was handed in, last activity, checkpoint lockouts **with the figures
+      submitted**, and the **last refused save** with its document and the message the student
+      saw. Six bulk queries for a whole section, nothing stored
+- [x] Refused saves are recorded where they happen, so "who is stuck, and on what?" has an answer
+      the paper set could never give (`services/activity.py`)
+- [x] Opening a student's workspace read-only names whose books they are, on every page (I2.4)
+
+### Guards and tests (157 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -182,10 +196,14 @@ flask db upgrade
 - [ ] Golden tests **A10** (every signature named, per signature) and **A11** (40 workspaces
       under 30 s)
 
-### Phase 6 — staff console (not started)
-- [ ] Assignments (create, clone, checkpoints, accommodations, late policy, join codes, roster)
-- [ ] Progress, Grading (overrides, comments, release), Diagnostics, exports (CSV presets), print,
-      staff-issued sign-in codes, `staff/` blueprint + `staff_action` audit
+### Phase 6 — staff console (Assignments and Progress done)
+- [ ] **Grading** screen: run grading for a section in batches (T8.6), the review queue, override
+      with a reason, comment, release marks (the engine and its storage are done, A12 holds)
+- [ ] **Diagnostics** (I4): designed errors across the cohort, documents most often triaged
+      differently, time on task, CSV export
+- [ ] Creating and cloning assignments, checkpoints, accommodations, late policy, join codes,
+      roster import — all still fixtures-only
+- [ ] `staff_action` audit table; exports (CSV presets), print record, staff-issued sign-in codes
 
 ### Phase 7 — multi-company (schema ready, UI not)
 - [ ] Catalogue + pack upload UI, `section_pack_availability`, student company choice, switch

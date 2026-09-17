@@ -39,6 +39,7 @@ from ..models import (
 )
 from ..presentation import kind_label
 from ..services import WriteRefused, workspace_write
+from ..services.activity import record_refused_save
 from ..services.checkpoints import checkpoint_state, record_attempt
 from ..services.dispositions import current_dispositions, set_disposition
 from ..services.entries import record_entry, void_entry
@@ -404,6 +405,14 @@ def entry_create(key):
                                 company_slug=g.company.slug, key=key))
     result = parse_general_entry(request.form, _entry_context(key))
     if not result.ok:
+        # What the student was stuck on, for the instructor's Progress screen (I2.5). The message
+        # is the one the student saw; their figures are not recorded.
+        record_refused_save(
+            db.session, g.workspace,
+            document_ref=(request.form.get("document_ref") or "").strip() or None,
+            reason=result.errors[0][1],
+        )
+        db.session.commit()
         return render_template(
             "student/entry_form.html",
             journal=journal_cfg,

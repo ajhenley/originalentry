@@ -1,0 +1,37 @@
+{% extends "layouts/staff.html" %}
+{% block heading %}Assignments{% endblock %}
+
+{% block console %}
+{% if not assignments %}
+<p class="text-muted">No assignments yet.</p>
+{% else %}
+<div class="overflow-x-auto rounded border border-rule" role="region" aria-label="Assignments"
+     tabindex="0">
+  <table class="w-full border-collapse text-sm">
+    <caption class="px-3 py-2 text-left font-semibold">Assignments and their sections</caption>
+    <thead>
+      <tr class="border-b border-rule text-muted">
+        <th scope="col" class="text-left font-medium">Assignment</th>
+        <th scope="col" class="text-left font-medium">Section</th>
+        <th scope="col" class="text-left font-medium">Company</th>
+        <th scope="col" class="text-left font-medium">Documents</th>
+        <th scope="col" class="text-right font-medium">Students</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in assignments %}
+      <tr class="border-b border-rule/60">
+        <th scope="row" class="text-left font-normal">
+          <a class="underline" href="{{ url_for('staff.progress', assignment=a.public_id) }}">{{ a.title }}</a>
+        </th>
+        <td>{{ a.section_name }}</td>
+        <td>{{ a.company_name }}</td>
+        <td>{{ a.mode }}</td>
+        <td class="text-right tabular-nums">{{ a.students }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

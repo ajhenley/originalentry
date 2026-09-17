@@ -4,6 +4,7 @@ nothing persists to the database.
 """
 
 import pytest
+from flask import g, has_app_context
 from flask.testing import FlaskClient
 from parchment.app import create_app
 from parchment.extensions import db
@@ -43,6 +44,11 @@ class _Client(FlaskClient):
         with self.session_transaction() as flask_session:
             flask_session["_user_id"] = user.get_id()  # "public_id:session_epoch"
             flask_session["_fresh"] = True
+        # This harness holds one app context open for the whole test, and Flask reuses it for
+        # each request rather than pushing a fresh one. Flask-Login caches the loaded user on
+        # ``g``, so without this a second sign-in in the same test would be ignored.
+        if has_app_context():
+            g.pop("_login_user", None)
 
 
 @pytest.fixture

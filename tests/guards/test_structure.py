@@ -1,6 +1,7 @@
 """Structural guards (T3.3, T11, T17.3):
 
 - every ``/w/`` route is decorated with ``workspace_view``;
+- every ``/staff/`` route is decorated with ``staff_view``;
 - no template uses an inline ``style`` attribute or an inline event handler (the CSP forbids
   them, so they would silently break in the browser).
 """
@@ -26,6 +27,18 @@ def test_every_workspace_route_uses_the_decorator():
         if not getattr(view, "_is_workspace_view", False):
             offenders.append(rule.endpoint)
     assert not offenders, f"/w/ routes missing @workspace_view: {offenders}"
+
+
+def test_every_console_route_requires_staff():
+    app = create_app()
+    offenders = []
+    for rule in app.url_map.iter_rules():
+        if not rule.rule.startswith("/staff/"):
+            continue
+        view = app.view_functions.get(rule.endpoint)
+        if not getattr(view, "_is_staff_view", False):
+            offenders.append(rule.endpoint)
+    assert not offenders, f"/staff/ routes missing @staff_view: {offenders}"
 
 
 def test_no_inline_styles_or_handlers_in_templates():

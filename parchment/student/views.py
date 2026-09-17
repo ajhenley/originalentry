@@ -42,6 +42,7 @@ from ..services import WriteRefused, workspace_write
 from ..services.checkpoints import checkpoint_state, record_attempt
 from ..services.dispositions import current_dispositions, set_disposition
 from ..services.entries import record_entry, void_entry
+from ..services.grades import final_marks
 from ..services.posting import (
     active_posted_entry_ids,
     post_entry_subsidiary,
@@ -699,6 +700,20 @@ def statement_save(statement_type):
                                 company_slug=g.company.slug, statement_type=statement_type,
                                 rows=DEFAULT_BLANK_ROWS))
     return back
+
+
+# ── Marks ────────────────────────────────────────────────────────────────────────────────
+
+@bp.get("/w/<workspace>/<company_slug>/marks")
+@workspace_view
+def marks():
+    """Nothing is shown until the instructor releases the section's marks (S6.6, I3.6)."""
+    assignment = db.session.get(Assignment, g.workspace.assignment_id)
+    released = assignment is not None and assignment.marks_released_at is not None
+    return render_template(
+        "student/marks.html",
+        marks=final_marks(db.session, g.workspace) if released else None,
+    )
 
 
 # ── Submission ───────────────────────────────────────────────────────────────────────────

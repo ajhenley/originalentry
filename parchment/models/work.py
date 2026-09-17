@@ -379,6 +379,76 @@ class StatementLine(db.Model):
     )
 
 
+class GradeRun(db.Model):
+    """One run of the grading engine (T8.1). Immutable: regrading adds a run, never edits one."""
+
+    __tablename__ = "grade_run"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspace.id"))
+    pack_version_id: Mapped[int] = mapped_column(BigInteger)
+    variant_id: Mapped[int] = mapped_column(BigInteger)
+    engine_version: Mapped[str] = mapped_column(String(20))
+    total_points: Mapped[int] = mapped_column(BigInteger)  # hundredths of a point
+    max_points: Mapped[int] = mapped_column(BigInteger)  # hundredths of a point
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    submission_status: Mapped[str] = mapped_column(String(20), default="open")
+    results: Mapped[dict] = mapped_column(JSONB)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    @property
+    def result(self):
+        """The stored result as the engine's own dataclasses (imported here to avoid a cycle)."""
+        from ..grading.models import result_from_dict
+
+        return result_from_dict(self.results or {})
+
+    __table_args__ = (
+        Index("ix_grade_run_workspace", "workspace_id", "created_at"),
+        CheckConstraint(
+            "submission_status IN ('open', 'submitted', 'submitted_late', 'not_submitted')",
+            name="grade_run_submission_status",
+        ),
+    )
+
+
+class GradeOverride(db.Model):
+    """An instructor's judgement on one component. It outlives every later run (A12)."""
+
+    __tablename__ = "grade_override"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspace.id"))
+    component_key: Mapped[str] = mapped_column(String(40))
+    points: Mapped[int] = mapped_column(BigInteger)  # hundredths of a point
+    reason: Mapped[str] = mapped_column(Text)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        Index(
+            "uq_grade_override_current",
+            "workspace_id",
+            "component_key",
+            unique=True,
+            postgresql_where=db.text("superseded_at IS NULL"),
+        ),
+    )
+
+
+class GradeComment(db.Model):
+    """The instructor's words to the student, shown once marks are released (I3.5)."""
+
+    __tablename__ = "grade_comment"
+
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspace.id"), primary_key=True)
+    body: Mapped[str] = mapped_column(Text)
+    updated_by_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class PostingRunEntry(db.Model):
     __tablename__ = "posting_run_entry"
 
@@ -412,6 +482,9 @@ __all__ = [
     "CheckpointAttempt",
     "StatementDraft",
     "StatementLine",
+    "GradeRun",
+    "GradeOverride",
+    "GradeComment",
     "ActivityEvent",
     "KIND_REGULAR",
     "KIND_ADJUSTING",

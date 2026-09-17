@@ -31,7 +31,8 @@
           {'href': url_for('student.general_ledger', workspace=ws, company_slug=slug), 'label': 'Ledgers'},
           {'href': url_for('student.statements', workspace=ws, company_slug=slug), 'label': 'Statements'},
           {'href': url_for('student.checkpoints', workspace=ws, company_slug=slug), 'label': 'Checkpoints'},
-          {'href': url_for('student.submit', workspace=ws, company_slug=slug), 'label': 'Submit'}
+          {'href': url_for('student.submit', workspace=ws, company_slug=slug), 'label': 'Submit'},
+          {'href': url_for('student.marks', workspace=ws, company_slug=slug), 'label': 'Marks'}
         ] %}
       <a href="{{ item.href }}"
          class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == item.href %}bg-rule/50 font-semibold{% endif %}"

@@ -32,7 +32,7 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _effective_close(assignment: Assignment) -> datetime | None:
+def effective_close(assignment: Assignment) -> datetime | None:
     """When writes stop for this assignment (accommodations land with the staff console)."""
     if assignment.late_policy == LATE_ACCEPT and assignment.late_until:
         return assignment.late_until
@@ -48,7 +48,7 @@ def _check_gates(session: Session, workspace: Workspace, actor) -> None:
     if workspace.variant_id is None:
         raise WriteRefused(messages.READ_ONLY_SUBMITTED)
     assignment = session.get(Assignment, workspace.assignment_id)
-    close = _effective_close(assignment) if assignment else None
+    close = effective_close(assignment) if assignment else None
     if close is not None and _now() >= close:
         raise WriteRefused(messages.READ_ONLY_CLOSED)
 

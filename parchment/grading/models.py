@@ -103,3 +103,60 @@ class GradeResult:
     @property
     def needs_review(self) -> bool:
         return any(c.needs_review for c in self.components)
+
+
+# ── storing a result ────────────────────────────────────────────────────────────────────
+# A run is kept as JSON so the evidence an instructor saw is still there years later, whatever
+# the engine does next. Points travel as floats here and are stored in hundredths (D1: never a
+# float in the database).
+
+def result_to_dict(result: GradeResult) -> dict:
+    return {
+        "engine_version": result.engine_version,
+        "components": [
+            {
+                "key": c.key,
+                "label": c.label,
+                "points": c.points,
+                "max_points": c.max_points,
+                "evidence": [
+                    {"item": e.item, "detail": e.detail, "earned": e.earned,
+                     "possible": e.possible}
+                    for e in c.evidence
+                ],
+                "needs_review": c.needs_review,
+                "review_reasons": list(c.review_reasons),
+            }
+            for c in result.components
+        ],
+        "signatures": [
+            {"key": s.key, "label": s.label, "confident": s.confident} for s in result.signatures
+        ],
+        "unexplained": [[account, cents] for account, cents in result.unexplained],
+    }
+
+
+def result_from_dict(data: dict) -> GradeResult:
+    return GradeResult(
+        engine_version=data.get("engine_version", ""),
+        components=tuple(
+            ComponentResult(
+                key=c["key"],
+                label=c["label"],
+                points=c["points"],
+                max_points=c["max_points"],
+                evidence=tuple(
+                    EvidenceRow(e["item"], e["detail"], e["earned"], e["possible"])
+                    for e in c.get("evidence", ())
+                ),
+                needs_review=c.get("needs_review", False),
+                review_reasons=tuple(c.get("review_reasons", ())),
+            )
+            for c in data.get("components", ())
+        ),
+        signatures=tuple(
+            DetectedSignature(s["key"], s["label"], s["confident"])
+            for s in data.get("signatures", ())
+        ),
+        unexplained=tuple((account, cents) for account, cents in data.get("unexplained", ())),
+    )

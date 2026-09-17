@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from .. import messages
 from ..models import Assignment, Workspace
 from .errors import WriteRefused
-from .write import _effective_close
+from .write import effective_close
 
 
 def submit_workspace(session: Session, workspace: Workspace) -> Workspace:
@@ -20,7 +20,7 @@ def submit_workspace(session: Session, workspace: Workspace) -> Workspace:
 
     now = datetime.now(UTC)
     assignment = session.get(Assignment, workspace.assignment_id)
-    due = _effective_close(assignment) if assignment else None
+    due = effective_close(assignment) if assignment else None
     late_hours = 0
     if due is not None and now > due:
         late_hours = math.ceil((now - due).total_seconds() / 3600)

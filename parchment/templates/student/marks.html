@@ -1,0 +1,60 @@
+{# What the student sees once the instructor releases marks (S6.6).
+
+   The words are "marks awarded". The four words this interface never uses do not appear here
+   either (A7), and where an instructor changed a mark the student is told why. #}
+{% extends "layouts/workspace.html" %}
+{% block heading %}Marks{% endblock %}
+
+{% block workspace %}
+{% if not marks %}
+<p class="max-w-prose text-muted" role="status">
+  Your marks for this assignment have not been released yet.
+</p>
+{% else %}
+<p class="mb-4 max-w-prose text-sm text-muted">
+  These are the marks awarded for each part of the work, and what each one was awarded for.
+</p>
+
+<div class="overflow-x-auto rounded border border-rule" role="region"
+     aria-label="Marks by component" tabindex="0">
+  <table class="w-full border-collapse text-sm">
+    <caption class="px-3 py-2 text-left font-semibold">Marks awarded</caption>
+    <thead>
+      <tr class="border-b border-rule text-muted">
+        <th scope="col" class="text-left font-medium">Part of the work</th>
+        <th scope="col" class="text-right font-medium">Awarded</th>
+        <th scope="col" class="text-right font-medium">Out of</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for component in marks.components %}
+      <tr class="border-b border-rule/60">
+        <th scope="row" class="text-left font-normal">
+          {{ component.label }}
+          {% if component.overridden and component.reason %}
+          <span class="block text-xs text-muted">Marked by your instructor: {{ component.reason }}</span>
+          {% endif %}
+        </th>
+        <td class="text-right tabular-nums">{{ '%.1f' | format(component.points) }}</td>
+        <td class="text-right tabular-nums">{{ '%.1f' | format(component.max_points) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="border-t-2 border-ink font-semibold">
+        <th scope="row" class="text-left">Total</th>
+        <td class="text-right tabular-nums">{{ '%.1f' | format(marks.total_points) }}</td>
+        <td class="text-right tabular-nums">of {{ '%.0f' | format(marks.max_points) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+{% if marks.comment %}
+<section class="mt-6 max-w-prose rounded border border-rule p-4" aria-labelledby="comment">
+  <h2 id="comment" class="mb-1 text-sm font-semibold">From your instructor</h2>
+  <p class="text-sm">{{ marks.comment }}</p>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Tailwind standalone binary (pinned + fetched by bin/get-tailwind.sh, never committed)
+bin/tailwindcss
+
+# Local backups / dumps
+*.dump
+*.sql.gz
+
+# OS
+.DS_Store

@@ -1,0 +1,51 @@
+[project]
+name = "parchment"
+version = "0.1.0"
+description = "Parchment — a browser-based accounting system simulation for Principles of Financial Accounting (Riverbend Ledger build)"
+requires-python = ">=3.13"
+readme = "README.md"
+
+# Runtime dependencies are pinned with hashes in requirements.txt (T16).
+# This list mirrors them for tooling that reads pyproject.
+dependencies = [
+    "Flask>=3.1,<4",
+    "Flask-SQLAlchemy>=3.1,<4",
+    "Flask-Migrate>=4,<5",
+    "Flask-Login>=0.6,<0.7",
+    "Flask-WTF>=1.2,<2",
+    "SQLAlchemy>=2.0,<2.1",
+    "psycopg[binary]>=3.1,<4",
+    "pydantic>=2.6,<3",
+    "requests>=2.31,<3",
+    "gunicorn>=21,<24",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["parchment*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+# Real Postgres is required for integration/isolation/guard DB tests (T17.1).
+# Pure engine + money + schema tests run with no database.
+markers = [
+    "db: test requires a real Postgres database",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["parchment", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -33,7 +33,6 @@ KNOWN_COMPONENTS = frozenset(
 DEFERRED_RULES = {
     "V5": "Required roles exist once; control roles where parties of that kind exist",
     "V8": "Each expected entry balances and uses only accounts its journal's columns allow",
-    "V9": "Replaying expected entries through ledger/ reproduces expected_balances (A2 at upload)",
     "V11": "Key entries trigger no signature; signature/adjustment shape rules",
     "V12": "Screen packs: a real PNG ≤2MB per document per variant, alt text, text alternative",
     "V14": "Version higher than any existing; zip checksum new",
@@ -79,8 +78,42 @@ def validate_pack(pack: Pack, keys: dict[str, AnswerKey] | None = None) -> list[
     if keys is not None:
         _keys_references(pack, keys, account_numbers, party_codes, problems)
         _v10_coverage(pack, keys, problems)
+        _v9_replay(pack, keys, problems)
 
     return problems
+
+
+def _v9_replay(pack: Pack, keys: dict[str, AnswerKey], problems: list[Problem]) -> None:
+    """A2 at upload: replay each variant's key through the engine and confirm it reproduces
+    ``expected_balances`` to the cent. Skipped for a variant whose balances depend on a
+    ``dependent`` adjustment (its amount is not in the key)."""
+    from ..ledger import engine
+    from . import replay  # local import: keeps ledger out of the module's import graph until used
+
+    for variant_code, key in keys.items():
+        if any(a.amount_basis == "dependent" for a in key.adjustments):
+            continue
+        try:
+            snapshot = replay.build_replay_snapshot(pack, key)
+        except Exception as exc:  # a malformed journal/key surfaces as a V9 problem, not a crash
+            problems.append(
+                Problem(f"answer_keys.{variant_code}", "V9", f"Replay failed: {exc}")
+            )
+            continue
+        for stage, expected in key.expected_balances.items():
+            if stage not in engine.STAGE_KINDS:
+                continue
+            actual = engine.balances(snapshot, stage)
+            for number, want in expected.items():
+                got = actual.get(number, 0)
+                if got != want:
+                    problems.append(
+                        Problem(
+                            f"answer_keys.{variant_code}.expected_balances.{stage}.{number}",
+                            "V9",
+                            f"Replay gives {got} cents, key says {want}.",
+                        )
+                    )
 
 
 def _v1_format(pack: Pack, problems: list[Problem]) -> None:

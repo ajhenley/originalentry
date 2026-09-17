@@ -16,6 +16,9 @@ from . import money
 LINE_NEEDS_ACCOUNT = "Every line needs an account."
 ENTRY_NEEDS_DOCUMENT = "Choose the document this entry records."
 
+# Disposition (triage): a "No entry required" choice must say why.
+NO_ENTRY_NEEDS_REASON = "Say why this document needs no entry (1–200 characters)."
+
 
 def out_of_balance(difference_cents: int) -> str:
     """Debits ≠ credits. ``difference_cents`` is the absolute gap."""

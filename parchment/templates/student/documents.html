@@ -1,0 +1,43 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}Documents{% endblock %}
+
+{% block workspace %}
+<p class="mb-4 text-sm text-muted">
+  {{ triaged }} of {{ total }} documents handled. For each one, record an entry or say a document
+  needs no entry.
+</p>
+
+<div class="overflow-x-auto rounded border border-rule" role="region" tabindex="0"
+     aria-label="Documents">
+  <table class="w-full border-collapse text-sm">
+    <caption class="px-3 py-2 text-left font-semibold">Source documents, in the order received</caption>
+    <thead>
+      <tr class="border-b border-rule text-muted">
+        <th scope="col" class="text-left font-medium">Document</th>
+        <th scope="col" class="text-left font-medium">Type</th>
+        <th scope="col" class="text-left font-medium">Date</th>
+        <th scope="col" class="text-left font-medium">Handled</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in documents %}
+      <tr class="border-b border-rule/60">
+        <td>
+          <a class="underline"
+             href="{{ url_for('student.document', workspace=workspace.public_id,
+                              company_slug=company.slug, ref=d.ref) }}">{{ d.display_ref }}</a>
+          {% if d.guided %}<span class="ml-1 rounded bg-rule/40 px-1 text-xs">guided</span>{% endif %}
+        </td>
+        <td>{{ d.doc_type.replace('_', ' ') }}</td>
+        <td>{{ d.date.strftime('%b %-d') }}</td>
+        <td>
+          {% if d.status == 'record' %}Recorded
+          {% elif d.status == 'no_entry' %}No entry required
+          {% else %}<span class="text-attention">Not handled</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

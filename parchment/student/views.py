@@ -31,10 +31,12 @@ from ..models import (
     Party,
     PostingRun,
     SourceDocument,
+    Variant,
     Workspace,
 )
 from ..presentation import kind_label
 from ..services import WriteRefused, workspace_write
+from ..services.dispositions import current_dispositions, set_disposition
 from ..services.entries import record_entry, void_entry
 from ..services.posting import (
     active_posted_entry_ids,
@@ -87,7 +89,9 @@ def home():
 @bp.get("/w/<workspace>/<company_slug>/")
 @workspace_view
 def overview():
-    return render_template("student/overview.html")
+    docs = _documents(g.pack_version.id)
+    triaged = len(current_dispositions(db.session, g.workspace))
+    return render_template("student/overview.html", triaged=triaged, total=len(docs))
 
 
 @bp.get("/w/<workspace>/<company_slug>/trial-balance", endpoint="trial_balance")
@@ -139,6 +143,89 @@ def subsidiary(kind):
         kind_label_value=kind_label(kind),
         proof=proof,
     )
+
+
+# ── Documents and dispositions (triage) ──────────────────────────────────────────────────
+
+def _variant_code():
+    variant = db.session.get(Variant, g.workspace.variant_id)
+    return variant.code if variant else None
+
+
+def _manifest_document(ref):
+    for d in (g.pack_version.manifest or {}).get("documents", []):
+        if d["ref"] == ref:
+            return d
+    return None
+
+
+@bp.get("/w/<workspace>/<company_slug>/documents")
+@workspace_view
+def documents():
+    docs = _documents(g.pack_version.id)
+    current = current_dispositions(db.session, g.workspace)
+    rows = []
+    for d in docs:
+        disp = current.get(d.id)
+        rows.append({
+            "ref": d.ref,
+            "display_ref": d.display_ref,
+            "doc_type": d.doc_type,
+            "date": d.doc_date,
+            "guided": d.guided,
+            "status": disp.choice if disp else None,
+            "reason": disp.reason if disp else None,
+        })
+    triaged = sum(1 for r in rows if r["status"])
+    return render_template("student/documents.html", documents=rows,
+                           triaged=triaged, total=len(rows))
+
+
+@bp.get("/w/<workspace>/<company_slug>/documents/<ref>")
+@workspace_view
+def document(ref):
+    doc = db.session.execute(
+        db.select(SourceDocument).where(
+            SourceDocument.pack_version_id == g.pack_version.id, SourceDocument.ref == ref
+        )
+    ).scalar_one_or_none()
+    if doc is None:
+        abort(404)
+    manifest_doc = _manifest_document(ref) or {}
+    variant_doc = (manifest_doc.get("variants") or {}).get(_variant_code(), {})
+    text_alt = variant_doc.get("text_alternative") or {"fields": [], "lines": []}
+    current = current_dispositions(db.session, g.workspace).get(doc.id)
+    return render_template(
+        "student/document.html",
+        doc=doc,
+        guidance=doc.guidance if doc.guided else None,
+        alt_text=variant_doc.get("alt"),
+        text_alt=text_alt,
+        disposition=current,
+        error=None,
+    )
+
+
+@bp.post("/w/<workspace>/<company_slug>/documents/<ref>/disposition")
+@workspace_view
+def disposition(ref):
+    if not _guard_writable():
+        return redirect(url_for("student.document", workspace=g.workspace.public_id,
+                                company_slug=g.company.slug, ref=ref))
+    choice = request.form.get("choice", "")
+    reason = request.form.get("reason", "")
+    try:
+        workspace_write(
+            db.session, g.workspace.public_id, current_user,
+            activity_kind="disposition",
+            mutate=lambda s, ws: set_disposition(s, ws, ref, choice, reason),
+            detail={"document": ref, "choice": choice},
+        )
+        flash("Saved.")
+    except WriteRefused as refused:
+        flash(refused.message)
+    return redirect(url_for("student.document", workspace=g.workspace.public_id,
+                            company_slug=g.company.slug, ref=ref))
 
 
 # ── Journalising and posting (write path) ────────────────────────────────────────────────

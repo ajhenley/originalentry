@@ -113,6 +113,43 @@ def test_general_ledger_renders(app, snapshot):
     assert not BANNED.search(text)
 
 
+def test_documents_queue_renders(app):
+    from datetime import date
+
+    docs = [
+        {"ref": "INV-1", "display_ref": "Invoice 1", "doc_type": "sales_invoice",
+         "date": date(2026, 12, 2), "guided": True, "status": None, "reason": None},
+        {"ref": "INV-2", "display_ref": "Invoice 2", "doc_type": "sales_invoice",
+         "date": date(2026, 12, 5), "guided": False, "status": "record", "reason": None},
+    ]
+    html = _render_workspace(app, "/w/ws12345678/testco-alpha/documents",
+                             "student/documents.html", documents=docs, triaged=1, total=2)
+    text = _visible_text(html)
+    assert "Invoice 1" in text and "Not handled" in text and "Recorded" in text
+    assert not BANNED.search(text)
+
+
+def test_document_detail_renders_view_as_text(app):
+    from datetime import date
+
+    doc = types.SimpleNamespace(
+        ref="INV-1", display_ref="Invoice 1", doc_type="sales_invoice",
+        doc_date=date(2026, 12, 2), guided=True,
+    )
+    text_alt = {"fields": [["Customer", "Firstborn Supply"]],
+                "lines": [["12", "Kayak rack", "140.00", "1,680.00"]]}
+    html = _render_workspace(
+        app, "/w/ws12345678/testco-alpha/documents/INV-1", "student/document.html",
+        doc=doc, guidance="Sales on account are recorded in the sales journal.",
+        alt_text="Sales invoice 1", text_alt=text_alt, disposition=None,
+    )
+    text = _visible_text(html)
+    assert "Firstborn Supply" in text
+    assert "Kayak rack" in text
+    assert "No entry required" in text
+    assert not BANNED.search(text)
+
+
 def test_subsidiary_proof_renders(app, snapshot):
     proof = subsidiary_proof(snapshot, "customer")
     assert proof.agrees

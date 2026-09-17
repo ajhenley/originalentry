@@ -10,6 +10,16 @@
 
 <div class="mt-6 grid gap-4 sm:grid-cols-3">
   <a class="rounded border border-rule p-4 hover:bg-rule/20"
+     href="{{ url_for('student.documents', workspace=workspace.public_id, company_slug=company.slug) }}">
+    <p class="font-semibold">Documents</p>
+    <p class="text-sm text-muted">{{ triaged }} of {{ total }} handled.</p>
+  </a>
+  <a class="rounded border border-rule p-4 hover:bg-rule/20"
+     href="{{ url_for('student.journals', workspace=workspace.public_id, company_slug=company.slug) }}">
+    <p class="font-semibold">Journals</p>
+    <p class="text-sm text-muted">Record and post entries.</p>
+  </a>
+  <a class="rounded border border-rule p-4 hover:bg-rule/20"
      href="{{ url_for('student.trial_balance', workspace=workspace.public_id, company_slug=company.slug) }}">
     <p class="font-semibold">Trial balance</p>
     <p class="text-sm text-muted">Unadjusted, adjusted and post-closing.</p>

@@ -25,6 +25,7 @@
       {% set slug = company.slug %}
       {% for item in [
           {'href': url_for('student.overview', workspace=ws, company_slug=slug), 'label': 'Overview'},
+          {'href': url_for('student.documents', workspace=ws, company_slug=slug), 'label': 'Documents'},
           {'href': url_for('student.journals', workspace=ws, company_slug=slug), 'label': 'Journals'},
           {'href': url_for('student.trial_balance', workspace=ws, company_slug=slug), 'label': 'Trial balance'},
           {'href': url_for('student.general_ledger', workspace=ws, company_slug=slug), 'label': 'Ledgers'}

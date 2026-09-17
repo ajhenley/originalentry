@@ -1,0 +1,75 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}{{ doc.display_ref }}{% endblock %}
+
+{% block workspace %}
+<p class="mb-4 text-sm text-muted">{{ doc.doc_type.replace('_', ' ') }} · {{ doc.doc_date.strftime('%B %-d, %Y') }}</p>
+
+{% if guidance %}
+<div class="mb-4 rounded border border-rule bg-rule/20 p-3 text-sm" data-pack-content>
+  <p class="font-semibold">Guidance</p>
+  <p>{{ guidance }}</p>
+</div>
+{% endif %}
+
+<section aria-label="Document as text" class="mb-6" data-pack-content>
+  {% if alt_text %}<p class="mb-2 text-sm text-muted">{{ alt_text }}</p>{% endif %}
+  {% if text_alt.fields %}
+  <dl class="mb-3 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
+    {% for row in text_alt.fields %}
+    <dt class="font-medium">{{ row[0] }}</dt><dd>{{ row[1] }}</dd>
+    {% endfor %}
+  </dl>
+  {% endif %}
+  {% if text_alt.lines %}
+  <div class="overflow-x-auto rounded border border-rule" role="region" tabindex="0"
+       aria-label="Document line items">
+    <table class="w-full border-collapse text-sm">
+      <caption class="px-3 py-2 text-left font-semibold">Line items</caption>
+      <tbody>
+        {% for line in text_alt.lines %}
+        <tr class="border-b border-rule/60">
+          {% for cell in line %}<td>{{ cell }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
+<section aria-label="What to do with this document">
+  <h2 class="mb-2 font-semibold">Handle this document</h2>
+  {% if disposition %}
+  <p class="mb-3 text-sm text-muted">
+    Current choice:
+    {% if disposition.choice == 'record' %}Record an entry
+    {% else %}No entry required — {{ disposition.reason }}{% endif %}
+  </p>
+  {% endif %}
+
+  {% if not read_only %}
+  <div class="flex flex-wrap gap-6">
+    <form method="post" action="{{ url_for('student.disposition', workspace=workspace.public_id,
+                                           company_slug=company.slug, ref=doc.ref) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="choice" value="record">
+      <button type="submit" class="rounded bg-company px-3 py-2 text-sm text-paper">
+        Record an entry</button>
+      <p class="mt-1 text-xs text-muted">Then choose a journal and enter the lines.</p>
+    </form>
+
+    <form method="post" action="{{ url_for('student.disposition', workspace=workspace.public_id,
+                                           company_slug=company.slug, ref=doc.ref) }}"
+          class="max-w-sm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="choice" value="no_entry">
+      <label for="reason" class="block text-sm font-medium">No entry required — say why</label>
+      <textarea id="reason" name="reason" rows="2" maxlength="200" required
+                class="mt-1 w-full rounded border border-rule px-2 py-1 text-sm"></textarea>
+      <button type="submit" class="mt-2 rounded border border-rule px-3 py-2 text-sm">
+        No entry required</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

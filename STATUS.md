@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-17 · 8 commits · 102 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-17 · 9 commits · 133 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -15,9 +15,13 @@ statements** → submit. Everything is
 company-scoped, every ledger figure is **derived by the engine** (never stored), and the **A2**
 guarantee (the engine reproduces the answer key to the cent) is proven two independent ways.
 
-Not yet built: the grading engine, the staff console, the multi-company UI, the JavaScript layer
-(`save.js`/pickers), real magic-link auth, document images, deployment config, and CI. Details
-below.
+The **grading engine** marks all ten components on the student's own figures, names the designed
+errors, and proves the two tests that protect the design: **A3** (work that follows the key earns
+full marks) and **A9** (one mis-journalised document, handled properly afterwards, still scores
+88.3%).
+
+Not yet built: the staff console, the multi-company UI, the JavaScript layer (`save.js`/pickers),
+real magic-link auth, document images, deployment config, and CI. Details below.
 
 ## How to run and test
 
@@ -92,7 +96,25 @@ flask db upgrade
       statements started
 - [x] Dev-only sign-in (email → session; refused in production)
 
-### Guards and tests (80)
+### Grading engine (phase 5)
+- [x] Pure `grade(work, pack, key)` over dataclasses — no Flask, no queries (T8.1)
+- [x] All **ten components** (T8.2): triage, journal_selection, entry_accuracy (structure and
+      figures split, lines merged by account/party/side so a split line is not a mistake),
+      posting_completeness, subsidiary_agreement, adjustment_form, adjustment_amounts
+      (`independent` figures marked, `dependent` ones left to the grader with the student's own
+      base balance), statements_structure, statements_figures, closing
+- [x] Evidence per item (what the student did, what the rule credited) and review flags (I3.2/I3.3)
+- [x] **Error signatures** (T8.5): document-level detection first (`entry_line`, `entry_amount`),
+      balance-delta fallback reported as a possibility, and differences no signature explains
+      listed for the instructor. Vacuous credit on empty books is refused — nothing recorded is
+      not a cleared account, and nothing recorded is not a designed error
+- [x] A statement's stage (`adjusted` / `post_closing`) comes from the **pack**, not a hardcoded
+      statement type name
+- [x] `grading/workspace.py`: the one DB→engine loader for grading, and the only place besides
+      `checkpoints` that reads an answer key (D6 rule 6)
+- [x] **Golden tests A3 and A9** (`tests/golden/`)
+
+### Guards and tests (133 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -135,11 +157,12 @@ flask db upgrade
 - [ ] Checkpoint **stage-gating** (needs `assignment_checkpoint`; e.g. "pass cp2 before adjusting")
 - [ ] Per-student accommodations (`assignment_override`)
 
-### Phase 5 — grading engine (not started)
-- [ ] Pure `grade(snapshot, pack, key)` + the **ten components** (T8.2)
-- [ ] Document-level error **signatures** + balance-delta fallback (T8.5)
-- [ ] Review flags, grade overrides/comments, batching (T8.6), time-on-task (T8.7)
-- [ ] Golden tests **A3, A9, A10, A11**
+### Phase 5 — grading engine (engine done, storage and screens not)
+- [ ] `grade_run` / `grade_override` / `grade_comment` tables, so a run is stored and an override
+      survives a regrade (A12)
+- [ ] Batching (T8.6), time-on-task (T8.7) — both need the staff console
+- [ ] Golden tests **A10** (every signature named, per signature) and **A11** (40 workspaces
+      under 30 s)
 
 ### Phase 6 — staff console (not started)
 - [ ] Assignments (create, clone, checkpoints, accommodations, late policy, join codes, roster)
@@ -176,13 +199,16 @@ flask db upgrade
 | A4 | Out-of-balance entry cannot be saved; DB rejects bypass | **Done** (validator + trigger) |
 | A6 | Trial balance on designed errors reads "In balance" | **Done** (always balances by construction) |
 | A7 | No banned words in the student interface | **Partial** (render checks; full sweep pending) |
+| A3 | Work that follows the key earns full marks | **Done** (golden, auto) |
+| A9 | One early mistake, handled properly afterwards, scores ≥ 85% | **Done** (88.3%, golden, auto) |
 | A8 | No answer-key value reaches a student | **Partial** (checkpoints proven; full leak test pending, harness now exists) |
 | A20 | Two companies' workspaces cannot reach each other | **Partial** (composite-FK + 404 proven; full A20 pending) |
 | A23 | Two charts with account 101 coexist everywhere | **Partial** (scoping in place; dedicated test pending) |
 | A26 | No lost work (expired session, retry, deploy) | **Not done** (needs `save.js`) |
 | A28 | Late policy holds; unsubmitted graded as "Not submitted" | **Partial** (submit + late_hours; grading pending) |
 | A29 | Built CSS in git matches a fresh build | **Done** (committed; CI check pending) |
-| A1, A3, A5, A9–A19, A21, A22, A24, A25, A27, A30 | — | **Not yet** (need grading, staff, JS, deploy, packs) |
+| A10 | Each designed error is named by its label | **Partial** (detection tested; per-signature sweep pending) |
+| A1, A5, A11–A19, A21, A22, A24, A25, A27, A30 | — | **Not yet** (need staff console, JS, deploy, packs) |
 
 ---
 
@@ -195,6 +221,10 @@ flask db upgrade
 - **Statement figures are typed by the student** (tension 6). The builder shows their own adjusted
   balances beside the form, and nothing is added up for them. Subtotal rows name a type from the
   pack (tension 7) so grading can read the structure without parsing free text.
+- **Grading refuses vacuous credit.** Books with nothing in them agree with themselves and hold no
+  open temporary accounts; the engine says so rather than awarding the marks, and skips signature
+  detection entirely (an untouched workspace would otherwise match any signature naming accounts
+  it never touched).
 - **V9 replays only `independent` adjustments** (their amount is in the key). A pack whose balances
   depend on a `dependent` adjustment is skipped by V9 and left to grading against the student's own
   figures (tension 8).

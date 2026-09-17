@@ -126,6 +126,8 @@ class SubtotalType(_Model):
 class Statement(_Model):
     type: str
     title: str
+    # Which of the student's own balances the statement reads: "adjusted" or "post_closing".
+    stage: str = "adjusted"
     allowed_sections: list[str]
     subtotal_types: list[SubtotalType] = []
     required_subtotals: list[str] = []

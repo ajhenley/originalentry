@@ -81,7 +81,15 @@ PACK: dict = {
          "required_subtotals": ["net_income"]},
     ],
     "rubric": {"components": [{"key": "triage", "points": 10},
-                             {"key": "entry_accuracy", "points": 26}]},
+                              {"key": "journal_selection", "points": 6},
+                              {"key": "entry_accuracy", "points": 26},
+                              {"key": "posting_completeness", "points": 4},
+                              {"key": "subsidiary_agreement", "points": 6},
+                              {"key": "adjustment_form", "points": 10},
+                              {"key": "adjustment_amounts", "points": 6},
+                              {"key": "statements_structure", "points": 12},
+                              {"key": "statements_figures", "points": 10},
+                              {"key": "closing", "points": 10}]},
 }
 
 KEY_A: dict = {
@@ -109,4 +117,17 @@ KEY_A: dict = {
                          "301": -1125000},
     },
     "checkpoints": {"cp1": 500000},
+    # The designed errors this company is built around (T8.5). The first two are read from the
+    # student's entry for one document; the third has no single document behind it, so it falls
+    # back to the balances and is reported as a possibility.
+    "error_signatures": [
+        {"key": "sale_to_an_expense_account", "label": "Recorded a sale in an expense account",
+         "detect": {"type": "entry_line", "document": "INV-2", "account": "611",
+                    "side": "debit"}},
+        {"key": "invoice_overstated", "label": "Recorded the invoice above its face",
+         "detect": {"type": "entry_amount", "document": "INV-1", "account": "112",
+                    "side": "debit", "amount": 130000}},
+        {"key": "depreciation_missed", "label": "Did not record the depreciation adjustment",
+         "detect": {"type": "balance_delta", "deltas": {"611": -25000, "155": 25000}}},
+    ],
 }

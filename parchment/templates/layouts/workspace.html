@@ -1,0 +1,55 @@
+{# Company chrome on every workspace page (T10.1): accent bar, monogram, company name, period,
+   navigation, read-only banner. No workspace page may extend a different layout (guard test).
+   The company accent comes from the pack and is set in a nonce'd <style> block, never in a
+   style attribute (T10.2, T11). #}
+{% extends "base.html" %}
+
+{% block title %}{{ self.heading() }} · {{ company.name }}{% endblock %}
+
+{% block chrome %}
+<style nonce="{{ csp_nonce }}">:root { --company-accent: {{ company.accent_hex }}; }</style>
+
+<header>
+  <div class="h-1.5 bg-company"></div>
+  <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-4 px-4 py-3">
+    <span aria-hidden="true"
+          class="grid h-9 w-9 place-items-center rounded bg-company text-sm font-semibold text-paper">
+      {{ company.monogram }}
+    </span>
+    <div class="mr-auto">
+      <p class="font-semibold leading-tight">{{ company.name }}</p>
+      <p class="text-sm text-muted leading-tight">{{ company.period_label }}</p>
+    </div>
+    <nav aria-label="Workspace" class="flex flex-wrap gap-1 text-sm">
+      {% set ws = workspace.public_id %}
+      {% set slug = company.slug %}
+      {% for item in [
+          {'href': url_for('student.overview', workspace=ws, company_slug=slug), 'label': 'Overview'},
+          {'href': url_for('student.trial_balance', workspace=ws, company_slug=slug), 'label': 'Trial balance'},
+          {'href': url_for('student.general_ledger', workspace=ws, company_slug=slug), 'label': 'Ledgers'}
+        ] %}
+      <a href="{{ item.href }}"
+         class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == item.href %}bg-rule/50 font-semibold{% endif %}"
+         {% if request.path == item.href %}aria-current="page"{% endif %}>{{ item.label }}</a>
+      {% endfor %}
+      {% for kind in company.subsidiary_kinds %}
+      {% set href = url_for('student.subsidiary', workspace=ws, company_slug=slug, kind=kind) %}
+      <a href="{{ href }}"
+         class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == href %}bg-rule/50 font-semibold{% endif %}"
+         {% if request.path == href %}aria-current="page"{% endif %}>{{ kind | kind_label }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+
+  {% if read_only %}
+  <div class="border-y border-rule bg-attention/10 px-4 py-2 text-sm text-attention" role="status">
+    {{ read_only_message }}
+  </div>
+  {% endif %}
+</header>
+{% endblock %}
+
+{% block main %}
+  <h1 class="mb-4 text-xl font-semibold">{% block heading %}{% endblock %}</h1>
+  {% block workspace %}{% endblock %}
+{% endblock %}

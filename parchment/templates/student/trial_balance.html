@@ -1,0 +1,17 @@
+{% extends "layouts/workspace.html" %}
+{% from "macros/tables.html" import trial_balance_table %}
+{% block heading %}Trial balance{% endblock %}
+
+{% block workspace %}
+<nav aria-label="Trial balance stage" class="mb-4 flex gap-1 text-sm">
+  {% for s in stages %}
+  {% set href = url_for('student.trial_balance', workspace=workspace.public_id,
+                        company_slug=company.slug, stage=s.key) %}
+  <a href="{{ href }}"
+     class="rounded border border-rule px-3 py-1 {% if s.key == stage %}bg-rule/50 font-semibold{% endif %}"
+     {% if s.key == stage %}aria-current="page"{% endif %}>{{ s.label }}</a>
+  {% endfor %}
+</nav>
+
+{{ trial_balance_table(tb, stage_label ~ " trial balance") }}
+{% endblock %}

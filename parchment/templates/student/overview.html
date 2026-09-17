@@ -1,0 +1,30 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}Overview{% endblock %}
+
+{% block workspace %}
+<p class="max-w-prose text-muted">
+  You are recording the December cycle for {{ company.name }}. Work through the documents, journalise
+  and post, then adjust, build the statements and close. The ledgers and trial balances below are
+  built from what you have posted.
+</p>
+
+<div class="mt-6 grid gap-4 sm:grid-cols-3">
+  <a class="rounded border border-rule p-4 hover:bg-rule/20"
+     href="{{ url_for('student.trial_balance', workspace=workspace.public_id, company_slug=company.slug) }}">
+    <p class="font-semibold">Trial balance</p>
+    <p class="text-sm text-muted">Unadjusted, adjusted and post-closing.</p>
+  </a>
+  <a class="rounded border border-rule p-4 hover:bg-rule/20"
+     href="{{ url_for('student.general_ledger', workspace=workspace.public_id, company_slug=company.slug) }}">
+    <p class="font-semibold">General ledger</p>
+    <p class="text-sm text-muted">Account balances from your postings.</p>
+  </a>
+  {% for kind in company.subsidiary_kinds %}
+  <a class="rounded border border-rule p-4 hover:bg-rule/20"
+     href="{{ url_for('student.subsidiary', workspace=workspace.public_id, company_slug=company.slug, kind=kind) }}">
+    <p class="font-semibold">{{ kind | kind_label }}</p>
+    <p class="text-sm text-muted">Subsidiary ledger and its proof.</p>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

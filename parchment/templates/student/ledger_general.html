@@ -1,0 +1,8 @@
+{% extends "layouts/workspace.html" %}
+{% from "macros/tables.html" import balance_table %}
+{% block heading %}General ledger{% endblock %}
+
+{% block workspace %}
+<p class="mb-4 text-sm text-muted">Account balances built from your postings, including adjustments.</p>
+{{ balance_table(rows, "General ledger balances") }}
+{% endblock %}

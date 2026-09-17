@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Your workspaces · Parchment{% endblock %}
+
+{% block main %}
+<div class="flex items-baseline justify-between">
+  <h1 class="text-xl font-semibold">Your workspaces</h1>
+  <a href="{{ url_for('auth.sign_out') }}" class="text-sm underline">Sign out</a>
+</div>
+<p class="mt-1 text-sm text-muted">Signed in as {{ current_user.email }}.</p>
+
+{% if workspaces %}
+<ul class="mt-6 divide-y divide-rule rounded border border-rule">
+  {% for w in workspaces %}
+  <li class="flex flex-wrap items-center gap-3 p-4">
+    <div class="mr-auto">
+      <a class="font-semibold underline"
+         href="{{ url_for('student.overview', workspace=w.public_id, company_slug=w.company_slug) }}">
+        {{ w.company_name }}
+      </a>
+      <p class="text-sm text-muted">{{ w.assignment_title }}</p>
+    </div>
+    <span class="rounded bg-rule/40 px-2 py-1 text-xs">{{ w.status_label }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="mt-6 rounded border border-rule p-4 text-muted">
+  You have no workspaces yet. Use a join code from your instructor to get started.
+</p>
+{% endif %}
+{% endblock %}

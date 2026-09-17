@@ -1,0 +1,10 @@
+{% extends "layouts/workspace.html" %}
+{% from "macros/tables.html" import subsidiary_proof as proof_table %}
+{% block heading %}{{ kind | kind_label }}{% endblock %}
+
+{% block workspace %}
+<p class="mb-4 text-sm text-muted">
+  Each party's balance against the control account. They agree once every party line is posted.
+</p>
+{{ proof_table(proof, kind_label_value ~ " subsidiary ledger") }}
+{% endblock %}

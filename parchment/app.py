@@ -55,14 +55,45 @@ def create_app(config=None) -> Flask:
     migrate.init_app(app, db, directory=str(_REPO_ROOT / "migrations"))
     csrf.init_app(app)
     login_manager.init_app(app)
-    login_manager.login_view = "auth.sign_in"
+    login_manager.login_view = "auth.sign_in_form"
 
     _register_login(app)
+    _register_jinja(app)
+    _register_blueprints(app)
     init_security(app)
     init_errors(app)
     _register_health(app)
 
     return app
+
+
+def _register_jinja(app: Flask) -> None:
+    from . import money
+    from .presentation import kind_label
+
+    app.jinja_env.filters["money"] = money.format_cents
+    app.jinja_env.filters["dollars"] = money.format_dollars
+    app.jinja_env.filters["kind_label"] = kind_label
+
+    @app.context_processor
+    def _inject_workspace_context():
+        # The workspace decorator sets these on g; expose them to base/layout templates.
+        from flask import g
+
+        return {
+            "workspace": getattr(g, "workspace", None),
+            "company": getattr(g, "company", None),
+            "read_only": getattr(g, "read_only", False),
+            "read_only_message": getattr(g, "read_only_message", None),
+        }
+
+
+def _register_blueprints(app: Flask) -> None:
+    from .auth import bp as auth_bp
+    from .student import bp as student_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(student_bp)
 
 
 def _register_login(app: Flask) -> None:

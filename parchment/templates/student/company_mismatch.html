@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Different company · Parchment{% endblock %}
+
+{% block main %}
+<div class="mx-auto max-w-md rounded border border-rule p-6">
+  <h1 class="text-lg font-semibold">These books belong to {{ company.name }}</h1>
+  <p class="mt-2 text-muted">
+    The address you followed named a different company. Open {{ company.name }} instead.
+  </p>
+  <a class="mt-4 inline-block rounded bg-company px-3 py-2 text-sm text-paper"
+     href="{{ url_for('student.overview', workspace=workspace.public_id, company_slug=company.slug) }}">
+    Open {{ company.name }}
+  </a>
+</div>
+{% endblock %}

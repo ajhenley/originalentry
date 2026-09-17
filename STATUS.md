@@ -10,18 +10,20 @@ This tracks what is built and what is not, against the phases in
 
 A student can complete the **full December cycle** end to end: sign in → triage documents →
 journalise → post to general and subsidiary ledgers → record adjusting entries → self-check with
-checkpoints → record closing entries → view all three trial balances → **build the four
-statements** → submit. Everything is
-company-scoped, every ledger figure is **derived by the engine** (never stored), and the **A2**
-guarantee (the engine reproduces the answer key to the cent) is proven two independent ways.
+checkpoints → record closing entries → view all three trial balances → **build the statements the
+pack defines** → submit. Everything is company-scoped, every ledger figure is **derived by the
+engine** (never stored), and the **A2** guarantee (the engine reproduces the answer key to the
+cent) is proven two independent ways.
 
 The **grading engine** marks all ten components on the student's own figures, names the designed
 errors, and proves the two tests that protect the design: **A3** (work that follows the key earns
 full marks) and **A9** (one mis-journalised document, handled properly afterwards, still scores
 88.3%).
 
-Not yet built: the staff console, the multi-company UI, the JavaScript layer (`save.js`/pickers),
-real magic-link auth, document images, deployment config, and CI. Details below.
+Grading results are computed but **not yet stored**: there is no `grade_run`, no override and no
+screen to read them on. That, the staff console, the multi-company UI, the JavaScript layer
+(`save.js`/pickers), real magic-link auth, document images, deployment config and CI are what
+remain. Details below.
 
 ## How to run and test
 
@@ -31,7 +33,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 80 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 133 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -62,8 +64,10 @@ flask db upgrade
 
 ### Database and app skeleton
 - [x] SQLAlchemy models: people / content / work core chain with **D5 composite scoping keys**
-- [x] Migrations: initial schema with the **balance trigger** + role-guarded default privileges +
-      deferrable composite FKs; `activity_event`; `answer_key` + `checkpoint_attempt`
+- [x] Migrations (4): initial schema with the **balance trigger** + role-guarded default
+      privileges + deferrable composite FKs; `activity_event`; `answer_key` +
+      `checkpoint_attempt`; `statement_draft` + `statement_line` (with `DELETE` granted to the
+      web role, since a saved statement replaces its rows)
 - [x] `config.py` (pooler-safe engine, scheme normalisation), `extensions.py`, `app.py` factory,
       `security.py` (CSP + nonce, HSTS/nosniff), `errors.py` (honest error pages), `/healthz`
 - [x] **D5 constraints proven against real Postgres**: balance trigger rejects unbalanced (A4),
@@ -112,7 +116,10 @@ flask db upgrade
       statement type name
 - [x] `grading/workspace.py`: the one DB→engine loader for grading, and the only place besides
       `checkpoints` that reads an answer key (D6 rule 6)
-- [x] **Golden tests A3 and A9** (`tests/golden/`)
+- [x] Differences no signature explains are returned as `GradeResult.unexplained`, for the
+      instructor to read
+- [x] **Golden tests A3 and A9** (`tests/golden/`): a faithful replay scores 100/100; one
+      mis-journalised document, handled properly afterwards, scores 88.3%
 
 ### Guards and tests (133 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
@@ -151,6 +158,8 @@ flask db upgrade
 - [ ] Join codes / enrolment UI (join flow, roster CSV)
 
 ### Phase 4 — statements (mostly done)
+- [ ] `statements[].stage` is read by the app and by grading but is **not validated** yet (V4 only
+      checks sections and subtotal types)
 - [ ] Reordering rows with Move up / Move down buttons (rows are currently ordered by where they
       sit in the form; a saved row can be retyped but not moved)
 - [ ] Worksheet (`worksheet_cell`) — optional (cut list #1)
@@ -161,6 +170,8 @@ flask db upgrade
 - [ ] `grade_run` / `grade_override` / `grade_comment` tables, so a run is stored and an override
       survives a regrade (A12)
 - [ ] Batching (T8.6), time-on-task (T8.7) — both need the staff console
+- [ ] `error_signatures[].deduct_points` is carried in the schema but ignored by the engine;
+      signatures are diagnostic only so far (T8.5)
 - [ ] Golden tests **A10** (every signature named, per signature) and **A11** (40 workspaces
       under 30 s)
 
@@ -196,19 +207,20 @@ flask db upgrade
 | # | Criterion | State |
 | --- | --- | --- |
 | A2 | Replaying the key balances and matches to the cent | **Done** (DB + pure V9, auto) |
+| A3 | Work that follows the key earns full marks | **Done** (golden, auto) |
 | A4 | Out-of-balance entry cannot be saved; DB rejects bypass | **Done** (validator + trigger) |
 | A6 | Trial balance on designed errors reads "In balance" | **Done** (always balances by construction) |
 | A7 | No banned words in the student interface | **Partial** (render checks; full sweep pending) |
-| A3 | Work that follows the key earns full marks | **Done** (golden, auto) |
-| A9 | One early mistake, handled properly afterwards, scores ≥ 85% | **Done** (88.3%, golden, auto) |
 | A8 | No answer-key value reaches a student | **Partial** (checkpoints proven; full leak test pending, harness now exists) |
+| A9 | One early mistake, handled properly afterwards, scores ≥ 85% | **Done** (88.3%, golden, auto) |
+| A10 | Each designed error is named by its label | **Partial** (detection tested per type; a case per signature pending) |
+| A12 | An override changes the mark and survives a regrade | **Not done** (needs `grade_run` / `grade_override`) |
 | A20 | Two companies' workspaces cannot reach each other | **Partial** (composite-FK + 404 proven; full A20 pending) |
 | A23 | Two charts with account 101 coexist everywhere | **Partial** (scoping in place; dedicated test pending) |
 | A26 | No lost work (expired session, retry, deploy) | **Not done** (needs `save.js`) |
-| A28 | Late policy holds; unsubmitted graded as "Not submitted" | **Partial** (submit + late_hours; grading pending) |
+| A28 | Late policy holds; unsubmitted graded as "Not submitted" | **Partial** (submit + `late_hours` done; the "Not submitted" label needs the stored grade run) |
 | A29 | Built CSS in git matches a fresh build | **Done** (committed; CI check pending) |
-| A10 | Each designed error is named by its label | **Partial** (detection tested; per-signature sweep pending) |
-| A1, A5, A11–A19, A21, A22, A24, A25, A27, A30 | — | **Not yet** (need staff console, JS, deploy, packs) |
+| A1, A5, A11, A13–A19, A21, A22, A24, A25, A27, A30 | — | **Not yet** (need staff console, JS, deploy, packs) |
 
 ---
 

@@ -273,6 +273,19 @@ class PostingRun(db.Model):
     )
 
 
+class ActivityEvent(db.Model):
+    __tablename__ = "activity_event"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspace.id"))
+    kind: Mapped[str] = mapped_column(String(20))
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # detail holds IDs and references only, never personal data (D4).
+    detail: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+    __table_args__ = (Index("ix_activity_event_workspace", "workspace_id", "at"),)
+
+
 class PostingRunEntry(db.Model):
     __tablename__ = "posting_run_entry"
 
@@ -303,6 +316,7 @@ __all__ = [
     "EntryLine",
     "PostingRun",
     "PostingRunEntry",
+    "ActivityEvent",
     "KIND_REGULAR",
     "KIND_ADJUSTING",
     "KIND_CLOSING",

@@ -1,0 +1,122 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}{{ journal.name }}{% endblock %}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+{% macro jk() %}<input type="hidden" name="journal_key" value="{{ journal.key }}">{% endmacro %}
+
+{% block workspace %}
+<div class="mb-4 flex flex-wrap gap-2">
+  {% if not read_only %}
+  <a class="rounded bg-company px-3 py-2 text-sm text-paper"
+     href="{{ url_for('student.entry_new', workspace=workspace.public_id,
+                      company_slug=company.slug, key=journal.key) }}">Record entry</a>
+  <form method="post" action="{{ url_for('student.post_general', workspace=workspace.public_id,
+                                         company_slug=company.slug, key=journal.key) }}">
+    {{ csrf() }}
+    <button type="submit" class="rounded border border-rule px-3 py-2 text-sm">
+      Post to the general ledger</button>
+  </form>
+  <form method="post" action="{{ url_for('student.post_subsidiary_all',
+        workspace=workspace.public_id, company_slug=company.slug, key=journal.key) }}">
+    {{ csrf() }}
+    <button type="submit" class="rounded border border-rule px-3 py-2 text-sm">
+      Post all to subsidiary ledgers</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if entries %}
+<div class="overflow-x-auto rounded border border-rule" role="region" tabindex="0"
+     aria-label="{{ journal.name }} entries">
+  <table class="w-full border-collapse text-sm">
+    <caption class="px-3 py-2 text-left font-semibold">Entries</caption>
+    <thead>
+      <tr class="border-b border-rule text-muted">
+        <th scope="col" class="text-left font-medium">#</th>
+        <th scope="col" class="text-left font-medium">Date</th>
+        <th scope="col" class="text-left font-medium">Lines</th>
+        <th scope="col" class="text-right font-medium">Debit</th>
+        <th scope="col" class="text-right font-medium">Credit</th>
+        <th scope="col" class="text-left font-medium">Status</th>
+        {% if not read_only %}<th scope="col" class="text-left font-medium">Actions</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      <tr class="border-b border-rule/60 align-top {% if e.voided %}text-muted line-through{% endif %}">
+        <td>{{ journal.ref_prefix if journal.ref_prefix }}{{ e.seq }}</td>
+        <td>{{ e.date.strftime('%b %-d') }}</td>
+        <td>
+          <ul>
+            {% for line in e.lines %}
+            <li>
+              {% if line.credit_cents %}<span class="pl-4">{% endif %}{{ line.account }}
+              {%- if line.party %} · {{ line.party }}{% endif %}{% if line.credit_cents %}</span>{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </td>
+        <td class="text-right tabular-nums">
+          {% for line in e.lines %}{% if line.debit_cents %}{{ line.debit_cents | money }}<br>{% endif %}{% endfor %}
+        </td>
+        <td class="text-right tabular-nums">
+          {% for line in e.lines %}{% if line.credit_cents %}{{ line.credit_cents | money }}<br>{% endif %}{% endfor %}
+        </td>
+        <td class="text-sm">
+          {% if e.voided %}Voided{% else %}
+            {{ 'Posted' if e.posted_general else 'Not posted' }}
+            {%- if e.has_party %} · {{ 'sub posted' if e.posted_subsidiary else 'sub open' }}{% endif %}
+          {% endif %}
+        </td>
+        {% if not read_only %}
+        <td>
+          {% if not e.voided %}
+          <div class="flex flex-wrap gap-1">
+            {% if e.has_party and not e.posted_subsidiary %}
+            <form method="post" action="{{ url_for('student.post_entry_sub',
+                  workspace=workspace.public_id, company_slug=company.slug, entry_id=e.public_id) }}">
+              {{ csrf() }}{{ jk() }}
+              <button type="submit" class="rounded border border-rule px-2 py-1 text-xs">
+                Post to subsidiary</button>
+            </form>
+            {% endif %}
+            {% if not e.posted_general and not e.posted_subsidiary %}
+            <form method="post" action="{{ url_for('student.entry_void',
+                  workspace=workspace.public_id, company_slug=company.slug, entry_id=e.public_id) }}">
+              {{ csrf() }}{{ jk() }}
+              <button type="submit" class="rounded border border-rule px-2 py-1 text-xs">Void</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="rounded border border-rule p-4 text-muted">No entries in this journal yet.</p>
+{% endif %}
+
+{% if runs %}
+<h2 class="mt-6 mb-2 font-semibold">Postings</h2>
+<ul class="divide-y divide-rule rounded border border-rule">
+  {% for run in runs %}
+  <li class="flex flex-wrap items-center gap-3 p-3 text-sm">
+    <span class="mr-auto">{{ run.target | capitalize }} posting {{ run.ordinal }}</span>
+    {% if not read_only %}
+    <form method="post" action="{{ url_for('student.posting_reverse',
+          workspace=workspace.public_id, company_slug=company.slug, run_id=run.public_id) }}">
+      {{ csrf() }}{{ jk() }}
+      <input type="text" name="reason" required placeholder="Reason to reverse"
+             class="rounded border border-rule px-2 py-1 text-xs" aria-label="Reason to reverse">
+      <button type="submit" class="rounded border border-rule px-2 py-1 text-xs">Reverse</button>
+    </form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

@@ -28,6 +28,16 @@
   {% block chrome %}{% endblock %}
 
   <main id="main" class="mx-auto max-w-5xl px-4 py-6">
+    {% with flashes = get_flashed_messages() %}
+      {% if flashes %}
+      <div class="mb-4 space-y-2">
+        {% for m in flashes %}
+        <p class="rounded border border-rule bg-attention/10 px-3 py-2 text-sm text-attention"
+           role="status">{{ m }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
     {% block main %}{% endblock %}
   </main>
 </body>

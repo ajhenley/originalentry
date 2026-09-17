@@ -11,7 +11,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
-    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -84,8 +83,7 @@ class Enrollment(db.Model):
 
     section: Mapped[Section] = relationship()
     user: Mapped[User] = relationship()
-
-    __table_args__ = (UniqueConstraint("section_id", "user_id"),)
+    # The composite primary key already enforces one enrollment per (section, user).
 
 
 __all__ = [

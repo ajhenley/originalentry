@@ -1,0 +1,25 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}Journals{% endblock %}
+
+{% block workspace %}
+<ul class="divide-y divide-rule rounded border border-rule">
+  {% for j in journals %}
+  <li class="flex flex-wrap items-center gap-3 p-4">
+    <div class="mr-auto">
+      <a class="font-semibold underline"
+         href="{{ url_for('student.journal', workspace=workspace.public_id,
+                          company_slug=company.slug, key=j.key) }}">{{ j.name }}</a>
+      <p class="text-sm text-muted">
+        {{ j.count }} entr{{ 'y' if j.count == 1 else 'ies' }}
+        {%- if j.unposted %} · {{ j.unposted }} not yet posted{% endif %}
+      </p>
+    </div>
+    {% if not read_only %}
+    <a class="rounded border border-rule px-3 py-1 text-sm"
+       href="{{ url_for('student.entry_new', workspace=workspace.public_id,
+                        company_slug=company.slug, key=j.key) }}">Record entry</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

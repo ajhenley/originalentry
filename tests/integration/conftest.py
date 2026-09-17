@@ -21,7 +21,11 @@ def session(app):
     with app.app_context():
         connection = db.engine.connect()
         trans = connection.begin()
-        s = Session(bind=connection, expire_on_commit=False)
+        # join_transaction_mode="create_savepoint": a service that commits (the write path does)
+        # releases a SAVEPOINT rather than the outer transaction, so the teardown rollback still
+        # undoes everything and nothing persists to Neon.
+        s = Session(bind=connection, expire_on_commit=False,
+                    join_transaction_mode="create_savepoint")
         try:
             yield s
         finally:

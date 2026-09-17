@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from ..models import (
     Account,
     AccountOpeningBalance,
+    AnswerKey,
     ContentPack,
     PackVersion,
     Party,
@@ -131,3 +132,25 @@ def import_content(session: Session, pack: schema.Pack, source_sha256: str) -> P
 
     session.flush()
     return pv
+
+
+def import_answer_keys(
+    session: Session, pack_version: PackVersion, keys: dict[str, schema.AnswerKey | dict]
+) -> None:
+    """Store one answer key per variant (D3). Payload is the whole key as JSON; only grading/ and
+    staff/ ever read it (D6 rule 6). Call after :func:`import_content`."""
+    variant_id = {
+        v.code: v.id
+        for v in session.scalars(
+            select(Variant).where(Variant.pack_version_id == pack_version.id)
+        )
+    }
+    for variant_code, key in keys.items():
+        vid = variant_id.get(variant_code)
+        if vid is None:
+            continue
+        payload = key.model_dump(mode="json") if isinstance(key, schema.AnswerKey) else dict(key)
+        session.add(
+            AnswerKey(pack_version_id=pack_version.id, variant_id=vid, payload=payload)
+        )
+    session.flush()

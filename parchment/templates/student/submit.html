@@ -1,0 +1,29 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}Submit{% endblock %}
+
+{% block workspace %}
+{% if submitted %}
+<p class="rounded border border-rule bg-attention/10 p-4 text-sm text-attention" role="status">
+  These books have been submitted. Your work is saved and is now read-only.
+</p>
+{% else %}
+<div class="max-w-prose">
+  <p class="text-muted">
+    Before you submit, check that you have handled every document and recorded and posted your
+    entries. After you submit, these books become read-only.
+  </p>
+
+  <dl class="mt-4 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
+    <dt class="font-medium">Documents handled</dt><dd>{{ triaged }} of {{ total }}</dd>
+    <dt class="font-medium">Entries recorded</dt><dd>{{ entry_count }}</dd>
+  </dl>
+
+  <form method="post" class="mt-6"
+        action="{{ url_for('student.submit_confirm', workspace=workspace.public_id,
+                           company_slug=company.slug) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="rounded bg-company px-4 py-2 text-paper">Submit my work</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

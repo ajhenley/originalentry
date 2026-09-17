@@ -150,6 +150,33 @@ def test_document_detail_renders_view_as_text(app):
     assert not BANNED.search(text)
 
 
+def test_checkpoints_render(app):
+    from parchment.services.checkpoints import CheckpointState
+
+    checkpoints = [
+        {"key": "cp1", "ordinal": 1, "prompt": "Accounts Receivable balance after posting",
+         "state": CheckpointState("cp1", 1, False, 2, False)},
+        {"key": "cp2", "ordinal": 2, "prompt": "Cash balance",
+         "state": CheckpointState("cp2", 3, False, 0, True)},
+    ]
+    html = _render_workspace(app, "/w/ws12345678/testco-alpha/checkpoints",
+                             "student/checkpoints.html", checkpoints=checkpoints)
+    text = _visible_text(html)
+    assert "Accounts Receivable balance after posting" in text
+    assert "locked" in text.lower()
+    assert "2 attempts remain" in text
+    assert not BANNED.search(text)
+
+
+def test_submit_page_renders(app):
+    html = _render_workspace(app, "/w/ws12345678/testco-alpha/submit", "student/submit.html",
+                             triaged=2, total=2, entry_count=3, submitted=False)
+    text = _visible_text(html)
+    assert "Submit my work" in text
+    assert "2 of 2" in text
+    assert not BANNED.search(text)
+
+
 def test_subsidiary_proof_renders(app, snapshot):
     proof = subsidiary_proof(snapshot, "customer")
     assert proof.agrees

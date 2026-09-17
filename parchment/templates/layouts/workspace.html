@@ -28,7 +28,9 @@
           {'href': url_for('student.documents', workspace=ws, company_slug=slug), 'label': 'Documents'},
           {'href': url_for('student.journals', workspace=ws, company_slug=slug), 'label': 'Journals'},
           {'href': url_for('student.trial_balance', workspace=ws, company_slug=slug), 'label': 'Trial balance'},
-          {'href': url_for('student.general_ledger', workspace=ws, company_slug=slug), 'label': 'Ledgers'}
+          {'href': url_for('student.general_ledger', workspace=ws, company_slug=slug), 'label': 'Ledgers'},
+          {'href': url_for('student.checkpoints', workspace=ws, company_slug=slug), 'label': 'Checkpoints'},
+          {'href': url_for('student.submit', workspace=ws, company_slug=slug), 'label': 'Submit'}
         ] %}
       <a href="{{ item.href }}"
          class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == item.href %}bg-rule/50 font-semibold{% endif %}"

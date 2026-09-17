@@ -16,9 +16,11 @@ from flask import (
 )
 from flask_login import current_user, login_required
 
+from .. import messages, money
 from ..decorators import workspace_view
 from ..extensions import db
 from ..forms.entries import AccountInfo, EntryContext, parse_general_entry
+from ..grading.checkpoints import evaluate as evaluate_checkpoint
 from ..ledger import STAGE_KINDS, balances, subsidiary_proof, trial_balance
 from ..ledger.engine import TrialBalanceRow
 from ..ledger.snapshot import load_snapshot
@@ -36,6 +38,7 @@ from ..models import (
 )
 from ..presentation import kind_label
 from ..services import WriteRefused, workspace_write
+from ..services.checkpoints import checkpoint_state, record_attempt
 from ..services.dispositions import current_dispositions, set_disposition
 from ..services.entries import record_entry, void_entry
 from ..services.posting import (
@@ -45,6 +48,7 @@ from ..services.posting import (
     post_journal_subsidiary_all,
     reverse_run,
 )
+from ..services.submit import submit_workspace
 
 bp = Blueprint("student", __name__)
 
@@ -482,3 +486,110 @@ def posting_reverse(run_id):
                          "Posting reversed. The entries are unposted again.")
     return redirect(url_for("student.journal", workspace=g.workspace.public_id,
                             company_slug=g.company.slug, key=key))
+
+
+# ── Checkpoints ──────────────────────────────────────────────────────────────────────────
+
+def _manifest_checkpoints():
+    return (g.pack_version.manifest or {}).get("checkpoints", [])
+
+
+def _checkpoint_or_404(key):
+    for c in _manifest_checkpoints():
+        if c["key"] == key:
+            return c
+    abort(404)
+
+
+@bp.get("/w/<workspace>/<company_slug>/checkpoints")
+@workspace_view
+def checkpoints():
+    rows = []
+    for c in _manifest_checkpoints():
+        state = checkpoint_state(db.session, g.workspace, c["key"])
+        rows.append({"key": c["key"], "ordinal": c.get("ordinal"), "prompt": c.get("prompt", ""),
+                     "state": state})
+    rows.sort(key=lambda r: r["ordinal"] or 0)
+    return render_template("student/checkpoints.html", checkpoints=rows)
+
+
+@bp.post("/w/<workspace>/<company_slug>/checkpoints/<key>")
+@workspace_view
+def checkpoint_submit(key):
+    _checkpoint_or_404(key)
+    redirect_to = redirect(url_for("student.checkpoints", workspace=g.workspace.public_id,
+                                   company_slug=g.company.slug))
+    if not _guard_writable():
+        return redirect_to
+
+    state = checkpoint_state(db.session, g.workspace, key)
+    if state.passed:
+        flash(messages.CHECKPOINT_PASSED)
+        return redirect_to
+    if state.locked:
+        flash(messages.CHECKPOINT_LOCKED)
+        return redirect_to
+
+    try:
+        submitted = money.parse_money(request.form.get("value"))
+    except money.MoneyError as exc:
+        flash(messages.money_error(exc.reason))
+        return redirect_to
+
+    # The pass/fail decision reads the key inside grading; only the boolean comes back (A8).
+    passed = evaluate_checkpoint(db.session, g.workspace, key, submitted)
+    try:
+        workspace_write(
+            db.session, g.workspace.public_id, current_user,
+            activity_kind="checkpoint",
+            mutate=lambda s, ws: record_attempt(s, ws, key, submitted, passed),
+            detail={"checkpoint": key, "passed": passed},
+        )
+    except WriteRefused as refused:
+        flash(refused.message)
+        return redirect_to
+
+    after = checkpoint_state(db.session, g.workspace, key)
+    if passed:
+        flash(messages.CHECKPOINT_PASSED)
+    elif after.locked:
+        flash(messages.CHECKPOINT_LOCKED)
+    else:
+        flash(messages.checkpoint_not_passed(after.remaining))
+    return redirect_to
+
+
+# ── Submission ───────────────────────────────────────────────────────────────────────────
+
+@bp.get("/w/<workspace>/<company_slug>/submit")
+@workspace_view
+def submit():
+    docs = _documents(g.pack_version.id)
+    triaged = len(current_dispositions(db.session, g.workspace))
+    entry_count = db.session.execute(
+        db.select(db.func.count()).select_from(JournalEntry).where(
+            JournalEntry.workspace_id == g.workspace.id, JournalEntry.voided_at.is_(None)
+        )
+    ).scalar_one()
+    return render_template(
+        "student/submit.html",
+        triaged=triaged, total=len(docs), entry_count=entry_count,
+        submitted=(g.workspace.status == "submitted"),
+    )
+
+
+@bp.post("/w/<workspace>/<company_slug>/submit")
+@workspace_view
+def submit_confirm():
+    if g.read_only:
+        flash(g.read_only_message or messages.READ_ONLY_SUBMITTED)
+        return redirect(url_for("student.overview", workspace=g.workspace.public_id,
+                                company_slug=g.company.slug))
+    try:
+        workspace_write(db.session, g.workspace.public_id, current_user,
+                        activity_kind="submit", mutate=lambda s, ws: submit_workspace(s, ws))
+        flash("Your work has been submitted. These books are now read-only.")
+    except WriteRefused as refused:
+        flash(refused.message)
+    return redirect(url_for("student.overview", workspace=g.workspace.public_id,
+                            company_slug=g.company.slug))

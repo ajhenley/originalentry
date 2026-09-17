@@ -5,6 +5,7 @@ Flask-Migrate can see them. Grouped Content / People / Work per T2.
 from .content import (
     Account,
     AccountOpeningBalance,
+    AnswerKey,
     ContentPack,
     PackVersion,
     Party,
@@ -31,6 +32,7 @@ from .work import (
     TARGET_SUBSIDIARY,
     ActivityEvent,
     Assignment,
+    CheckpointAttempt,
     Disposition,
     EntryLine,
     JournalEntry,
@@ -56,6 +58,7 @@ __all__ = [
     "Account",
     "Party",
     "SourceDocument",
+    "AnswerKey",
     "AccountOpeningBalance",
     "PartyOpeningBalance",
     # work
@@ -67,6 +70,7 @@ __all__ = [
     "EntryLine",
     "PostingRun",
     "PostingRunEntry",
+    "CheckpointAttempt",
     "ActivityEvent",
     "KIND_REGULAR",
     "KIND_ADJUSTING",

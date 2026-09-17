@@ -138,6 +138,18 @@ class SourceDocument(db.Model):
     )
 
 
+class AnswerKey(db.Model):
+    __tablename__ = "answer_key"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    pack_version_id: Mapped[int] = mapped_column(ForeignKey("pack_version.id"))
+    variant_id: Mapped[int] = mapped_column(ForeignKey("variant.id"))
+    # Read only by grading/ and staff/ (D6 rule 6). Never joined into a student query.
+    payload: Mapped[dict] = mapped_column(JSONB)
+
+    __table_args__ = (UniqueConstraint("pack_version_id", "variant_id"),)
+
+
 class AccountOpeningBalance(db.Model):
     __tablename__ = "account_opening_balance"
 
@@ -167,6 +179,7 @@ __all__ = [
     "Account",
     "Party",
     "SourceDocument",
+    "AnswerKey",
     "AccountOpeningBalance",
     "PartyOpeningBalance",
 ]

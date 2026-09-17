@@ -273,6 +273,22 @@ class PostingRun(db.Model):
     )
 
 
+class CheckpointAttempt(db.Model):
+    __tablename__ = "checkpoint_attempt"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspace.id"))
+    checkpoint_key: Mapped[str] = mapped_column(String(40))
+    attempt_no: Mapped[int] = mapped_column(Integer)
+    value_cents: Mapped[int] = mapped_column(BigInteger)  # the student's submitted figure
+    passed: Mapped[bool] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "checkpoint_key", "attempt_no"),
+    )
+
+
 class ActivityEvent(db.Model):
     __tablename__ = "activity_event"
 
@@ -316,6 +332,7 @@ __all__ = [
     "EntryLine",
     "PostingRun",
     "PostingRunEntry",
+    "CheckpointAttempt",
     "ActivityEvent",
     "KIND_REGULAR",
     "KIND_ADJUSTING",

@@ -1,0 +1,37 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}Checkpoints{% endblock %}
+
+{% block workspace %}
+<p class="mb-4 max-w-prose text-sm text-muted">
+  A checkpoint asks for one figure from your own books. It tells you whether that figure lines up,
+  so you can find a slip before you go further. Each checkpoint allows a few attempts.
+</p>
+
+<ul class="space-y-4">
+  {% for c in checkpoints %}
+  <li class="rounded border border-rule p-4">
+    <p class="font-semibold">Checkpoint {{ c.ordinal }}</p>
+    <p class="text-sm" data-pack-content>{{ c.prompt }}</p>
+
+    {% if c.state.passed %}
+    <p class="mt-2 text-sm text-muted">Checkpoint passed.</p>
+    {% elif c.state.locked %}
+    <p class="mt-2 text-sm text-attention">This checkpoint is locked. Please see your instructor.</p>
+    {% elif not read_only %}
+    <form method="post" class="mt-2 flex flex-wrap items-end gap-2"
+          action="{{ url_for('student.checkpoint_submit', workspace=workspace.public_id,
+                             company_slug=company.slug, key=c.key) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label for="value-{{ c.key }}" class="block text-sm font-medium">Your figure</label>
+        <input id="value-{{ c.key }}" name="value" inputmode="decimal" required
+               class="mt-1 w-40 rounded border border-rule px-2 py-1 text-right tabular-nums">
+      </div>
+      <button type="submit" class="rounded bg-company px-3 py-2 text-sm text-paper">Check</button>
+      <span class="text-sm text-muted">{{ c.state.remaining }} attempt{{ '' if c.state.remaining == 1 else 's' }} remain</span>
+    </form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

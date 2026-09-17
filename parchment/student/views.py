@@ -20,6 +20,7 @@ from .. import messages, money
 from ..decorators import workspace_view
 from ..extensions import db
 from ..forms.entries import AccountInfo, EntryContext, parse_general_entry
+from ..forms.statements import StatementContext, parse_statement
 from ..grading.checkpoints import evaluate as evaluate_checkpoint
 from ..ledger import STAGE_KINDS, balances, subsidiary_proof, trial_balance
 from ..ledger.engine import TrialBalanceRow
@@ -47,6 +48,13 @@ from ..services.posting import (
     post_journal_general,
     post_journal_subsidiary_all,
     reverse_run,
+)
+from ..services.statements import (
+    draft_rows,
+    load_draft,
+    own_figures,
+    save_statement,
+    statement_counts,
 )
 from ..services.submit import submit_workspace
 
@@ -559,6 +567,140 @@ def checkpoint_submit(key):
     return redirect_to
 
 
+# ── Statements ───────────────────────────────────────────────────────────────────────────
+# The app supplies the form, the account list and the student's own figures. What goes where,
+# in what order, and every amount, is the student's decision (S5.5).
+
+DEFAULT_BLANK_ROWS = 5
+POST_CLOSING_TYPES = ("post_closing_trial_balance",)
+
+
+def _manifest_statements():
+    return (g.pack_version.manifest or {}).get("statements", [])
+
+
+def _statement_or_404(statement_type):
+    for s in _manifest_statements():
+        if s["type"] == statement_type:
+            return s
+    abort(404)
+
+
+def _statement_stage(statement_type):
+    """The post-closing trial balance is built on post-closing figures; the rest on adjusted."""
+    return "post_closing" if statement_type in POST_CLOSING_TYPES else "adjusted"
+
+
+def _statement_context(statement):
+    return StatementContext(
+        statement_type=statement["type"],
+        title=statement.get("title", statement["type"]),
+        account_numbers={a.number for a in _accounts(g.pack_version.id)},
+        subtotal_types={s["key"]: s["label"] for s in statement.get("subtotal_types", [])},
+    )
+
+
+def _rows_from_form(form, count):
+    """Re-render what the student typed after a refusal, so nothing is retyped (S3.10)."""
+    rows = []
+    for i in range(count):
+        rows.append({
+            "kind": (form.get(f"row-{i}-kind") or "").strip(),
+            "label": (form.get(f"row-{i}-label") or "").strip() or None,
+            "account_number": (form.get(f"row-{i}-account") or "").strip() or None,
+            "subtotal_type": (form.get(f"row-{i}-subtotal_type") or "").strip() or None,
+            "amount": (form.get(f"row-{i}-amount") or "").strip(),
+            "indent": int(form.get(f"row-{i}-indent") or 0),
+            "amount_column": int(form.get(f"row-{i}-amount_column") or 1),
+        })
+    return rows
+
+
+def _submitted_row_count(form):
+    highest = -1
+    for key in form:
+        if key.startswith("row-"):
+            try:
+                highest = max(highest, int(key.split("-")[1]))
+            except (ValueError, IndexError):
+                continue
+    return highest + 1
+
+
+@bp.get("/w/<workspace>/<company_slug>/statements")
+@workspace_view
+def statements():
+    counts = statement_counts(db.session, g.workspace)
+    rows = [
+        {"type": s["type"], "title": s.get("title", s["type"]),
+         "row_count": counts.get(s["type"], 0)}
+        for s in _manifest_statements()
+    ]
+    return render_template("student/statements.html", statements=rows)
+
+
+@bp.get("/w/<workspace>/<company_slug>/statements/<statement_type>")
+@workspace_view
+def statement(statement_type):
+    statement_def = _statement_or_404(statement_type)
+    draft = load_draft(db.session, g.workspace, statement_type)
+    try:
+        blank_rows = max(0, min(50, int(request.args.get("rows", DEFAULT_BLANK_ROWS))))
+    except ValueError:
+        blank_rows = DEFAULT_BLANK_ROWS
+    return render_template(
+        "student/statement.html",
+        statement=statement_def,
+        rows=draft_rows(db.session, g.workspace, draft),
+        accounts=_accounts(g.pack_version.id),
+        figures=own_figures(db.session, g.workspace, _statement_stage(statement_type)),
+        header=(draft.header if draft else {}),
+        blank_rows=blank_rows,
+        errors={},
+    )
+
+
+@bp.post("/w/<workspace>/<company_slug>/statements/<statement_type>", endpoint="statement_save")
+@workspace_view
+def statement_save(statement_type):
+    statement_def = _statement_or_404(statement_type)
+    back = redirect(url_for("student.statement", workspace=g.workspace.public_id,
+                            company_slug=g.company.slug, statement_type=statement_type))
+    if not _guard_writable():
+        return back
+
+    result = parse_statement(request.form, _statement_context(statement_def))
+    if not result.ok:
+        submitted = _submitted_row_count(request.form)
+        return render_template(
+            "student/statement.html",
+            statement=statement_def,
+            rows=_rows_from_form(request.form, submitted),
+            accounts=_accounts(g.pack_version.id),
+            figures=own_figures(db.session, g.workspace, _statement_stage(statement_type)),
+            header={"title": (request.form.get("header-title") or "").strip(),
+                    "period": (request.form.get("header-period") or "").strip()},
+            blank_rows=0,
+            errors=dict(result.errors),
+        ), 422
+
+    try:
+        workspace_write(db.session, g.workspace.public_id, current_user,
+                        activity_kind="statement",
+                        mutate=lambda s, ws: save_statement(s, ws, result.command),
+                        detail={"statement": statement_type})
+    except WriteRefused as refused:
+        flash(refused.message)
+        return back
+
+    flash(messages.STATEMENT_SAVED)
+    if request.form.get("add_rows"):
+        return redirect(url_for("student.statement", workspace=g.workspace.public_id,
+                                company_slug=g.company.slug, statement_type=statement_type,
+                                rows=DEFAULT_BLANK_ROWS))
+    return back
+
+
 # ── Submission ───────────────────────────────────────────────────────────────────────────
 
 @bp.get("/w/<workspace>/<company_slug>/submit")
@@ -571,9 +713,12 @@ def submit():
             JournalEntry.workspace_id == g.workspace.id, JournalEntry.voided_at.is_(None)
         )
     ).scalar_one()
+    started = statement_counts(db.session, g.workspace)
     return render_template(
         "student/submit.html",
         triaged=triaged, total=len(docs), entry_count=entry_count,
+        statements_started=len([t for t, n in started.items() if n]),
+        statements_total=len(_manifest_statements()),
         submitted=(g.workspace.status == "submitted"),
     )
 

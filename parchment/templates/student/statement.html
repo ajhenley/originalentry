@@ -1,0 +1,185 @@
+{# The statement builder (S5.5, tension 7).
+
+   Rows are the student's: heading, account, subtotal, total or blank, in any order, with the
+   figures they choose. Subtotal rows pick a type from the pack's vocabulary so the structure can
+   be read later without guessing at free text. The side panel shows the student's *own* adjusted
+   balances — it is not an answer, it is their own ledger.
+
+   Reordering uses Move up / Move down buttons (T10.4): no drag and drop, keyboard throughout. #}
+{% extends "layouts/workspace.html" %}
+{% block heading %}{{ statement.title }}{% endblock %}
+
+{% block workspace %}
+{% if errors %}
+<div class="mb-4 rounded border border-attention/40 bg-attention/10 p-3 text-sm text-attention"
+     role="alert">
+  <p class="font-semibold">This statement was not saved. Your rows are still here.</p>
+  <ul class="mt-1 list-disc pl-5">
+    {% for field, message in errors.items() %}<li>{{ message }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="flex flex-col gap-6 lg:flex-row">
+  <form method="post" class="flex-1 space-y-4"
+        action="{{ url_for('student.statement_save', workspace=workspace.public_id,
+                           company_slug=company.slug, statement_type=statement.type) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="flex flex-wrap gap-4">
+      <div class="min-w-64 flex-1">
+        <label for="header-title" class="block text-sm font-medium">Statement title</label>
+        <input id="header-title" name="header-title" type="text"
+               value="{{ header.get('title', statement.title) }}"
+               class="mt-1 w-full rounded border border-rule px-2 py-1">
+      </div>
+      <div class="min-w-64 flex-1">
+        <label for="header-period" class="block text-sm font-medium">Period line</label>
+        <input id="header-period" name="header-period" type="text"
+               placeholder="For the Month Ended December 31, 2026"
+               value="{{ header.get('period', '') }}"
+               class="mt-1 w-full rounded border border-rule px-2 py-1">
+      </div>
+    </div>
+
+    <div class="overflow-x-auto rounded border border-rule">
+      <table class="w-full border-collapse text-sm">
+        <caption class="px-3 py-2 text-left font-semibold">
+          {{ statement.title }} — your rows
+        </caption>
+        <thead>
+          <tr class="border-b border-rule text-muted">
+            <th scope="col" class="text-left font-medium">Row</th>
+            <th scope="col" class="text-left font-medium">Kind</th>
+            <th scope="col" class="text-left font-medium">Account or subtotal</th>
+            <th scope="col" class="text-left font-medium">Heading text</th>
+            <th scope="col" class="text-left font-medium">Indent</th>
+            <th scope="col" class="text-right font-medium">Figure</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in range(rows | length + blank_rows) %}
+          {% set row = rows[i] if i < (rows | length) else none %}
+          <tr class="border-b border-rule/60 align-top">
+            <td class="text-muted">{{ i + 1 }}</td>
+            <td>
+              <label class="sr-only" for="row-{{ i }}-kind">Row {{ i + 1 }}, kind</label>
+              <select id="row-{{ i }}-kind" name="row-{{ i }}-kind"
+                      class="w-full rounded border border-rule px-2 py-1">
+                <option value="">—</option>
+                {% for k in [('heading', 'Heading'), ('account', 'Account'),
+                             ('subtotal', 'Subtotal'), ('total', 'Total'), ('blank', 'Blank')] %}
+                <option value="{{ k[0] }}"
+                  {% if row and row.kind == k[0] %}selected{% endif %}>{{ k[1] }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <label class="sr-only" for="row-{{ i }}-account">Row {{ i + 1 }}, account</label>
+              <select id="row-{{ i }}-account" name="row-{{ i }}-account"
+                      class="w-full rounded border border-rule px-2 py-1">
+                <option value="">— account —</option>
+                {% for a in accounts %}
+                <option value="{{ a.number }}"
+                  {% if row and row.account_number == a.number %}selected{% endif %}>
+                  {{ a.number }} · {{ a.name }}</option>
+                {% endfor %}
+              </select>
+              <label class="sr-only" for="row-{{ i }}-subtotal_type">
+                Row {{ i + 1 }}, subtotal</label>
+              <select id="row-{{ i }}-subtotal_type" name="row-{{ i }}-subtotal_type"
+                      class="mt-1 w-full rounded border border-rule px-2 py-1">
+                <option value="">— subtotal —</option>
+                {% for s in statement.subtotal_types %}
+                <option value="{{ s.key }}"
+                  {% if row and row.subtotal_type == s.key %}selected{% endif %}>{{ s.label }}</option>
+                {% endfor %}
+              </select>
+              {% if errors.get('row-' ~ i ~ '-account') %}
+              <p class="mt-1 text-xs text-attention">{{ errors.get('row-' ~ i ~ '-account') }}</p>
+              {% endif %}
+              {% if errors.get('row-' ~ i ~ '-subtotal_type') %}
+              <p class="mt-1 text-xs text-attention">
+                {{ errors.get('row-' ~ i ~ '-subtotal_type') }}</p>
+              {% endif %}
+            </td>
+            <td>
+              <label class="sr-only" for="row-{{ i }}-label">Row {{ i + 1 }}, heading text</label>
+              <input id="row-{{ i }}-label" name="row-{{ i }}-label" type="text"
+                     value="{{ row.label if row and row.label else '' }}"
+                     class="w-full rounded border border-rule px-2 py-1">
+              {% if errors.get('row-' ~ i ~ '-label') %}
+              <p class="mt-1 text-xs text-attention">{{ errors.get('row-' ~ i ~ '-label') }}</p>
+              {% endif %}
+            </td>
+            <td>
+              <label class="sr-only" for="row-{{ i }}-indent">Row {{ i + 1 }}, indent</label>
+              <select id="row-{{ i }}-indent" name="row-{{ i }}-indent"
+                      class="rounded border border-rule px-2 py-1">
+                {% for n in [0, 1, 2] %}
+                <option value="{{ n }}"
+                  {% if row and row.indent == n %}selected{% endif %}>{{ n }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="text-right">
+              <label class="sr-only" for="row-{{ i }}-amount">Row {{ i + 1 }}, figure</label>
+              <input id="row-{{ i }}-amount" name="row-{{ i }}-amount" inputmode="decimal"
+                     value="{{ row.amount if row else '' }}"
+                     class="w-32 rounded border border-rule px-2 py-1 text-right tabular-nums">
+              {% if errors.get('row-' ~ i ~ '-amount') %}
+              <p class="mt-1 text-xs text-attention">{{ errors.get('row-' ~ i ~ '-amount') }}</p>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-sm text-muted">
+      A figure in parentheses, like (420.00), is treated as a negative, the way a loss is written
+      on paper. Add rows by filling the blank rows at the end and saving.
+    </p>
+
+    {% if not read_only %}
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" class="rounded bg-company px-4 py-2 text-paper">Save statement</button>
+      <button type="submit" name="add_rows" value="5"
+              class="rounded border border-rule px-4 py-2">Add rows</button>
+      <a class="rounded border border-rule px-4 py-2"
+         href="{{ url_for('student.statements', workspace=workspace.public_id,
+                          company_slug=company.slug) }}">Back to statements</a>
+    </div>
+    {% endif %}
+  </form>
+
+  <aside class="lg:w-80" aria-labelledby="own-figures">
+    <h2 id="own-figures" class="mb-2 text-sm font-semibold">Your adjusted balances</h2>
+    <p class="mb-2 text-xs text-muted">
+      These come from your own ledgers. Copy across whatever this statement needs.
+    </p>
+    <div class="overflow-x-auto rounded border border-rule">
+      <table class="w-full border-collapse text-sm">
+        <caption class="sr-only">Your adjusted account balances</caption>
+        <thead>
+          <tr class="border-b border-rule text-muted">
+            <th scope="col" class="text-left font-medium">Account</th>
+            <th scope="col" class="text-right font-medium">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in figures %}
+          <tr class="border-b border-rule/60">
+            <th scope="row" class="text-left font-normal">{{ f.number }} · {{ f.name }}</th>
+            <td class="text-right tabular-nums">
+              {{ f.amount_cents | abs | money }} {{ 'Dr' if f.amount_cents > 0 else 'Cr' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </aside>
+</div>
+{% endblock %}

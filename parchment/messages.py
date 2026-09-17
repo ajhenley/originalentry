@@ -52,6 +52,13 @@ def money_error(reason: str) -> str:
     return MONEY_ERRORS.get(reason, MONEY_ERRORS[money.NOT_A_NUMBER])
 
 
+# ── Statements (S5.5): mechanical checks only, never a judgement about the layout ───────
+
+STATEMENT_NEEDS_SUBTOTAL_TYPE = "Choose what this subtotal is."
+STATEMENT_HEADING_NEEDS_LABEL = "Give this heading a label."
+STATEMENT_SAVED = "Statement saved."
+
+
 # ── Posting and entry lifecycle (T6.4) ──────────────────────────────────────────────────
 
 JOURNAL_ALREADY_POSTED = "This journal has already been posted."

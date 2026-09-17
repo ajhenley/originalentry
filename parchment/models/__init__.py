@@ -39,6 +39,8 @@ from .work import (
     JournalEntryRevision,
     PostingRun,
     PostingRunEntry,
+    StatementDraft,
+    StatementLine,
     Workspace,
 )
 
@@ -71,6 +73,8 @@ __all__ = [
     "PostingRun",
     "PostingRunEntry",
     "CheckpointAttempt",
+    "StatementDraft",
+    "StatementLine",
     "ActivityEvent",
     "KIND_REGULAR",
     "KIND_ADJUSTING",

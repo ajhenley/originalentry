@@ -4,6 +4,7 @@ nothing persists to the database.
 """
 
 import pytest
+from flask.testing import FlaskClient
 from parchment.app import create_app
 from parchment.extensions import db
 from sqlalchemy.orm import Session
@@ -33,3 +34,40 @@ def session(app):
             if trans.is_active:  # a test may have rolled back after a forced constraint check
                 trans.rollback()
             connection.close()
+
+
+class _Client(FlaskClient):
+    """A test client that can sign a user in without going through the dev sign-in form."""
+
+    def sign_in(self, user):
+        with self.session_transaction() as flask_session:
+            flask_session["_user_id"] = user.get_id()  # "public_id:session_epoch"
+            flask_session["_fresh"] = True
+
+
+@pytest.fixture
+def client(app, session):
+    """A test client whose requests run on the test transaction, so nothing persists.
+
+    Flask-SQLAlchemy picks its bind from ``db.engines``, so the test connection is put there for
+    the duration of the test. New sessions join the outer transaction through a SAVEPOINT, which
+    means the write path can commit and the teardown rollback still undoes it.
+    """
+    connection = session.connection()
+    engines = app.extensions["sqlalchemy"]._app_engines[app]
+    original = dict(engines)
+    engines[None] = connection
+
+    db.session.remove()
+    db.session.configure(join_transaction_mode="create_savepoint")
+    app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
+    app.test_client_class = _Client
+
+    try:
+        yield app.test_client()
+    finally:
+        db.session.remove()
+        db.session.configure(join_transaction_mode="conditional_savepoint")
+        engines.clear()
+        engines.update(original)
+        app.config.update(TESTING=False, WTF_CSRF_ENABLED=True)

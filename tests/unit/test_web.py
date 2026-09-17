@@ -170,7 +170,8 @@ def test_checkpoints_render(app):
 
 def test_submit_page_renders(app):
     html = _render_workspace(app, "/w/ws12345678/testco-alpha/submit", "student/submit.html",
-                             triaged=2, total=2, entry_count=3, submitted=False)
+                             triaged=2, total=2, entry_count=3, statements_started=1,
+                             statements_total=2, submitted=False)
     text = _visible_text(html)
     assert "Submit my work" in text
     assert "2 of 2" in text
@@ -187,4 +188,70 @@ def test_subsidiary_proof_renders(app, snapshot):
     text = _visible_text(html)
     assert "Agrees" in text
     assert "Firstborn Supply" in text
+    assert not BANNED.search(text)
+
+
+def test_statements_index_lists_the_forms_the_pack_supplies(app):
+    statements = [
+        {"type": "income_statement", "title": "Income Statement", "row_count": 4},
+        {"type": "balance_sheet", "title": "Balance Sheet", "row_count": 0},
+    ]
+    html = _render_workspace(app, "/w/ws12345678/testco-alpha/statements",
+                             "student/statements.html", statements=statements)
+    text = _visible_text(html)
+    assert "Income Statement" in text
+    assert "Balance Sheet" in text
+    assert "Not started" in text  # the balance sheet has no rows yet
+    assert not BANNED.search(text)
+
+
+def test_statement_builder_offers_the_pack_vocabulary_and_the_students_own_figures(app, snapshot):
+    from parchment.ledger import balances
+
+    statement = {
+        "type": "income_statement", "title": "Income Statement",
+        "subtotal_types": [{"key": "net_sales", "label": "Net sales"},
+                           {"key": "net_income", "label": "Net income"}],
+    }
+    rows = [
+        {"kind": "heading", "label": "Revenue", "account_number": None, "subtotal_type": None,
+         "amount": "", "indent": 0, "amount_column": 1},
+        {"kind": "account", "label": None, "account_number": "401", "subtotal_type": None,
+         "amount": "5,000.00", "indent": 1, "amount_column": 1},
+    ]
+    figures = [
+        {"number": n, "name": snapshot.accounts[n].name, "amount_cents": b}
+        for n, b in balances(snapshot, "adjusted").items() if b != 0
+    ]
+    accounts = [{"number": n, "name": a.name} for n, a in snapshot.accounts.items()]
+
+    html = _render_workspace(
+        app, "/w/ws12345678/testco-alpha/statements/income_statement",
+        "student/statement.html",
+        statement=statement, rows=rows, accounts=accounts, figures=figures,
+        header={"title": "Income Statement"}, blank_rows=3, errors={},
+    )
+    text = _visible_text(html)
+    assert "Income Statement" in text
+    assert "Net income" in text          # the pack's subtotal vocabulary is offered
+    assert "Sales Revenue" in text       # the account list
+    assert "5,000.00" in text            # the student's own adjusted figure, in the side panel
+    assert "Add rows" in text
+    assert not BANNED.search(text)
+
+
+def test_statement_builder_shows_a_refusal_next_to_the_row(app):
+    statement = {"type": "income_statement", "title": "Income Statement",
+                 "subtotal_types": [{"key": "net_income", "label": "Net income"}]}
+    rows = [{"kind": "subtotal", "label": None, "account_number": None, "subtotal_type": None,
+             "amount": "1.234", "indent": 0, "amount_column": 1}]
+    html = _render_workspace(
+        app, "/w/ws12345678/testco-alpha/statements/income_statement",
+        "student/statement.html",
+        statement=statement, rows=rows, accounts=[], figures=[],
+        header={"title": "Income Statement"}, blank_rows=1,
+        errors={"row-0-subtotal_type": "Choose what this subtotal is."},
+    )
+    text = _visible_text(html)
+    assert "Choose what this subtotal is." in text
     assert not BANNED.search(text)

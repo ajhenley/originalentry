@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-17 · 7 commits · 80 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-17 · 8 commits · 102 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -10,13 +10,14 @@ This tracks what is built and what is not, against the phases in
 
 A student can complete the **full December cycle** end to end: sign in → triage documents →
 journalise → post to general and subsidiary ledgers → record adjusting entries → self-check with
-checkpoints → record closing entries → view all three trial balances → submit. Everything is
+checkpoints → record closing entries → view all three trial balances → **build the four
+statements** → submit. Everything is
 company-scoped, every ledger figure is **derived by the engine** (never stored), and the **A2**
 guarantee (the engine reproduces the answer key to the cent) is proven two independent ways.
 
-Not yet built: the statement builder, the grading engine, the staff console, the multi-company UI,
-the JavaScript layer (`save.js`/pickers), real magic-link auth, document images, deployment
-config, and CI. Details below.
+Not yet built: the grading engine, the staff console, the multi-company UI, the JavaScript layer
+(`save.js`/pickers), real magic-link auth, document images, deployment config, and CI. Details
+below.
 
 ## How to run and test
 
@@ -81,7 +82,14 @@ flask db upgrade
 - [x] Documents + dispositions: queue, detail (view-as-text from pack, guidance), record / no-entry
 - [x] Checkpoints: `grading/checkpoints.py` `evaluate` returns **boolean only** (A8); attempts /
       remaining / locked; submit-a-figure UI
-- [x] Submission: submit → `late_hours` stamped (no penalty), then read-only
+- [x] **Statement builder** (S5.5, tension 7): `statement_draft`/`statement_line` with composite
+      scoping keys and CHECKs; rows are heading / account / subtotal / total / blank; subtotal and
+      total rows take their **type from the pack**, headings stay free text; figures are typed by
+      the student (parentheses mean a negative, as on paper) and the app does no arithmetic; the
+      side panel shows the student's **own** adjusted balances; saving replaces the layout and
+      bumps the draft version
+- [x] Submission: submit → `late_hours` stamped (no penalty), then read-only; the checklist counts
+      statements started
 - [x] Dev-only sign-in (email → session; refused in production)
 
 ### Guards and tests (80)
@@ -89,7 +97,13 @@ flask db upgrade
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
       in a response), money round-trips/rejections
-- [x] Integration (live Neon): D5 constraints, DB A2, write path, dispositions, checkpoints, submit
+- [x] Integration (live Neon): D5 constraints, DB A2, write path, dispositions, checkpoints,
+      submit, statement drafts
+- [x] **Route-level harness** (`client` fixture): Flask-SQLAlchemy is bound to the test
+      connection, so a real request writes inside the test transaction and nothing persists. The
+      statement screens are tested through the same form endpoints a browser uses, including the
+      404 for another student's workspace and the 422 that keeps every typed row on the page.
+      This is the harness the full A7/A8 sweeps and A26 will need
 
 ---
 
@@ -114,9 +128,9 @@ flask db upgrade
 - [ ] Guided mode gating and the M3.6 cross-company picker message
 - [ ] Join codes / enrolment UI (join flow, roster CSV)
 
-### Phase 4 — statements (partial)
-- [ ] **Statement builder**: `statement_draft` / `statement_line` tables, subtotal types from the
-      pack, the builder UI (the large remaining Phase 4 piece)
+### Phase 4 — statements (mostly done)
+- [ ] Reordering rows with Move up / Move down buttons (rows are currently ordered by where they
+      sit in the form; a saved row can be retyped but not moved)
 - [ ] Worksheet (`worksheet_cell`) — optional (cut list #1)
 - [ ] Checkpoint **stage-gating** (needs `assignment_checkpoint`; e.g. "pass cp2 before adjusting")
 - [ ] Per-student accommodations (`assignment_override`)
@@ -162,7 +176,7 @@ flask db upgrade
 | A4 | Out-of-balance entry cannot be saved; DB rejects bypass | **Done** (validator + trigger) |
 | A6 | Trial balance on designed errors reads "In balance" | **Done** (always balances by construction) |
 | A7 | No banned words in the student interface | **Partial** (render checks; full sweep pending) |
-| A8 | No answer-key value reaches a student | **Partial** (checkpoints proven; full leak test pending) |
+| A8 | No answer-key value reaches a student | **Partial** (checkpoints proven; full leak test pending, harness now exists) |
 | A20 | Two companies' workspaces cannot reach each other | **Partial** (composite-FK + 404 proven; full A20 pending) |
 | A23 | Two charts with account 101 coexist everywhere | **Partial** (scoping in place; dedicated test pending) |
 | A26 | No lost work (expired session, retry, deploy) | **Not done** (needs `save.js`) |
@@ -178,6 +192,9 @@ flask db upgrade
 - **Recording uses the general-journal grid** for now (regular/adjusting/closing). A credit sale
   can be recorded there (AR + party, Sales) so the full posting/subsidiary flow is demoable; the
   special-journal column form is deferred.
+- **Statement figures are typed by the student** (tension 6). The builder shows their own adjusted
+  balances beside the form, and nothing is added up for them. Subtotal rows name a type from the
+  pack (tension 7) so grading can read the structure without parsing free text.
 - **V9 replays only `independent` adjustments** (their amount is in the key). A pack whose balances
   depend on a `dependent` adjustment is skipped by V9 and left to grading against the student's own
   figures (tension 8).

@@ -1,0 +1,31 @@
+{# The statement forms this company's pack supplies (S5.4). The app offers the form and the
+   account list; what goes where is the student's decision. #}
+{% extends "layouts/workspace.html" %}
+{% block heading %}Statements{% endblock %}
+
+{% block workspace %}
+<p class="mb-4 max-w-prose text-sm text-muted">
+  Each statement is yours to build: add the rows you need, in the order you want them, and enter
+  every figure from your own books.
+</p>
+
+<ul class="space-y-3">
+  {% for s in statements %}
+  <li class="flex flex-wrap items-center gap-3 rounded border border-rule p-4">
+    <div class="mr-auto">
+      <a class="font-semibold underline"
+         href="{{ url_for('student.statement', workspace=workspace.public_id,
+                          company_slug=company.slug, statement_type=s.type) }}">{{ s.title }}</a>
+      <p class="text-sm text-muted">
+        {% if s.row_count %}{{ s.row_count }} row{{ '' if s.row_count == 1 else 's' }}
+        {% else %}Not started{% endif %}
+      </p>
+    </div>
+    <a class="rounded border border-rule px-3 py-1 text-sm"
+       href="{{ url_for('student.statement', workspace=workspace.public_id,
+                        company_slug=company.slug, statement_type=s.type) }}">
+      {% if read_only %}View{% else %}Open{% endif %}</a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

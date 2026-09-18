@@ -1,10 +1,12 @@
 """Pack validation (T5.4). Shared by the upload screen, ``flask packs validate`` and
 ``flask packs import``. Reports **every** problem with its JSON path, not just the first.
 
-Pydantic (``schema.load_pack``) covers V1's parse step. This module adds the cross-field and
-cross-file rules. The rules that need the ledger engine or the database (V9 replay, V12 image
-bytes, V14 version/checksum, V16 zip safety) are listed in :data:`DEFERRED_RULES` and wired in
-as their prerequisites land; they are intentionally not silently skipped.
+Pydantic (``schema.load_pack``) covers V1's parse step. This module adds every cross-field and
+cross-file rule, including the V9 replay. Three rules cannot live here because they are not about
+the pack's own fields, and they run where their evidence is: **V16** (zip safety) in
+``zip_reader``, and **V12** (image bytes) and **V14** (version and checksum against the
+catalogue) in ``importing``. Anything still unwritten is listed in :data:`DEFERRED_RULES` rather
+than silently skipped.
 """
 
 from __future__ import annotations
@@ -31,10 +33,14 @@ KNOWN_COMPONENTS = frozenset(
 
 # Rules implemented elsewhere as their prerequisites land (documented, never silently skipped).
 DEFERRED_RULES = {
-    "V12": "Screen packs: a real PNG ≤2MB per document per variant, alt text, text alternative",
-    "V14": "Version higher than any existing; zip checksum new",
-    "V16": "Zip safety: no absolute/.. paths, ≤200MB uncompressed, ≤2000 entries",
     "W1": "Warn on pack text containing correct/incorrect/right/wrong",
+}
+
+# Rules that run outside this module, where their evidence is.
+ELSEWHERE = {
+    "V12": "importing._v12_images",
+    "V14": "importing._v14_catalogue",
+    "V16": "zip_reader.read_pack_zip",
 }
 
 

@@ -4,8 +4,17 @@ The console is small on purpose. These tests cover what it must never get wrong:
 reach it, and a row tells the instructor where each student is and what they were stuck on.
 """
 
+from datetime import UTC, datetime
+
 import pytest
-from parchment.models import Assignment, Section, User, Variant, Workspace
+from parchment.models import (
+    Assignment,
+    PackVersion,
+    Section,
+    User,
+    Variant,
+    Workspace,
+)
 from parchment.packs import schema
 from parchment.packs.importer import import_answer_keys, import_content
 from parchment.services import workspace_write
@@ -112,3 +121,69 @@ def test_a_refused_save_in_the_browser_reaches_the_progress_screen(client, secti
 
     assert "INV-1" in body
     assert "out of balance by $100.00" in body
+
+
+def test_an_instructor_sets_a_term_up_without_touching_the_database(client, section, session):
+    """A13: a section, an assignment, a join code and an enrolled student, all through screens."""
+    _, _, _, instructor = section
+    client.sign_in(instructor)
+
+    page = client.get("/staff/assignments/new").get_data(as_text=True)
+    assert "TestCo Alpha" in page      # the catalogue offers the companies that are loaded
+
+    created = client.post("/staff/assignments/new", data={
+        "section_choice": "new",
+        "section_name": "ACCT 1010-09",
+        "section_term": "Fall 2026",
+        "title": "December cycle",
+        "pack_version_id": str(session.scalars(select(PackVersion.id)).first()),
+        "mode": "paper",
+        "due_at": "2026-12-18T23:59",
+        "variant_policy": "round_robin",
+    }, follow_redirects=True)
+
+    body = created.get_data(as_text=True)
+    assert created.status_code == 200
+    assert "December cycle" in body
+    assert "ACCT 1010-09" in body
+
+    code = session.scalars(
+        select(Section.join_code).where(Section.name == "ACCT 1010-09")
+    ).one()
+    assert code in body               # the instructor can read the code off the screen
+
+    student = User(email="a13-student@example.edu", given_name="Nia", family_name="Bello")
+    session.add(student)
+    session.flush()
+    client.sign_in(student)
+    joined = client.post("/join", data={"code": code}, follow_redirects=True)
+
+    assert joined.status_code == 200
+    assert "December cycle" in joined.get_data(as_text=True)
+
+
+def test_a_code_that_is_not_in_use_says_so_without_saying_more(client, section, session):
+    _, _, student, _ = section
+    client.sign_in(student)
+
+    body = client.post("/join", data={"code": "NOTACODE"},
+                       follow_redirects=True).get_data(as_text=True)
+
+    assert "not in use" in body
+
+
+def test_cloning_an_assignment_moves_its_dates(client, section, session):
+    assignment, _, _, instructor = section
+    assignment.due_at = datetime(2026, 12, 18, 23, 59, tzinfo=UTC)
+    session.flush()
+    client.sign_in(instructor)
+
+    response = client.post(f"/staff/assignments/{assignment.public_id}/clone",
+                           data={"shift_days": "120"}, follow_redirects=True)
+
+    assert response.status_code == 200
+    clones = session.scalars(
+        select(Assignment).where(Assignment.cloned_from_id == assignment.id)
+    ).all()
+    assert len(clones) == 1
+    assert clones[0].due_at.date().isoformat() == "2027-04-17"

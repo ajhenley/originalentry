@@ -2,6 +2,11 @@
 {% block heading %}Assignments{% endblock %}
 
 {% block console %}
+<p class="mb-4">
+  <a class="rounded bg-ink px-3 py-2 text-sm text-paper"
+     href="{{ url_for('staff.assignment_new') }}">New assignment</a>
+</p>
+
 {% if not assignments %}
 <p class="text-muted">No assignments yet.</p>
 {% else %}
@@ -13,6 +18,7 @@
       <tr class="border-b border-rule text-muted">
         <th scope="col" class="text-left font-medium">Assignment</th>
         <th scope="col" class="text-left font-medium">Section</th>
+        <th scope="col" class="text-left font-medium">Join code</th>
         <th scope="col" class="text-left font-medium">Company</th>
         <th scope="col" class="text-left font-medium">Documents</th>
         <th scope="col" class="text-right font-medium">Students</th>
@@ -26,6 +32,7 @@
           <a class="underline" href="{{ url_for('staff.progress', assignment=a.public_id) }}">{{ a.title }}</a>
         </th>
         <td>{{ a.section_name }}</td>
+        <td class="font-mono tracking-widest">{{ a.join_code }}</td>
         <td>{{ a.company_name }}</td>
         <td>{{ a.mode }}</td>
         <td class="text-right tabular-nums">{{ a.students }}</td>
@@ -33,6 +40,14 @@
           <a class="underline" href="{{ url_for('staff.grading', assignment=a.public_id) }}">Grading</a>
           ·
           <a class="underline" href="{{ url_for('staff.diagnostics', assignment=a.public_id) }}">Diagnostics</a>
+          <form method="post" class="mt-1 flex items-center gap-1"
+                action="{{ url_for('staff.assignment_clone', assignment=a.public_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="sr-only" for="shift-{{ a.public_id }}">Move dates by, in days</label>
+            <input id="shift-{{ a.public_id }}" name="shift_days" inputmode="numeric" value="364"
+                   class="w-16 rounded border border-rule px-1 py-0.5 text-right tabular-nums">
+            <button type="submit" class="rounded border border-rule px-2 py-0.5">Clone</button>
+          </form>
         </td>
       </tr>
       {% endfor %}

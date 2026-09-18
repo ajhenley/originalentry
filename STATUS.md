@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-18 · 14 commits · 180 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-18 · 15 commits · 193 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -26,9 +26,12 @@ missing is the rest of the instructor's side of it. The console now covers **Ass
 **Progress**, **Grading** and **Diagnostics**: an instructor grades a section in batches, reads
 what the rule credited item by item, overrides a mark with a reason, releases marks in one action,
 and sees which designed errors the cohort actually made, which documents were handled differently
-from the key, and how long the work took — with the whole cohort exportable as CSV. The catalogue,
-assignment setup, the multi-company UI, the JavaScript layer (`save.js`/pickers), real magic-link
-auth, document images, deployment config and CI are what remain. Details below.
+from the key, and how long the work took — with the whole cohort exportable as CSV. **A term can
+now be set up entirely through screens**: a section with a join code, an assignment on a company
+from the catalogue, cloning last term's with the dates moved, and a student who types the code and
+lands in their own books. The catalogue upload, the multi-company UI, the JavaScript layer
+(`save.js`/pickers), real magic-link auth, document images, deployment config and CI are what
+remain. Details below.
 
 ## How to run and test
 
@@ -38,7 +41,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 180 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 193 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -164,10 +167,17 @@ flask db upgrade
       Bars are `<meter>` elements, because the content security policy forbids inline styles
 - [x] **Time on task** (T8.7) as a pure rule: gaps over twenty minutes are breaks worth nothing,
       so a tab left open overnight adds nothing
+- [x] **Setting a term up** (I1.1–I1.6, A13, A14): make a section (join code generated from an
+      alphabet with no O/0 or I/1), make an assignment on a catalogue company with its mode,
+      dates, late policy and variant policy, and clone last term's with every date moved by one
+      offset. Times are read in the course's own time zone
+- [x] **Join codes** (I1.4): a student types the code, is enrolled, and gets one workspace per
+      open assignment with a variant handed out in turn. Joining twice changes nothing; a code
+      that is not in use says only that; rotating a code retires the old one
 - [x] **Cohort CSV export** with a stable header: one row per student, every component, the time
       on task and the signatures recognised
 
-### Guards and tests (180 in all)
+### Guards and tests (193 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -223,8 +233,9 @@ flask db upgrade
 ### Phase 6 — staff console (Assignments, Progress, Grading and Diagnostics done)
 - [ ] I4.4 (where students abandoned) and I4.6 (comparing a cohort across two companies) — both
       **Should** in the PRD
-- [ ] Creating and cloning assignments, checkpoints, accommodations, late policy, join codes,
-      roster import — all still fixtures-only
+- [ ] Checkpoint deadlines, per-student accommodations and roster CSV import (I1.5, I1.11) — the
+      tables exist for accommodations, the screens do not
+- [ ] Assigning a variant by hand where the policy says manual (I1.3)
 - [ ] Exports (CSV presets), print record, staff-issued sign-in codes
 - [ ] Grading a section larger than one batch needs the button pressed again; `batch.js` will
       automate it (T8.6)
@@ -264,12 +275,14 @@ flask db upgrade
 | A9 | One early mistake, handled properly afterwards, scores ≥ 85% | **Done** (88.3%, golden, twice: pure engine and through the database, auto) |
 | A10 | Each designed error is named by its label | **Partial** (detection tested per type; a case per signature pending) |
 | A12 | An override changes the mark and survives a regrade | **Done** (auto) |
+| A13 | A section, an assignment, a join code and an enrolled student, without documentation | **Partial** (the whole path is tested end to end through the screens; the five-minute timing is still to be observed on a real person) |
+| A14 | Cloning an assignment with new dates takes under 1 minute | **Partial** (one form, one field, tested; timing still to be observed) |
 | A20 | Two companies' workspaces cannot reach each other | **Partial** (composite-FK + 404 proven; full A20 pending) |
 | A23 | Two charts with account 101 coexist everywhere | **Partial** (scoping in place; dedicated test pending) |
 | A26 | No lost work (expired session, retry, deploy) | **Not done** (needs `save.js`) |
 | A28 | Late policy holds; unsubmitted graded as "Not submitted" | **Done** (`late_hours` on submit; each run records open / submitted / submitted_late / not_submitted) |
 | A29 | Built CSS in git matches a fresh build | **Done** (committed; CI check pending) |
-| A1, A5, A11, A13–A19, A21, A22, A24, A25, A27, A30 | — | **Not yet** (need staff console, JS, deploy, packs) |
+| A1, A5, A11, A15–A19, A21, A22, A24, A25, A27, A30 | — | **Not yet** (need the catalogue, JS, deploy, packs) |
 
 ---
 

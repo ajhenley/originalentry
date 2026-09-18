@@ -13,6 +13,7 @@ from flask import (
     Blueprint,
     Response,
     abort,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -24,7 +25,14 @@ from flask_login import current_user
 from ..decorators_staff import staff_view
 from ..extensions import db
 from ..models import Assignment, ContentPack, PackVersion, Section, User, Workspace
+from ..models.work import LATE_ACCEPT, LATE_CLOSED
 from ..services import staff_actions
+from ..services.assignments import (
+    clone_assignment,
+    create_assignment,
+    create_section,
+    rotate_join_code,
+)
 from ..services.diagnostics import cohort_csv, cohort_diagnostics
 from ..services.grades import (
     final_marks,
@@ -77,6 +85,7 @@ def index():
             "section_name": section.name,
             "company_name": pack.company_name if pack else "—",
             "mode": assignment.mode,
+            "join_code": section.join_code if section.join_code_active else "—",
             "due_at": assignment.due_at,
             "students": counts.get(assignment.id, 0),
         }
@@ -277,3 +286,146 @@ def diagnostics_export(assignment: str):
         mimetype="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── Setting a term up (I1.1–I1.6) ────────────────────────────────────────────────────────
+# An instructor starts a term here, not in a database session: a section with a join code, an
+# assignment on a company from the catalogue, and last term's assignment cloned with new dates.
+
+
+def _catalogue():
+    """Every pack version the app holds, newest first, with its company name."""
+    rows = db.session.execute(
+        db.select(PackVersion, ContentPack)
+        .join(ContentPack, PackVersion.content_pack_id == ContentPack.id)
+        .order_by(ContentPack.company_name, PackVersion.version.desc())
+    ).all()
+    return [
+        {"id": version.id, "label": f"{pack.company_name} · v{version.version}",
+         "company_name": pack.company_name, "has_images": version.has_images}
+        for version, pack in rows
+    ]
+
+
+def _parse_when(raw: str | None):
+    """A date and time typed on the form, read in the course's own time zone (D1)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    if not (raw or "").strip():
+        return None
+    try:
+        naive = datetime.fromisoformat(raw.strip())
+    except ValueError:
+        return None
+    course_tz = ZoneInfo(current_app.extensions["parchment_config"].COURSE_TZ)
+    return naive.replace(tzinfo=course_tz) if naive.tzinfo is None else naive
+
+
+@bp.get("/assignments/new")
+@staff_view
+def assignment_new():
+    return render_template(
+        "staff/assignment_new.html",
+        catalogue=_catalogue(),
+        sections=db.session.scalars(
+            db.select(Section).where(Section.archived_at.is_(None)).order_by(Section.name)
+        ).all(),
+        values={},
+        errors={},
+    )
+
+
+@bp.post("/assignments/new")
+@staff_view
+def assignment_create():
+    catalogue = _catalogue()
+    form = request.form
+    errors = {}
+
+    title = (form.get("title") or "").strip()
+    if not title:
+        errors["title"] = "Give the assignment a title."
+
+    pack_version = db.session.get(PackVersion, form.get("pack_version_id", type=int) or 0)
+    if pack_version is None:
+        errors["pack_version_id"] = "Choose the company this assignment uses."
+
+    section = None
+    if (form.get("section_choice") or "existing") == "new":
+        name = (form.get("section_name") or "").strip()
+        if not name:
+            errors["section_name"] = "Give the section a name."
+        else:
+            section = create_section(db.session, name=name,
+                                     term=(form.get("section_term") or "").strip(),
+                                     actor=current_user)
+    else:
+        section = db.session.get(Section, form.get("section_id", type=int) or 0)
+        if section is None:
+            errors["section_id"] = "Choose the section this assignment is for."
+
+    due_at = _parse_when(form.get("due_at"))
+    late_until = _parse_when(form.get("late_until"))
+    late_policy = form.get("late_policy") or LATE_CLOSED
+    if late_policy == LATE_ACCEPT and (late_until is None or due_at is None
+                                       or late_until <= due_at):
+        errors["late_until"] = "Late work needs a cut-off after the due date."
+
+    if errors:
+        db.session.rollback()
+        return render_template(
+            "staff/assignment_new.html",
+            catalogue=catalogue,
+            sections=db.session.scalars(
+                db.select(Section).where(Section.archived_at.is_(None)).order_by(Section.name)
+            ).all(),
+            values=form,
+            errors=errors,
+        ), 422
+
+    assignment = create_assignment(
+        db.session,
+        section=section,
+        title=title,
+        pack_version=pack_version,
+        mode=form.get("mode") or "screen",
+        due_at=due_at,
+        opens_at=_parse_when(form.get("opens_at")),
+        late_policy=late_policy,
+        late_until=late_until,
+        variant_policy=form.get("variant_policy") or "round_robin",
+        actor=current_user,
+    )
+    db.session.commit()
+    flash(f"{assignment.title} is ready. Students join with {section.join_code}.")
+    return redirect(url_for("staff.index"))
+
+
+@bp.post("/assignments/<assignment>/clone")
+@staff_view
+def assignment_clone(assignment: str):
+    from datetime import timedelta
+
+    found = _assignment_or_404(assignment)
+    days = request.form.get("shift_days", type=int)
+    if days is None:
+        flash("Say how many days to move the dates by.")
+        return redirect(url_for("staff.index"))
+
+    clone = clone_assignment(db.session, found, shift=timedelta(days=days), actor=current_user)
+    db.session.commit()
+    flash(f"{clone.title} cloned with dates moved by {days} days.")
+    return redirect(url_for("staff.index"))
+
+
+@bp.post("/sections/<int:section_id>/join-code")
+@staff_view
+def section_rotate_code(section_id: int):
+    section = db.session.get(Section, section_id)
+    if section is None:
+        abort(404)
+    rotate_join_code(db.session, section, actor=current_user)
+    db.session.commit()
+    flash(f"{section.name} now joins with {section.join_code}.")
+    return redirect(url_for("staff.index"))

@@ -40,6 +40,7 @@ from ..models import (
 from ..presentation import kind_label
 from ..services import WriteRefused, workspace_write
 from ..services.activity import record_refused_save
+from ..services.assignments import JoinRefused, join_with_code
 from ..services.checkpoints import checkpoint_state, record_attempt
 from ..services.dispositions import current_dispositions, set_disposition
 from ..services.entries import record_entry, void_entry
@@ -98,6 +99,33 @@ def home():
         for ws, asg, cp in rows
     ]
     return render_template("student/home.html", workspaces=workspaces)
+
+
+# ── Joining a section ────────────────────────────────────────────────────────────────────
+
+@bp.get("/join")
+@login_required
+def join_form():
+    return render_template("student/join.html")
+
+
+@bp.post("/join", endpoint="join")
+@login_required
+def join_submit():
+    try:
+        workspaces = join_with_code(db.session, code=request.form.get("code"),
+                                   student=current_user)
+    except JoinRefused as refused:
+        db.session.rollback()
+        flash(refused.message)
+        return render_template("student/join.html"), 422
+
+    db.session.commit()
+    if workspaces:
+        flash("You are enrolled. Your books are ready.")
+    else:
+        flash("You are enrolled. Nothing has opened yet — check back when your instructor says.")
+    return redirect(url_for("student.home"))
 
 
 @bp.get("/w/<workspace>/<company_slug>/")

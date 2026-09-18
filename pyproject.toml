@@ -24,6 +24,11 @@ dependencies = [
 dev = [
     "pytest>=8,<9",
     "ruff>=0.6",
+    "Pillow>=10,<12",   # generator image rendering (used in tests)
+]
+# Laptop-only: the pack generator's image renderer (T16 allows a generator-only dependency).
+generator = [
+    "Pillow>=10,<12",
 ]
 
 [build-system]

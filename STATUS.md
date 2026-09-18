@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-17 · 12 commits · 166 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-17 · 13 commits · 169 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -37,7 +37,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 166 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 169 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -124,6 +124,12 @@ flask db upgrade
       instructor to read
 - [x] **Golden tests A3 and A9** (`tests/golden/`): a faithful replay scores 100/100; one
       mis-journalised document, handled properly afterwards, scores 88.3%
+- [x] **A3 through the database**: `tests/perfect_student.py` builds a student who followed the
+      key using the same services a browser drives — triage, entries in the key's journals with
+      their special-journal columns, posting to both ledgers, the adjustment, the closing entries
+      worked out from their own adjusted balances, and a statement built from their own figures —
+      and grading reads it back out of Postgres for full marks. Restoring the document-reference
+      bug drops that student to 68/100, so the guard bites
 - [x] **Grade storage**: `grade_run` (immutable, one per run, with the evidence as JSON and how
       the work was handed in), `grade_override` (a reason is required, one current row per
       component, and it is applied on top of the latest run so **A12** holds), `grade_comment`
@@ -150,7 +156,7 @@ flask db upgrade
 - [x] `staff_action` audit trail (D2): every override, comment, run and release is recorded with
       the reason given at the time and no personal data
 
-### Guards and tests (166 in all)
+### Guards and tests (169 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -202,9 +208,7 @@ flask db upgrade
       signatures are diagnostic only so far (T8.5)
 - [ ] Golden tests **A10** (every signature named, per signature) and **A11** (40 workspaces
       under 30 s)
-- [ ] **A3 through the database**, not only the pure engine: the golden tests replay the key in
-      memory, which is how a loader bug (entries carrying no document reference) survived until
-      the Grading screen exposed it
+- [ ] **A9 through the database** as well, reusing `tests/perfect_student.py`
 
 ### Phase 6 — staff console (Assignments, Progress and Grading done)
 - [ ] **Diagnostics** (I4): designed errors across the cohort, documents most often triaged
@@ -242,7 +246,7 @@ flask db upgrade
 | # | Criterion | State |
 | --- | --- | --- |
 | A2 | Replaying the key balances and matches to the cent | **Done** (DB + pure V9, auto) |
-| A3 | Work that follows the key earns full marks | **Done** (golden, auto) |
+| A3 | Work that follows the key earns full marks | **Done** (golden, twice: pure engine and through the database, auto) |
 | A4 | Out-of-balance entry cannot be saved; DB rejects bypass | **Done** (validator + trigger) |
 | A6 | Trial balance on designed errors reads "In balance" | **Done** (always balances by construction) |
 | A7 | No banned words in the student interface | **Partial** (render checks; full sweep pending) |
@@ -270,7 +274,10 @@ flask db upgrade
   pack (tension 7) so grading can read the structure without parsing free text.
 - **The ledger snapshot carries each entry's document reference.** Without it every component that
   works document by document scored zero on real data while the in-memory golden tests passed.
-  There is now a test for it, and a DB-level A3 is the next guard to write.
+  A3 now runs through the database as well, and that guard was mutation-checked: put the bug back
+  and the perfect student scores 68 instead of 100.
+- **The database harness lives in `tests/conftest.py`**, not under `tests/integration/`, because
+  the golden tests need it too.
 - **Grading refuses vacuous credit.** Books with nothing in them agree with themselves and hold no
   open temporary accounts; the engine says so rather than awarding the marks, and skips signature
   detection entirely (an untouched workspace would otherwise match any signature naming accounts

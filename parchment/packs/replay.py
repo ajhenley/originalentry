@@ -59,7 +59,9 @@ def _engine_journals(pack: schema.Pack) -> dict[str, Journal]:
     return journals
 
 
-def _column_key(journal: Journal, account_number: str, side: str) -> str | None:
+def column_key_for(journal: Journal, account_number: str, side: str) -> str | None:
+    """Which column of a special journal a line belongs in. Public: the answer-key
+    replay, the key print and the test fixtures all need the same mapping."""
     if journal.kind != "special":
         return None
     for c in journal.columns:
@@ -71,7 +73,7 @@ def _column_key(journal: Journal, account_number: str, side: str) -> str | None:
     return None
 
 
-def _general_journal_key(pack: schema.Pack) -> str:
+def general_journal_key(pack: schema.Pack) -> str:
     for j in pack.journals:
         if j.kind == "general":
             return j.key
@@ -107,7 +109,7 @@ def build_replay_snapshot(pack: schema.Pack, key: schema.AnswerKey) -> Snapshot:
                 account_number=line.account,
                 debit_cents=line.debit or 0,
                 credit_cents=line.credit or 0,
-                column_key=_column_key(journal, line.account,
+                column_key=column_key_for(journal, line.account,
                                        "debit" if line.debit else "credit") if journal else None,
                 party_code=line.party,
             )
@@ -120,7 +122,7 @@ def build_replay_snapshot(pack: schema.Pack, key: schema.AnswerKey) -> Snapshot:
         next_id += 1
 
     # Independent adjustments (general journal).
-    gj = _general_journal_key(pack)
+    gj = general_journal_key(pack)
     for adj in key.adjustments:
         if adj.amount_basis != "independent" or adj.amount is None:
             continue
@@ -150,7 +152,7 @@ def build_replay_snapshot(pack: schema.Pack, key: schema.AnswerKey) -> Snapshot:
     adjusted = engine.balances(working, "adjusted")
 
     # Closing entries.
-    for lines in _closing_line_sets(pack, accounts, adjusted):
+    for lines in closing_line_sets(pack, accounts, adjusted):
         entries[next_id] = Entry(
             id=next_id, journal_key=gj, entry_date=when, kind=CLOSING,
             lines=tuple(lines),
@@ -190,7 +192,7 @@ def _postings(
     return tuple(general), tuple(subsidiary)
 
 
-def _closing_line_sets(
+def closing_line_sets(
     pack: schema.Pack, accounts: dict[str, Account], adjusted: dict[str, int]
 ) -> list[list[Line]]:
     income_summary = next(

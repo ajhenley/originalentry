@@ -1,6 +1,9 @@
-"""Integration-test harness. Real Postgres (Neon), because triggers, composite keys and locks
+"""The database test harness. Real Postgres (Neon), because triggers, composite keys and locks
 are part of the design (T17.1). Every test runs inside one transaction that is rolled back, so
 nothing persists to the database.
+
+It lives at the top of ``tests/`` because the golden tests need it too: A3 is proved twice, once
+against the pure engine and once against a workspace read back out of the database.
 """
 
 import pytest

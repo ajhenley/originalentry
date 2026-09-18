@@ -16,6 +16,7 @@
         <th scope="col" class="text-left font-medium">Company</th>
         <th scope="col" class="text-left font-medium">Documents</th>
         <th scope="col" class="text-right font-medium">Students</th>
+        <th scope="col" class="text-left font-medium">Screens</th>
       </tr>
     </thead>
     <tbody>
@@ -28,6 +29,11 @@
         <td>{{ a.company_name }}</td>
         <td>{{ a.mode }}</td>
         <td class="text-right tabular-nums">{{ a.students }}</td>
+        <td class="text-xs">
+          <a class="underline" href="{{ url_for('staff.grading', assignment=a.public_id) }}">Grading</a>
+          ·
+          <a class="underline" href="{{ url_for('staff.diagnostics', assignment=a.public_id) }}">Diagnostics</a>
+        </td>
       </tr>
       {% endfor %}
     </tbody>

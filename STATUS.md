@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-17 · 13 commits · 169 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-18 · 14 commits · 180 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -23,11 +23,12 @@ full marks) and **A9** (one mis-journalised document, handled properly afterward
 Grading results are **stored** now: a run is immutable, an override carries a reason and survives
 a regrade (**A12**), and a student sees their marks once the instructor releases them. What is
 missing is the rest of the instructor's side of it. The console now covers **Assignments**,
-**Progress** and **Grading**: an instructor grades a section in batches, reads what the rule
-credited item by item, overrides a mark with a reason, comments, and releases marks to the whole
-section in one action. Diagnostics, the catalogue, assignment setup, the multi-company UI, the
-JavaScript layer (`save.js`/pickers), real magic-link auth, document images, deployment config and
-CI are what remain. Details below.
+**Progress**, **Grading** and **Diagnostics**: an instructor grades a section in batches, reads
+what the rule credited item by item, overrides a mark with a reason, releases marks in one action,
+and sees which designed errors the cohort actually made, which documents were handled differently
+from the key, and how long the work took — with the whole cohort exportable as CSV. The catalogue,
+assignment setup, the multi-company UI, the JavaScript layer (`save.js`/pickers), real magic-link
+auth, document images, deployment config and CI are what remain. Details below.
 
 ## How to run and test
 
@@ -37,7 +38,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 169 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 180 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -124,6 +125,8 @@ flask db upgrade
       instructor to read
 - [x] **Golden tests A3 and A9** (`tests/golden/`): a faithful replay scores 100/100; one
       mis-journalised document, handled properly afterwards, scores 88.3%
+- [x] **A9 through the database** as well: the same helper with one document mis-journalised —
+      the mistake costs marks where it was made and nowhere else, read back out of Postgres
 - [x] **A3 through the database**: `tests/perfect_student.py` builds a student who followed the
       key using the same services a browser drives — triage, entries in the key's journals with
       their special-journal columns, posting to both ledgers, the adjustment, the closing entries
@@ -155,8 +158,16 @@ flask db upgrade
       a required reason, comment, and release marks for the section in one action
 - [x] `staff_action` audit trail (D2): every override, comment, run and release is recorded with
       the reason given at the time and no personal data
+- [x] **Diagnostics** (I4.1–I4.3, I4.5): how many students each designed error caught (and how
+      many the balances only suggest it for), which documents were handled differently from the
+      key and in which direction, and time on task with its median, quartiles and distribution.
+      Bars are `<meter>` elements, because the content security policy forbids inline styles
+- [x] **Time on task** (T8.7) as a pure rule: gaps over twenty minutes are breaks worth nothing,
+      so a tab left open overnight adds nothing
+- [x] **Cohort CSV export** with a stable header: one row per student, every component, the time
+      on task and the signatures recognised
 
-### Guards and tests (169 in all)
+### Guards and tests (180 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -208,11 +219,10 @@ flask db upgrade
       signatures are diagnostic only so far (T8.5)
 - [ ] Golden tests **A10** (every signature named, per signature) and **A11** (40 workspaces
       under 30 s)
-- [ ] **A9 through the database** as well, reusing `tests/perfect_student.py`
 
-### Phase 6 — staff console (Assignments, Progress and Grading done)
-- [ ] **Diagnostics** (I4): designed errors across the cohort, documents most often triaged
-      differently, time on task, CSV export
+### Phase 6 — staff console (Assignments, Progress, Grading and Diagnostics done)
+- [ ] I4.4 (where students abandoned) and I4.6 (comparing a cohort across two companies) — both
+      **Should** in the PRD
 - [ ] Creating and cloning assignments, checkpoints, accommodations, late policy, join codes,
       roster import — all still fixtures-only
 - [ ] Exports (CSV presets), print record, staff-issued sign-in codes
@@ -251,7 +261,7 @@ flask db upgrade
 | A6 | Trial balance on designed errors reads "In balance" | **Done** (always balances by construction) |
 | A7 | No banned words in the student interface | **Partial** (render checks; full sweep pending) |
 | A8 | No answer-key value reaches a student | **Partial** (checkpoints proven; full leak test pending, harness now exists) |
-| A9 | One early mistake, handled properly afterwards, scores ≥ 85% | **Done** (88.3%, golden, auto) |
+| A9 | One early mistake, handled properly afterwards, scores ≥ 85% | **Done** (88.3%, golden, twice: pure engine and through the database, auto) |
 | A10 | Each designed error is named by its label | **Partial** (detection tested per type; a case per signature pending) |
 | A12 | An override changes the mark and survives a regrade | **Done** (auto) |
 | A20 | Two companies' workspaces cannot reach each other | **Partial** (composite-FK + 404 proven; full A20 pending) |

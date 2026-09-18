@@ -1,0 +1,123 @@
+{# Diagnostics (I4.1–I4.3, I4.5): what this cohort actually did.
+
+   Counts and medians, never a name beside a mistake. The bars are <meter> elements, because the
+   content security policy forbids the inline styles a hand-drawn bar would need (T11). #}
+{% extends "layouts/staff.html" %}
+{% block heading %}{{ assignment.title }} · diagnostics{% endblock %}
+
+{% block console %}
+<p class="mb-4 text-sm text-muted">
+  {{ section.name }} · {{ diagnostics.graded }} of {{ diagnostics.total }} graded
+  · <a class="underline"
+       href="{{ url_for('staff.diagnostics_export', assignment=assignment.public_id) }}">Export the cohort as CSV</a>
+</p>
+
+<section class="mb-8" aria-labelledby="designed-errors">
+  <h2 id="designed-errors" class="mb-2 font-semibold">The errors this company was built around</h2>
+  {% if not diagnostics.signatures %}
+  <p class="text-muted">This company declares no designed errors.</p>
+  {% else %}
+  <div class="overflow-x-auto rounded border border-rule" role="region"
+       aria-label="Designed errors" tabindex="0">
+    <table class="w-full border-collapse text-sm">
+      <caption class="px-3 py-2 text-left font-semibold">How many students each one caught</caption>
+      <thead>
+        <tr class="border-b border-rule text-muted">
+          <th scope="col" class="text-left font-medium">Error</th>
+          <th scope="col" class="text-right font-medium">Students</th>
+          <th scope="col" class="text-left font-medium">Share of those graded</th>
+          <th scope="col" class="text-right font-medium">Possible</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in diagnostics.signatures %}
+        <tr class="border-b border-rule/60">
+          <th scope="row" class="text-left font-normal">{{ row.label }}</th>
+          <td class="text-right tabular-nums">{{ row.students }}</td>
+          <td>
+            <meter min="0" max="{{ diagnostics.graded or 1 }}" value="{{ row.students }}"
+                   aria-label="{{ row.label }}: {{ row.students }} of {{ diagnostics.graded }}"></meter>
+          </td>
+          <td class="text-right tabular-nums">{{ row.possible or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="mt-2 text-xs text-muted">
+    "Possible" means the balances look like that error but no single document showed it.
+  </p>
+  {% endif %}
+</section>
+
+<section class="mb-8" aria-labelledby="triage">
+  <h2 id="triage" class="mb-2 font-semibold">Documents handled differently from the key</h2>
+  {% set misses = diagnostics.triage | selectattr('total') | list %}
+  {% if not misses %}
+  <p class="text-muted">Every document was handled as the key has it.</p>
+  {% else %}
+  <div class="overflow-x-auto rounded border border-rule" role="region"
+       aria-label="Documents handled differently" tabindex="0">
+    <table class="w-full border-collapse text-sm">
+      <caption class="px-3 py-2 text-left font-semibold">By document</caption>
+      <thead>
+        <tr class="border-b border-rule text-muted">
+          <th scope="col" class="text-left font-medium">Document</th>
+          <th scope="col" class="text-right font-medium">Recorded, key records none</th>
+          <th scope="col" class="text-right font-medium">No entry, key records one</th>
+          <th scope="col" class="text-right font-medium">Not handled</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in misses %}
+        <tr class="border-b border-rule/60">
+          <th scope="row" class="text-left font-normal">{{ row.document_ref }}</th>
+          <td class="text-right tabular-nums">{{ row.recorded_when_none_is_expected }}</td>
+          <td class="text-right tabular-nums">{{ row.no_entry_when_one_is_expected }}</td>
+          <td class="text-right tabular-nums">{{ row.not_handled }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
+<section aria-labelledby="time">
+  <h2 id="time" class="mb-2 font-semibold">Time on task</h2>
+  <p class="mb-2 text-sm">
+    Median {{ '%.0f' | format(diagnostics.time_on_task.median_minutes) }} minutes across
+    {{ diagnostics.time_on_task.students }} student{{ '' if diagnostics.time_on_task.students == 1 else 's' }}
+    · quartiles {{ '%.0f' | format(diagnostics.time_on_task.lower_quartile) }}
+    and {{ '%.0f' | format(diagnostics.time_on_task.upper_quartile) }} minutes.
+  </p>
+  <div class="overflow-x-auto rounded border border-rule" role="region"
+       aria-label="Time on task" tabindex="0">
+    <table class="w-full border-collapse text-sm">
+      <caption class="px-3 py-2 text-left font-semibold">How long the work took</caption>
+      <thead>
+        <tr class="border-b border-rule text-muted">
+          <th scope="col" class="text-left font-medium">Hours</th>
+          <th scope="col" class="text-right font-medium">Students</th>
+          <th scope="col" class="text-left font-medium">Share</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for label, count in diagnostics.time_on_task.buckets %}
+        <tr class="border-b border-rule/60">
+          <th scope="row" class="text-left font-normal">{{ label }}</th>
+          <td class="text-right tabular-nums">{{ count }}</td>
+          <td>
+            <meter min="0" max="{{ diagnostics.time_on_task.students or 1 }}" value="{{ count }}"
+                   aria-label="{{ label }}: {{ count }} students"></meter>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="mt-2 text-xs text-muted">
+    Gaps longer than twenty minutes count as breaks, so a tab left open overnight adds nothing.
+  </p>
+</section>
+{% endblock %}

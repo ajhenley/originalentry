@@ -6,13 +6,26 @@ each of them now?* Nothing here writes to a student's books.
 
 from __future__ import annotations
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+import csv
+import io
+
+from flask import (
+    Blueprint,
+    Response,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user
 
 from ..decorators_staff import staff_view
 from ..extensions import db
 from ..models import Assignment, ContentPack, PackVersion, Section, User, Workspace
 from ..services import staff_actions
+from ..services.diagnostics import cohort_csv, cohort_diagnostics
 from ..services.grades import (
     final_marks,
     grade_section,
@@ -231,3 +244,36 @@ def grading_comment(assignment: str, workspace: str):
     flash("Comment saved. The student sees it once marks are released.")
     return redirect(url_for("staff.grading_detail", assignment=found.public_id,
                             workspace=ws.public_id))
+
+
+# ── Diagnostics (I4) ─────────────────────────────────────────────────────────────────────
+# The reason to build this rather than keep the paper set: which misconception a cohort actually
+# has. It counts, and the instructor draws the conclusion (T8.8).
+
+
+@bp.get("/diagnostics/<assignment>")
+@staff_view
+def diagnostics(assignment: str):
+    found = _assignment_or_404(assignment)
+    return render_template(
+        "staff/diagnostics.html",
+        assignment=found,
+        section=db.session.get(Section, found.section_id),
+        diagnostics=cohort_diagnostics(db.session, found),
+    )
+
+
+@bp.get("/diagnostics/<assignment>/export.csv")
+@staff_view
+def diagnostics_export(assignment: str):
+    found = _assignment_or_404(assignment)
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    for row in cohort_csv(db.session, found):
+        writer.writerow(row)
+    filename = f"{found.public_id}-cohort.csv"
+    return Response(
+        buffer.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

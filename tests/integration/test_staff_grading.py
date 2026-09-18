@@ -186,3 +186,24 @@ def test_the_review_queue_lists_only_what_the_engine_could_not_decide(client, se
 
     assert "Sam F" in body           # the student whose work needs a look
     assert "second@example.edu" not in body
+
+
+def test_diagnostics_reports_the_cohort_and_exports_it(client, section, session):
+    """I4: counts, not accusations — and a CSV the instructor can take away."""
+    assignment, workspaces, instructor = section
+    client.sign_in(instructor)
+    client.post(_grading_url(assignment, "/run"), follow_redirects=True)
+
+    page = client.get(f"/staff/diagnostics/{assignment.public_id}")
+    body = page.get_data(as_text=True)
+    assert page.status_code == 200
+    assert "Recorded a sale in an expense account" in body   # every designed error is listed
+    assert "Time on task" in body
+
+    export = client.get(f"/staff/diagnostics/{assignment.public_id}/export.csv")
+    assert export.status_code == 200
+    assert "text/csv" in export.headers["Content-Type"]
+    assert "attachment" in export.headers["Content-Disposition"]
+    lines = export.get_data(as_text=True).strip().splitlines()
+    assert lines[0].startswith("email,family_name,given_name,variant")
+    assert len(lines) == 3  # a header and the two students

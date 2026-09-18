@@ -28,10 +28,18 @@ from parchment.services.statements import own_figures, save_statement
 from sqlalchemy import select
 
 
-def build(session, pack_dict: dict, key_dict: dict, *, email: str, join_code: str):
-    """Return (workspace, student, pack, key) for a student who followed the key exactly."""
+def build(session, pack_dict: dict, key_dict: dict, *, email: str, join_code: str,
+          worked_from: dict | None = None):
+    """Return (workspace, student, pack, key) for a student who followed the key exactly.
+
+    ``worked_from`` lets a test give the student a *different* key to work from — one document
+    in the wrong journal, say — while the real key is still what grading compares against. That
+    is how A9 is built: one mistake, then everything afterwards handled properly on the figures
+    the mistake left behind.
+    """
     pack = schema.load_pack(pack_dict)
     key = schema.load_answer_key(key_dict)
+    worked = schema.load_answer_key(worked_from) if worked_from else key
 
     pack_version = import_content(session, pack, source_sha256=join_code.ljust(64, "0"))
     import_answer_keys(session, pack_version, {key.variant: key})
@@ -55,11 +63,11 @@ def build(session, pack_dict: dict, key_dict: dict, *, email: str, join_code: st
     session.add(workspace)
     session.flush()
 
-    _triage(session, workspace, student, key)
-    _journalise(session, workspace, student, pack, key)
-    _adjust(session, workspace, student, pack, key)
+    _triage(session, workspace, student, worked)
+    _journalise(session, workspace, student, pack, worked)
+    _adjust(session, workspace, student, pack, worked)
     _post_everything(session, workspace, student, pack)
-    _close(session, workspace, student, pack, key)
+    _close(session, workspace, student, pack, worked)
     _post_everything(session, workspace, student, pack)
     _build_statements(session, workspace, student, pack)
 

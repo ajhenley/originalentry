@@ -2,7 +2,8 @@
 commands; services never touch Flask request objects.
 """
 
+from . import staff_actions
 from .errors import WriteRefused
 from .write import workspace_write
 
-__all__ = ["workspace_write", "WriteRefused"]
+__all__ = ["workspace_write", "WriteRefused", "staff_actions"]

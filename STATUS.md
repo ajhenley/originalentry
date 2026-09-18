@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-17 · 11 commits · 157 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-17 · 12 commits · 166 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -22,11 +22,12 @@ full marks) and **A9** (one mis-journalised document, handled properly afterward
 
 Grading results are **stored** now: a run is immutable, an override carries a reason and survives
 a regrade (**A12**), and a student sees their marks once the instructor releases them. What is
-missing is most of the instructor's side of it. The console has begun: an instructor signs in,
-sees their assignments, reads a **Progress** screen that says where every student is and what
-their last refused save was, and can open any student's books read-only. Grading screens, the
-catalogue, the multi-company UI, the JavaScript layer (`save.js`/pickers), real magic-link auth,
-document images, deployment config and CI are what remain. Details below.
+missing is the rest of the instructor's side of it. The console now covers **Assignments**,
+**Progress** and **Grading**: an instructor grades a section in batches, reads what the rule
+credited item by item, overrides a mark with a reason, comments, and releases marks to the whole
+section in one action. Diagnostics, the catalogue, assignment setup, the multi-company UI, the
+JavaScript layer (`save.js`/pickers), real magic-link auth, document images, deployment config and
+CI are what remain. Details below.
 
 ## How to run and test
 
@@ -36,7 +37,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 157 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 166 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -142,8 +143,14 @@ flask db upgrade
 - [x] Refused saves are recorded where they happen, so "who is stuck, and on what?" has an answer
       the paper set could never give (`services/activity.py`)
 - [x] Opening a student's workspace read-only names whose books they are, on every page (I2.4)
+- [x] **Grading** screen (I3.1–I3.7): marks per student, "needs a look" filter for the review
+      queue, grading in batches of 10 per request so nothing nears the request limit, a detail
+      screen showing each component's evidence and the designed errors recognised, override with
+      a required reason, comment, and release marks for the section in one action
+- [x] `staff_action` audit trail (D2): every override, comment, run and release is recorded with
+      the reason given at the time and no personal data
 
-### Guards and tests (157 in all)
+### Guards and tests (166 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -195,15 +202,18 @@ flask db upgrade
       signatures are diagnostic only so far (T8.5)
 - [ ] Golden tests **A10** (every signature named, per signature) and **A11** (40 workspaces
       under 30 s)
+- [ ] **A3 through the database**, not only the pure engine: the golden tests replay the key in
+      memory, which is how a loader bug (entries carrying no document reference) survived until
+      the Grading screen exposed it
 
-### Phase 6 — staff console (Assignments and Progress done)
-- [ ] **Grading** screen: run grading for a section in batches (T8.6), the review queue, override
-      with a reason, comment, release marks (the engine and its storage are done, A12 holds)
+### Phase 6 — staff console (Assignments, Progress and Grading done)
 - [ ] **Diagnostics** (I4): designed errors across the cohort, documents most often triaged
       differently, time on task, CSV export
 - [ ] Creating and cloning assignments, checkpoints, accommodations, late policy, join codes,
       roster import — all still fixtures-only
-- [ ] `staff_action` audit table; exports (CSV presets), print record, staff-issued sign-in codes
+- [ ] Exports (CSV presets), print record, staff-issued sign-in codes
+- [ ] Grading a section larger than one batch needs the button pressed again; `batch.js` will
+      automate it (T8.6)
 
 ### Phase 7 — multi-company (schema ready, UI not)
 - [ ] Catalogue + pack upload UI, `section_pack_availability`, student company choice, switch
@@ -258,6 +268,9 @@ flask db upgrade
 - **Statement figures are typed by the student** (tension 6). The builder shows their own adjusted
   balances beside the form, and nothing is added up for them. Subtotal rows name a type from the
   pack (tension 7) so grading can read the structure without parsing free text.
+- **The ledger snapshot carries each entry's document reference.** Without it every component that
+  works document by document scored zero on real data while the in-memory golden tests passed.
+  There is now a test for it, and a DB-level A3 is the next guard to write.
 - **Grading refuses vacuous credit.** Books with nothing in them agree with themselves and hold no
   open temporary accounts; the engine says so rather than awarding the marks, and skips signature
   detection entirely (an untouched workspace would otherwise match any signature naming accounts
@@ -269,3 +282,6 @@ flask db upgrade
   migration so it's a no-op on the single-role dev Neon database and correct in production.
 - **DB tests require real Postgres** (Neon); the harness uses `join_transaction_mode="create_savepoint"`
   so the committing write path still rolls back and nothing persists.
+- **The route harness gives the app the test's own session** (`db.session.registry.set`). Two
+  sessions on one connection each managing savepoints fight, and the loser is a teardown that
+  cannot roll back.

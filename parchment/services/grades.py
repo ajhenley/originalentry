@@ -190,3 +190,32 @@ def submission_status(session: Session, workspace: Workspace) -> str:
     if close is not None and datetime.now(UTC) > close:
         return NOT_SUBMITTED  # closed, and never handed in (I3.8)
     return OPEN
+
+
+def grade_section(session: Session, assignment: Assignment, actor=None, limit: int | None = None):
+    """Grade the workspaces of one assignment, newest work first, and store a run for each.
+
+    ``limit`` caps how many are graded in one call, so a large section can be worked through in
+    batches that finish well inside the web request limit (T8.6, I3.7).
+    """
+    from ..grading.workspace import grade_workspace
+    from ..models import Workspace
+
+    workspaces = list(
+        session.scalars(
+            select(Workspace)
+            .where(Workspace.assignment_id == assignment.id, Workspace.archived_at.is_(None))
+            .order_by(Workspace.id)
+        )
+    )
+    graded = []
+    for workspace in workspaces[: limit or len(workspaces)]:
+        graded.append(record_run(session, workspace, grade_workspace(session, workspace), actor))
+    return graded, len(workspaces)
+
+
+def release_marks(session: Session, assignment: Assignment, actor=None) -> Assignment:
+    """Open the section's marks to its students, in one action (I3.6)."""
+    assignment.marks_released_at = datetime.now(UTC)
+    session.flush()
+    return assignment

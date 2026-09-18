@@ -20,6 +20,7 @@ from .people import (
     ROLES,
     Enrollment,
     Section,
+    StaffAction,
     User,
 )
 from .work import (
@@ -56,6 +57,7 @@ __all__ = [
     "ROLE_GRADER",
     "ROLE_INSTRUCTOR",
     "ROLES",
+    "StaffAction",
     # content
     "ContentPack",
     "PackVersion",

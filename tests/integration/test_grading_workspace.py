@@ -81,3 +81,27 @@ def test_grading_credits_the_triage_a_student_has_done(session):
 
     triage = result.component("triage")
     assert triage.points == pytest.approx(triage.max_points / 2)
+
+
+def test_an_entry_carries_the_document_it_records(session):
+    """Without this, every component that works document by document quietly scores zero."""
+    from datetime import date
+
+    from parchment.forms.entries import EntryCommand, LineCommand
+    from parchment.services.entries import record_entry
+
+    ws, student = _seed(session)
+    command = EntryCommand(
+        journal_key="general", kind="regular", document_ref="INV-1",
+        entry_date=date(2026, 12, 2), description=None,
+        lines=[LineCommand("112", "C-ONE", 120000, 0), LineCommand("401", None, 0, 120000)],
+        client_key="doc-ref-1",
+    )
+    workspace_write(session, ws.public_id, student, activity_kind="save",
+                    mutate=lambda s, w: record_entry(s, w, command))
+
+    work = load_work(session, ws)
+
+    assert len(work.entries_for_document("INV-1")) == 1
+    accuracy = grade_workspace(session, ws).component("entry_accuracy")
+    assert accuracy.points > 0  # the document was recognised and its entry compared

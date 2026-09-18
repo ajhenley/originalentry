@@ -20,6 +20,7 @@ from ..models import (
     PartyOpeningBalance,
     PostingRun,
     PostingRunEntry,
+    SourceDocument,
     Workspace,
 )
 from ..models import (
@@ -114,7 +115,15 @@ def load_snapshot(session: Session, workspace: Workspace) -> Snapshot:
         if party_id in id_to_party_code
     }
 
-    # Entries and their lines.
+    # Entries and their lines. An entry carries the reference of the document it records, which
+    # is what every document-by-document grading component matches on (T8.2).
+    document_refs = dict(
+        session.execute(
+            select(SourceDocument.id, SourceDocument.ref).where(
+                SourceDocument.pack_version_id == pv_id
+            )
+        ).all()
+    )
     entry_rows = session.scalars(
         select(JournalEntry).where(JournalEntry.workspace_id == workspace.id)
     ).all()
@@ -143,7 +152,7 @@ def load_snapshot(session: Session, workspace: Workspace) -> Snapshot:
             entry_date=e.entry_date,
             kind=e.kind,
             lines=tuple(sorted(lines_by_entry[e.id], key=lambda line: line.line_no)),
-            document_ref=None,
+            document_ref=document_refs.get(e.document_id),
             description=e.description,
             voided=e.voided_at is not None,
             seq=e.seq,

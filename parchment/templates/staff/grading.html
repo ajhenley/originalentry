@@ -1,0 +1,75 @@
+{# Grading (I3.1, I3.3, I3.6–I3.7).
+
+   Marking is automatic; judgement is not. The list says what the engine gave each student, flags
+   what it could not decide, and releases the section in one action. Grading runs in batches, so
+   no request comes near the limit. #}
+{% extends "layouts/staff.html" %}
+{% block heading %}{{ assignment.title }} · grading{% endblock %}
+
+{% block console %}
+<div class="mb-4 flex flex-wrap items-center gap-3">
+  <p class="mr-auto text-sm text-muted">
+    {{ section.name }} · {{ rows | length }} shown{% if released %} · marks released{% endif %}
+  </p>
+
+  <form method="post" action="{{ url_for('staff.grading_run', assignment=assignment.public_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="rounded bg-ink px-3 py-2 text-sm text-paper">Grade</button>
+  </form>
+
+  {% if not released %}
+  <form method="post"
+        action="{{ url_for('staff.grading_release', assignment=assignment.public_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="rounded border border-rule px-3 py-2 text-sm">Release marks</button>
+  </form>
+  {% endif %}
+
+  <a class="rounded border border-rule px-3 py-2 text-sm"
+     href="{{ url_for('staff.grading', assignment=assignment.public_id,
+                      filter=none if only_review else 'review') }}">
+    {{ 'Show everyone' if only_review else 'Needs a look' }}</a>
+</div>
+
+{% if not rows %}
+<p class="text-muted">
+  {% if only_review %}Nothing is waiting for a human here.{% else %}Nobody is enrolled yet.{% endif %}
+</p>
+{% else %}
+<div class="overflow-x-auto rounded border border-rule" role="region" aria-label="Marks"
+     tabindex="0">
+  <table class="w-full border-collapse text-sm">
+    <caption class="px-3 py-2 text-left font-semibold">Marks by student</caption>
+    <thead>
+      <tr class="border-b border-rule text-muted">
+        <th scope="col" class="text-left font-medium">Student</th>
+        <th scope="col" class="text-right font-medium">Marks</th>
+        <th scope="col" class="text-left font-medium">Handed in</th>
+        <th scope="col" class="text-left font-medium">Needs a look</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr class="border-b border-rule/60">
+        <th scope="row" class="text-left font-normal">
+          <a class="underline"
+             href="{{ url_for('staff.grading_detail', assignment=assignment.public_id,
+                              workspace=row.workspace_public_id) }}">{{ row.student_name }}</a>
+          <span class="block text-xs text-muted">{{ row.student_email }}</span>
+        </th>
+        <td class="text-right tabular-nums">
+          {% if row.marks %}
+          {{ '%.1f' | format(row.marks.total_points) }} of {{ '%.0f' | format(row.marks.max_points) }}
+          <span class="block text-xs text-muted">{{ '%.0f' | format(row.marks.percent) }}%</span>
+          {% else %}Not graded{% endif %}
+        </td>
+        <td>{{ (row.submission_status or '—') | replace('_', ' ') }}</td>
+        <td>{% if row.marks and row.marks.needs_review %}
+          <span class="text-attention">Yes</span>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

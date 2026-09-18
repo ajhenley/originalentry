@@ -1,4 +1,4 @@
-"""People tables (D2). Core chain only; login_token and staff_action land with the auth phase."""
+"""People tables (D2). Core chain and the staff audit trail; login_token lands with auth."""
 
 from __future__ import annotations
 
@@ -11,8 +11,10 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
+    Text,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
@@ -85,6 +87,27 @@ class Enrollment(db.Model):
     user: Mapped[User] = relationship()
     # The composite primary key already enforces one enrollment per (section, user).
 
+class StaffAction(db.Model):
+    """What staff did, and why (D2).
+
+    Reopening a workspace, overriding a mark, releasing a section: each is recorded with the
+    reason given at the time. The detail holds ids and counts, never personal data.
+    """
+
+    __tablename__ = "staff_action"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    action: Mapped[str] = mapped_column(String(40))
+    target_table: Mapped[str] = mapped_column(String(40))
+    target_id: Mapped[int] = mapped_column(BigInteger)
+    reason: Mapped[str | None] = mapped_column(Text)
+    detail: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (Index("ix_staff_action_target", "target_table", "target_id", "created_at"),)
+
+
 
 __all__ = [
     "User",
@@ -94,4 +117,5 @@ __all__ = [
     "ROLE_GRADER",
     "ROLE_INSTRUCTOR",
     "ROLES",
+    "StaffAction",
 ]

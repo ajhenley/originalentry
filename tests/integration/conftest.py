@@ -53,11 +53,12 @@ class _Client(FlaskClient):
 
 @pytest.fixture
 def client(app, session):
-    """A test client whose requests run on the test transaction, so nothing persists.
+    """A test client whose requests run on the test's own session, so nothing persists.
 
-    Flask-SQLAlchemy picks its bind from ``db.engines``, so the test connection is put there for
-    the duration of the test. New sessions join the outer transaction through a SAVEPOINT, which
-    means the write path can commit and the teardown rollback still undoes it.
+    The app and the test share **one** Session: two sessions on one connection each managing their
+    own savepoints will fight, and the loser is a teardown that cannot roll back. Because that
+    session joins the outer transaction through a SAVEPOINT, a request may commit — the write path
+    does — and the teardown rollback still undoes all of it.
     """
     connection = session.connection()
     engines = app.extensions["sqlalchemy"]._app_engines[app]
@@ -65,15 +66,14 @@ def client(app, session):
     engines[None] = connection
 
     db.session.remove()
-    db.session.configure(join_transaction_mode="create_savepoint")
+    db.session.registry.set(session)
     app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
     app.test_client_class = _Client
 
     try:
         yield app.test_client()
     finally:
-        db.session.remove()
-        db.session.configure(join_transaction_mode="conditional_savepoint")
+        db.session.registry.clear()
         engines.clear()
         engines.update(original)
         app.config.update(TESTING=False, WTF_CSRF_ENABLED=True)

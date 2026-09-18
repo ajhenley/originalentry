@@ -1,0 +1,16 @@
+{% extends "layouts/auth.html" %}
+{% block title %}Check your email · Parchment{% endblock %}
+
+{% block auth %}
+<h1 class="text-lg font-semibold">Check your email</h1>
+<p class="mt-3 text-muted">
+  If {{ email }} has an account, a sign-in link and a six-digit code are on their way. The link and
+  the code both expire in 15 minutes.
+</p>
+<p class="mt-4 text-sm">
+  <a class="underline" href="{{ url_for('auth.code_form') }}">Enter the code instead</a>
+</p>
+<p class="mt-2 text-sm text-muted">
+  Nothing arrived? Check spam, or ask your instructor for a sign-in code.
+</p>
+{% endblock %}

@@ -4,10 +4,6 @@
 {% block auth %}
 <h1 class="text-lg font-semibold">Sign in</h1>
 
-{% for message in get_flashed_messages() %}
-<p class="mt-3 rounded bg-attention/10 px-3 py-2 text-sm text-attention" role="status">{{ message }}</p>
-{% endfor %}
-
 <form method="post" action="{{ url_for('auth.sign_in') }}" class="mt-4 space-y-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div>
@@ -23,7 +19,10 @@
 </form>
 
 <p class="mt-4 text-sm text-muted">
-  We send a link and a six-digit code. Using either signs you in. If the email does not arrive, ask
-  your instructor for a code.
+  We send a link and a six-digit code. Using either signs you in.
+  <a class="underline" href="{{ url_for('auth.code_form') }}">Have a code already?</a>
+</p>
+<p class="mt-2 text-sm text-muted">
+  New here? <a class="underline" href="{{ url_for('auth.join_form') }}">Join with a class code.</a>
 </p>
 {% endblock %}

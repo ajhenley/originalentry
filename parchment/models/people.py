@@ -108,6 +108,43 @@ class StaffAction(db.Model):
     __table_args__ = (Index("ix_staff_action_target", "target_table", "target_id", "created_at"),)
 
 
+# Token purposes (E2).
+PURPOSE_SIGN_IN = "sign_in"
+PURPOSE_JOIN = "join"
+PURPOSE_STAFF_CODE = "staff_code"
+
+
+class LoginToken(db.Model):
+    """A pending sign-in (E2). Stores only hashes — never a token, a code, an email in clear, or a
+    raw IP. A row proves someone asked to sign in as ``email``; consuming it starts the session.
+
+    ``ip_hash`` is an HMAC of the client IP, used only to rate-limit and never displayed. For a
+    join (E4) the row also carries the section and the name the person gave, so verifying the link
+    is what creates the account — nobody is enrolled at an address they cannot receive mail at.
+    Rows are purged 30 days after creation (OPS-7)."""
+
+    __tablename__ = "login_token"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    email: Mapped[str] = mapped_column(String(320))
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    purpose: Mapped[str] = mapped_column(String(20), default=PURPOSE_SIGN_IN)
+    token_hash: Mapped[str | None] = mapped_column(String(64), unique=True)  # sha256 of the link
+    code_hash: Mapped[str] = mapped_column(String(64))  # HMAC of the six-digit code
+    code_attempts: Mapped[int] = mapped_column(BigInteger, default=0)
+    ip_hash: Mapped[str | None] = mapped_column(String(64))  # HMAC of the client IP
+    join_section_id: Mapped[int | None] = mapped_column(ForeignKey("section.id"))
+    join_given_name: Mapped[str | None] = mapped_column(String(120))
+    join_family_name: Mapped[str | None] = mapped_column(String(120))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_login_token_email", func.lower(email), "created_at"),
+        Index("ix_login_token_ip", "ip_hash", "created_at"),
+    )
+
 
 __all__ = [
     "User",
@@ -118,4 +155,8 @@ __all__ = [
     "ROLE_INSTRUCTOR",
     "ROLES",
     "StaffAction",
+    "LoginToken",
+    "PURPOSE_SIGN_IN",
+    "PURPOSE_JOIN",
+    "PURPOSE_STAFF_CODE",
 ]

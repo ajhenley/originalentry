@@ -88,8 +88,12 @@ class Config:
         self.SESSION_COOKIE_SAMESITE = "Lax"
         self.SESSION_COOKIE_SECURE = self.IS_PRODUCTION or _bool("FORCE_SECURE_COOKIES", False)
         # Default is a browser session with a 2-hour idle timeout; the "keep me signed in"
-        # 14-day option is applied per-login by the auth blueprint.
+        # 14-day option is applied per-login by the auth blueprint via the remember cookie.
         self.PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
+        self.REMEMBER_COOKIE_DURATION = timedelta(days=14)
+        self.REMEMBER_COOKIE_HTTPONLY = True
+        self.REMEMBER_COOKIE_SAMESITE = "Lax"
+        self.REMEMBER_COOKIE_SECURE = self.SESSION_COOKIE_SECURE
 
         # CSRF on every POST, with NO time limit (a form open for hours must still save).
         self.WTF_CSRF_TIME_LIMIT = None

@@ -15,11 +15,15 @@ from .content import (
     Variant,
 )
 from .people import (
+    PURPOSE_JOIN,
+    PURPOSE_SIGN_IN,
+    PURPOSE_STAFF_CODE,
     ROLE_GRADER,
     ROLE_INSTRUCTOR,
     ROLE_STUDENT,
     ROLES,
     Enrollment,
+    LoginToken,
     Section,
     StaffAction,
     User,
@@ -59,6 +63,10 @@ __all__ = [
     "ROLE_INSTRUCTOR",
     "ROLES",
     "StaffAction",
+    "LoginToken",
+    "PURPOSE_SIGN_IN",
+    "PURPOSE_JOIN",
+    "PURPOSE_STAFF_CODE",
     # content
     "ContentPack",
     "PackVersion",

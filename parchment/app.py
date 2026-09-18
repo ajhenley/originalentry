@@ -57,15 +57,24 @@ def create_app(config=None) -> Flask:
     csrf.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = "auth.sign_in_form"
+    # basic, not strong: strong signs students out when their network changes (E3).
+    login_manager.session_protection = "basic"
 
     _register_login(app)
     _register_jinja(app)
     _register_blueprints(app)
+    _register_cli(app)
     init_security(app)
     init_errors(app)
     _register_health(app)
 
     return app
+
+
+def _register_cli(app: Flask) -> None:
+    from .cli import register_cli
+
+    register_cli(app)
 
 
 def _register_jinja(app: Flask) -> None:

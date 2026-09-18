@@ -3,6 +3,16 @@
 {% block main %}
 <div class="mx-auto max-w-md">
   <p class="mb-6 text-lg font-semibold">Parchment</p>
+  {% with flashes = get_flashed_messages() %}
+    {% if flashes %}
+    <div class="mb-4 space-y-2">
+      {% for m in flashes %}
+      <p class="rounded border border-rule bg-attention/10 px-3 py-2 text-sm text-attention"
+         role="status">{{ m }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
   {% block auth %}{% endblock %}
 </div>
 {% endblock %}

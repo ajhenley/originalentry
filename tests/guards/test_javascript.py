@@ -19,8 +19,12 @@ BANNED = re.compile(r"\b(correct|incorrect|right|wrong)\b", re.IGNORECASE)
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed here")
 def test_the_javascript_tests_pass():
+    # Expand the glob here — subprocess does not run a shell, and node treats an unexpanded
+    # pattern as a literal (missing) path.
+    test_files = sorted(str(p) for p in (ROOT / "tests" / "js").glob("*.test.js"))
+    assert test_files, "no JavaScript tests found under tests/js/"
     result = subprocess.run(
-        ["node", "--test", "tests/js/*.test.js"],
+        ["node", "--test", *test_files],
         cwd=ROOT, capture_output=True, text=True, check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr

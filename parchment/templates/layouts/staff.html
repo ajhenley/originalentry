@@ -12,6 +12,9 @@
       <a href="{{ url_for('staff.index') }}"
          class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == url_for('staff.index') %}bg-rule/50 font-semibold{% endif %}"
          {% if request.path == url_for('staff.index') %}aria-current="page"{% endif %}>Assignments</a>
+      <a href="{{ url_for('staff.catalogue') }}"
+         class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == url_for('staff.catalogue') %}bg-rule/50 font-semibold{% endif %}"
+         {% if request.path == url_for('staff.catalogue') %}aria-current="page"{% endif %}>Catalogue</a>
       <a href="{{ url_for('auth.sign_out') }}" class="rounded px-2 py-1 hover:bg-rule/40">Sign out</a>
     </nav>
   </div>

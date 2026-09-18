@@ -1,0 +1,71 @@
+{# The catalogue (I1.7, I1.10): what the app holds, and a way to add to it.
+
+   It lists and enables companies; it does not create them. A company is a chart of accounts, a
+   transaction narrative, a document set and an answer key, and the workbook is the tool for
+   building one. #}
+{% extends "layouts/staff.html" %}
+{% block heading %}Catalogue{% endblock %}
+
+{% block console %}
+{% if problems %}
+<div class="mb-4 rounded border border-attention/40 bg-attention/10 p-3 text-sm text-attention"
+     role="alert">
+  <p class="font-semibold">That pack was not loaded. Nothing in the catalogue has changed.</p>
+  <ul class="mt-1 space-y-0.5">
+    {% for problem in problems %}
+    <li><span class="font-mono">{{ problem.rule }}</span> · {{ problem.path }} — {{ problem.message }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-end gap-3"
+      action="{{ url_for('staff.catalogue_upload') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div>
+    <label class="block text-sm font-medium" for="pack">Upload a pack</label>
+    <input id="pack" name="pack" type="file" accept=".zip"
+           class="mt-1 rounded border border-rule px-2 py-1 text-sm">
+  </div>
+  <button type="submit" class="rounded bg-ink px-3 py-2 text-sm text-paper">Load it</button>
+  <p class="text-xs text-muted">
+    The generator makes the zip from the workbook. It is checked before anything is written.
+  </p>
+</form>
+
+{% if not companies %}
+<p class="text-muted">The catalogue is empty. Upload a pack the generator made.</p>
+{% else %}
+{% for company in companies %}
+<section class="mb-6" aria-labelledby="company-{{ company.slug }}">
+  <h2 id="company-{{ company.slug }}" class="mb-2 font-semibold">{{ company.company_name }}</h2>
+  <div class="overflow-x-auto rounded border border-rule" role="region"
+       aria-label="{{ company.company_name }} versions" tabindex="0">
+    <table class="w-full border-collapse text-sm">
+      <caption class="sr-only">Versions of {{ company.company_name }}</caption>
+      <thead>
+        <tr class="border-b border-rule text-muted">
+          <th scope="col" class="text-left font-medium">Version</th>
+          <th scope="col" class="text-left font-medium">Period</th>
+          <th scope="col" class="text-left font-medium">Covers</th>
+          <th scope="col" class="text-left font-medium">Documents</th>
+          <th scope="col" class="text-right font-medium">Workspaces on it</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for version in company.versions %}
+        <tr class="border-b border-rule/60">
+          <th scope="row" class="text-left font-normal">v{{ version.version }}</th>
+          <td>{{ version.period }}</td>
+          <td class="text-xs">{{ version.scope_tags | join(', ') or '—' }}</td>
+          <td class="text-xs">{{ 'On screen' if version.has_images else 'On paper' }}</td>
+          <td class="text-right tabular-nums">{{ version.in_use }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endfor %}
+{% endif %}
+{% endblock %}

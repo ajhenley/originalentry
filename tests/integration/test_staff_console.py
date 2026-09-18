@@ -187,3 +187,62 @@ def test_cloning_an_assignment_moves_its_dates(client, section, session):
     ).all()
     assert len(clones) == 1
     assert clones[0].due_at.date().isoformat() == "2027-04-17"
+
+
+def test_the_catalogue_lists_the_companies_and_takes_an_upload(client, section, session):
+    """I1.7, I1.10: what the app holds, and a way to add to it that validates first."""
+    import io
+    import json
+    import zipfile
+
+    from tests.packs import testco_alpha
+
+    _, _, _, instructor = section
+    client.sign_in(instructor)
+
+    body = client.get("/staff/catalogue").get_data(as_text=True)
+    assert "TestCo Alpha" in body
+    assert "Upload a pack" in body
+
+    second = dict(testco_alpha.PACK, version=2)
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("pack.json", json.dumps(second))
+        archive.writestr("answer_keys/A.json", json.dumps(testco_alpha.KEY_A))
+    buffer.seek(0)
+
+    uploaded = client.post("/staff/catalogue", follow_redirects=True,
+                           data={"pack": (buffer, "testco-alpha-v2.zip")},
+                           content_type="multipart/form-data")
+
+    assert uploaded.status_code == 200
+    assert "version 2" in uploaded.get_data(as_text=True).lower()
+
+
+def test_a_pack_that_fails_validation_is_refused_with_its_problems(client, section, session):
+    import io
+    import json
+    import zipfile
+
+    from tests.packs import testco_alpha
+
+    _, _, _, instructor = section
+    client.sign_in(instructor)
+
+    broken = json.loads(json.dumps(testco_alpha.PACK))
+    broken["version"] = 5
+    for account in broken["accounts"]:
+        if "income_summary" in account.get("roles", []):
+            account["roles"] = []
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("pack.json", json.dumps(broken))
+    buffer.seek(0)
+
+    response = client.post("/staff/catalogue", data={"pack": (buffer, "broken.zip")},
+                           content_type="multipart/form-data")
+
+    assert response.status_code == 422
+    body = response.get_data(as_text=True)
+    assert "income_summary" in body
+    assert "V5" in body

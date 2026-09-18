@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-18 · 15 commits · 193 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-18 · 16 commits · 219 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -29,9 +29,10 @@ and sees which designed errors the cohort actually made, which documents were ha
 from the key, and how long the work took — with the whole cohort exportable as CSV. **A term can
 now be set up entirely through screens**: a section with a join code, an assignment on a company
 from the catalogue, cloning last term's with the dates moved, and a student who types the code and
-lands in their own books. The catalogue upload, the multi-company UI, the JavaScript layer
-(`save.js`/pickers), real magic-link auth, document images, deployment config and CI are what
-remain. Details below.
+lands in their own books. **Packs arrive as zips now**: the catalogue takes the archive the
+generator makes, checks it against every rule before writing anything, and refuses a repeat upload
+or a version that is not newer. The multi-company UI, the JavaScript layer (`save.js`/pickers),
+real magic-link auth, document images, deployment config and CI are what remain. Details below.
 
 ## How to run and test
 
@@ -41,7 +42,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 193 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 219 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -64,7 +65,13 @@ flask db upgrade
       general), debit-positive balances, trial balances by stage, subsidiary proof (T6.2–T6.4)
 - [x] `ledger/snapshot.py` — the one DB→engine loader (bounded queries)
 - [x] `packs/schema.py` — pydantic schema for `pack.json` + answer keys (T5.2/T5.3)
-- [x] `packs/validate.py` — rules **V1–V4, V6, V7, V9, V10, V13, V15**; each problem with its JSON path
+- [x] `packs/validate.py` — rules **V1–V11, V13, V15** (V12 and W1 wait on images and pack text);
+      each problem carries its JSON path, and an upload reports every problem at once
+- [x] `packs/zip_reader.py` — opens the generator's zip with the **V16** safety rules: no path
+      that escapes the archive, no more than 2,000 entries or 200 MB unpacked, and a checksum
+      over the bytes
+- [x] `packs/importing.py` — validate, then **V14** against the catalogue (the same archive twice
+      is refused, and a version must be newer than every version already held), then write
 - [x] `packs/replay.py` — pure `pack+key → Snapshot`, generates closing entries (for V9)
 - [x] `packs/importer.py` — `import_content` + `import_answer_keys`
 - [x] **A2 proven two ways**: DB replay (`tests/integration/test_a2.py`) and pure V9
@@ -174,10 +181,13 @@ flask db upgrade
 - [x] **Join codes** (I1.4): a student types the code, is enrolled, and gets one workspace per
       open assignment with a variant handed out in turn. Joining twice changes nothing; a code
       that is not in use says only that; rotating a code retires the old one
+- [x] **Catalogue** screen (I1.7, I1.10): every company, its versions, period, scope tags, whether
+      it carries images, and how many workspaces sit on each version — with the upload form and
+      the refusal listing every problem by rule and path
 - [x] **Cohort CSV export** with a stable header: one row per student, every component, the time
       on task and the signatures recognised
 
-### Guards and tests (193 in all)
+### Guards and tests (219 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -196,9 +206,9 @@ flask db upgrade
 
 ### Phase 0 — generator and packs
 - [ ] Generator script (workbook → pack zip + one PNG per document per variant)
-- [ ] Zip import path: streaming to temp file, **V16 zip safety**, PNG signature checks (importer
-      currently consumes a validated dict, not a zip)
-- [ ] Validation rules **V5, V8, V11, V12, V14, W1** (registered in `validate.DEFERRED_RULES`)
+- [ ] Validation rules **V12** (images) and **W1** (pack text warnings) — both wait on images
+- [ ] Image entries in a zip are read but not stored: `pack_asset` / `document_variant` do not
+      exist yet, so a screen-mode pack loads as a paper one
 - [ ] `testco-beta` fixture and the real `riverbend-supply` pack (only `testco-alpha` exists)
 
 ### Phase 2 — journals (partial)
@@ -282,7 +292,8 @@ flask db upgrade
 | A26 | No lost work (expired session, retry, deploy) | **Not done** (needs `save.js`) |
 | A28 | Late policy holds; unsubmitted graded as "Not submitted" | **Done** (`late_hours` on submit; each run records open / submitted / submitted_late / not_submitted) |
 | A29 | Built CSS in git matches a fresh build | **Done** (committed; CI check pending) |
-| A1, A5, A11, A15–A19, A21, A22, A24, A25, A27, A30 | — | **Not yet** (need the catalogue, JS, deploy, packs) |
+| A15 | A regenerated pack uploads without hand-editing | **Partial** (a pack zip uploads, validates and lands in the catalogue; images are not stored yet) |
+| A1, A5, A11, A16–A19, A21, A22, A24, A25, A27, A30 | — | **Not yet** (need the generator, JS, deploy, images) |
 
 ---
 

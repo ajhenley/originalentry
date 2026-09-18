@@ -31,9 +31,6 @@ KNOWN_COMPONENTS = frozenset(
 
 # Rules implemented elsewhere as their prerequisites land (documented, never silently skipped).
 DEFERRED_RULES = {
-    "V5": "Required roles exist once; control roles where parties of that kind exist",
-    "V8": "Each expected entry balances and uses only accounts its journal's columns allow",
-    "V11": "Key entries trigger no signature; signature/adjustment shape rules",
     "V12": "Screen packs: a real PNG ≤2MB per document per variant, alt text, text alternative",
     "V14": "Version higher than any existing; zip checksum new",
     "V16": "Zip safety: no absolute/.. paths, ≤200MB uncompressed, ≤2000 entries",
@@ -72,15 +69,140 @@ def validate_pack(pack: Pack, keys: dict[str, AnswerKey] | None = None) -> list[
     _v4_statements(pack, statement_sections, problems)
     _v6_v7_openings(pack, account_numbers, party_codes, problems)
     _v10_guided(pack, problems)
+    _v5_roles(pack, problems)
     _v13_contrast(pack, problems)
     _v15_rubric(pack, problems)
 
     if keys is not None:
         _keys_references(pack, keys, account_numbers, party_codes, problems)
+        _v8_entries_fit_their_journal(pack, keys, problems)
         _v10_coverage(pack, keys, problems)
+        _v11_signatures_and_adjustments(pack, keys, problems)
         _v9_replay(pack, keys, problems)
 
     return problems
+
+
+REQUIRED_ROLES = ("retained_earnings", "income_summary")
+
+
+def _v5_roles(pack: Pack, problems: list[Problem]) -> None:
+    """The roles the engine finds accounts by, since it never names an account number (A21)."""
+    for role in REQUIRED_ROLES:
+        holders = [a.number for a in pack.accounts if role in a.roles]
+        if len(holders) != 1:
+            problems.append(
+                Problem(
+                    "accounts", "V5",
+                    f"Exactly one account must carry the role {role!r}; "
+                    f"{len(holders)} do ({', '.join(holders) or 'none'}).",
+                )
+            )
+
+    for kind in sorted({p.kind for p in pack.parties}):
+        controls = [a.number for a in pack.accounts if a.subsidiary_kind == kind]
+        if len(controls) != 1:
+            problems.append(
+                Problem(
+                    "accounts", "V5",
+                    f"Exactly one account must be the control account for {kind!r}; "
+                    f"{len(controls)} are ({', '.join(controls) or 'none'}).",
+                )
+            )
+
+
+def _v8_entries_fit_their_journal(
+    pack: Pack, keys: dict[str, AnswerKey], problems: list[Problem]
+) -> None:
+    """Each expected entry balances, and a special journal holds only what it has columns for."""
+    journals = {j.key: j for j in pack.journals}
+
+    for variant_code, key in keys.items():
+        for index, entry in enumerate(key.expected_entries):
+            path = f"answer_keys.{variant_code}.expected_entries[{index}]"
+            debits = sum(line.debit or 0 for line in entry.lines)
+            credits = sum(line.credit or 0 for line in entry.lines)
+            if debits != credits:
+                problems.append(
+                    Problem(path, "V8",
+                            f"The entry does not balance: {debits} debit, {credits} credit.")
+                )
+            if len(entry.lines) < 2:
+                problems.append(Problem(path, "V8", "An entry needs at least two lines."))
+
+            journal = journals.get(entry.journal)
+            if journal is None or journal.kind != "special":
+                continue
+            for line in entry.lines:
+                side = "debit" if line.debit else "credit"
+                allowed = any(
+                    column.side == side
+                    and (column.account == line.account or column.account is None)
+                    for column in journal.columns
+                )
+                if not allowed:
+                    problems.append(
+                        Problem(
+                            path, "V8",
+                            f"{journal.name} has no {side} column for account {line.account}.",
+                        )
+                    )
+
+
+def _v11_signatures_and_adjustments(
+    pack: Pack, keys: dict[str, AnswerKey], problems: list[Problem]
+) -> None:
+    """A signature the key itself triggers would report every student for it (T8.5)."""
+    for variant_code, key in keys.items():
+        entries_by_document: dict[str, list] = {}
+        for entry in key.expected_entries:
+            entries_by_document.setdefault(entry.document, []).append(entry)
+
+        for signature in key.error_signatures:
+            path = f"answer_keys.{variant_code}.error_signatures.{signature.key}"
+            detect = signature.detect or {}
+            kind = detect.get("type")
+            if kind not in ("entry_line", "entry_amount", "balance_delta"):
+                problems.append(Problem(path, "V11", f"Unknown detect type {kind!r}."))
+                continue
+            if kind == "balance_delta":
+                if not detect.get("deltas"):
+                    problems.append(Problem(path, "V11", "A balance_delta signature needs deltas."))
+                continue
+
+            document = detect.get("document")
+            if not key.triage.get(document, False):
+                problems.append(
+                    Problem(path, "V11",
+                            f"{document} is not a document the key records an entry for.")
+                )
+                continue
+            for entry in entries_by_document.get(document, []):
+                for line in entry.lines:
+                    side = "debit" if line.debit else "credit"
+                    if line.account != detect.get("account") or side != detect.get("side"):
+                        continue
+                    if kind == "entry_line" or (line.debit or line.credit) == detect.get("amount"):
+                        problems.append(
+                            Problem(path, "V11",
+                                    "The key's own entry for this document matches this "
+                                    "signature, so every student would be reported for it.")
+                        )
+
+        for index, adjustment in enumerate(key.adjustments):
+            path = f"answer_keys.{variant_code}.adjustments[{index}]"
+            if adjustment.amount_basis == "independent" and adjustment.amount is None:
+                problems.append(
+                    Problem(path, "V11", "An independent adjustment needs its amount.")
+                )
+            if adjustment.amount_basis == "dependent" and not adjustment.base_account:
+                problems.append(
+                    Problem(path, "V11",
+                            "A dependent adjustment needs the base_account its figure follows "
+                            "from, so the grader sees the student's own balance.")
+                )
+            if not adjustment.pattern:
+                problems.append(Problem(path, "V11", "An adjustment needs its pattern."))
 
 
 def _v9_replay(pack: Pack, keys: dict[str, AnswerKey], problems: list[Problem]) -> None:

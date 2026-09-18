@@ -26,6 +26,7 @@ from ..decorators_staff import staff_view
 from ..extensions import db
 from ..models import Assignment, ContentPack, PackVersion, Section, User, Workspace
 from ..models.work import LATE_ACCEPT, LATE_CLOSED
+from ..packs.importing import PackImportRefused, import_pack_zip
 from ..services import staff_actions
 from ..services.assignments import (
     clone_assignment,
@@ -429,3 +430,67 @@ def section_rotate_code(section_id: int):
     db.session.commit()
     flash(f"{section.name} now joins with {section.join_code}.")
     return redirect(url_for("staff.index"))
+
+
+# ── Catalogue (I1.7, I1.10) ──────────────────────────────────────────────────────────────
+# The catalogue lists what the app holds and takes a pack the generator made. It does not author
+# anything: a company is a chart of accounts, a narrative, a document set and an answer key, and
+# the workbook is the tool for building one.
+
+MAX_PACK_BYTES = 60 * 1024 * 1024
+
+
+def _catalogue_rows():
+    rows = db.session.execute(
+        db.select(ContentPack, PackVersion)
+        .join(PackVersion, PackVersion.content_pack_id == ContentPack.id)
+        .order_by(ContentPack.company_name, PackVersion.version.desc())
+    ).all()
+    used = dict(
+        db.session.execute(
+            db.select(Workspace.pack_version_id, db.func.count())
+            .where(Workspace.archived_at.is_(None))
+            .group_by(Workspace.pack_version_id)
+        ).all()
+    )
+    catalogue: dict[str, dict] = {}
+    for pack, version in rows:
+        entry = catalogue.setdefault(pack.slug, {"company_name": pack.company_name,
+                                                 "slug": pack.slug, "versions": []})
+        entry["versions"].append({
+            "version": version.version,
+            "period": f"{version.period_start:%-d %b %Y} – {version.period_end:%-d %b %Y}",
+            "scope_tags": version.scope_tags or [],
+            "has_images": version.has_images,
+            "in_use": used.get(version.id, 0),
+            "uploaded_at": version.uploaded_at,
+        })
+    return list(catalogue.values())
+
+
+@bp.get("/catalogue")
+@staff_view
+def catalogue():
+    return render_template("staff/catalogue.html", companies=_catalogue_rows(), problems=[])
+
+
+@bp.post("/catalogue")
+@staff_view
+def catalogue_upload():
+    upload = request.files.get("pack")
+    if upload is None or not upload.filename:
+        flash("Choose a pack zip to upload.")
+        return redirect(url_for("staff.catalogue"))
+
+    try:
+        version = import_pack_zip(db.session, upload.stream, actor=current_user)
+    except PackImportRefused as refused:
+        db.session.rollback()
+        return render_template(
+            "staff/catalogue.html", companies=_catalogue_rows(), problems=refused.problems
+        ), 422
+
+    db.session.commit()
+    pack = db.session.get(ContentPack, version.content_pack_id)
+    flash(f"{pack.company_name} version {version.version} is in the catalogue.")
+    return redirect(url_for("staff.catalogue"))

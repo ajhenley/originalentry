@@ -7,6 +7,7 @@ from .content import (
     AccountOpeningBalance,
     AnswerKey,
     ContentPack,
+    PackAsset,
     PackVersion,
     Party,
     PartyOpeningBalance,
@@ -66,6 +67,7 @@ __all__ = [
     "Party",
     "SourceDocument",
     "AnswerKey",
+    "PackAsset",
     "AccountOpeningBalance",
     "PartyOpeningBalance",
     # work

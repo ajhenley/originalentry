@@ -9,6 +9,7 @@ from flask import (
     abort,
     flash,
     g,
+    make_response,
     redirect,
     render_template,
     request,
@@ -30,6 +31,7 @@ from ..models import (
     Assignment,
     ContentPack,
     JournalEntry,
+    PackAsset,
     PackVersion,
     Party,
     PostingRun,
@@ -237,15 +239,47 @@ def document(ref):
     variant_doc = (manifest_doc.get("variants") or {}).get(_variant_code(), {})
     text_alt = variant_doc.get("text_alternative") or {"fields": [], "lines": []}
     current = current_dispositions(db.session, g.workspace).get(doc.id)
+    assignment = db.session.get(Assignment, g.workspace.assignment_id)
+    screen_mode = assignment is not None and assignment.mode == "screen"
     return render_template(
         "student/document.html",
         doc=doc,
         guidance=doc.guidance if doc.guided else None,
         alt_text=variant_doc.get("alt"),
         text_alt=text_alt,
+        # The image is shown only in screen mode, and only when the pack brought one (S2.1/S2.2).
+        has_image=bool(screen_mode and variant_doc.get("image")),
         disposition=current,
         error=None,
     )
+
+
+@bp.get("/w/<workspace>/<company_slug>/documents/<ref>/image")
+@workspace_view
+def document_image(ref):
+    """The document itself. Inside the workspace, so it is never guessable from a URL (T11)."""
+    assignment = db.session.get(Assignment, g.workspace.assignment_id)
+    if assignment is None or assignment.mode != "screen":
+        abort(404)
+
+    manifest_doc = _manifest_document(ref) or {}
+    path = ((manifest_doc.get("variants") or {}).get(_variant_code(), {}) or {}).get("image")
+    if not path:
+        abort(404)
+
+    asset = db.session.execute(
+        db.select(PackAsset).where(
+            PackAsset.pack_version_id == g.pack_version.id, PackAsset.path == path
+        )
+    ).scalar_one_or_none()
+    if asset is None:
+        abort(404)
+
+    response = make_response(asset.data)
+    response.headers["Content-Type"] = asset.content_type
+    response.headers["Cache-Control"] = "private, max-age=3600"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @bp.post("/w/<workspace>/<company_slug>/documents/<ref>/disposition")

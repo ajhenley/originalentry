@@ -40,5 +40,7 @@
     {% endwith %}
     {% block main %}{% endblock %}
   </main>
+  {# Scripts are modules loaded with the page's nonce (T11). Every page works without them. #}
+  {% block scripts %}{% endblock %}
 </body>
 </html>

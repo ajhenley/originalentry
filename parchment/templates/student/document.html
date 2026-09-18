@@ -11,7 +11,29 @@
 </div>
 {% endif %}
 
+{% if has_image %}
+{# Screen mode: the document itself, zoomable. The text alternative below is not a fallback —
+   it is there for everyone, always (S2.8). #}
+<figure class="mb-6" data-zoom>
+  <div class="overflow-auto rounded border border-rule bg-rule/10 p-2" role="region" tabindex="0"
+       aria-label="{{ doc.display_ref }}, zoomable">
+    <img src="{{ url_for('student.document_image', workspace=workspace.public_id,
+                         company_slug=company.slug, ref=doc.ref) }}"
+         alt="{{ alt_text or doc.display_ref }}" data-zoom-image
+         class="max-w-none origin-top-left">
+  </div>
+  <figcaption class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+    <button type="button" data-zoom-out class="rounded border border-rule px-2 py-0.5">−</button>
+    <button type="button" data-zoom-reset class="rounded border border-rule px-2 py-0.5">Fit</button>
+    <button type="button" data-zoom-in class="rounded border border-rule px-2 py-0.5">+</button>
+    <span data-zoom-level>100%</span>
+    <span>Or use + − 0 while the document has focus.</span>
+  </figcaption>
+</figure>
+{% endif %}
+
 <section aria-label="Document as text" class="mb-6" data-pack-content>
+  <h2 class="mb-2 text-sm font-semibold">View as text</h2>
   {% if alt_text %}<p class="mb-2 text-sm text-muted">{{ alt_text }}</p>{% endif %}
   {% if text_alt.fields %}
   <dl class="mb-3 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
@@ -72,4 +94,11 @@
   </div>
   {% endif %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+{% if has_image %}
+<script type="module" nonce="{{ csp_nonce }}"
+        src="{{ url_for('static', filename='js/zoom.js') }}"></script>
+{% endif %}
 {% endblock %}

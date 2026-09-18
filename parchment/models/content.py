@@ -18,13 +18,14 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, deferred, mapped_column, relationship
 
 from ..extensions import db
 
@@ -138,6 +139,28 @@ class SourceDocument(db.Model):
     )
 
 
+class PackAsset(db.Model):
+    """A file the pack brought with it — a document image (D3).
+
+    The bytes live in Postgres rather than a bucket: there is no second service to secure, and an
+    image is reachable only through a route that checks whose workspace is asking (T1.1, T11).
+    """
+
+    __tablename__ = "pack_asset"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    pack_version_id: Mapped[int] = mapped_column(ForeignKey("pack_version.id"))
+    # The path as the pack names it, e.g. documents/A/INV-1.png
+    path: Mapped[str] = mapped_column(String(300))
+    sha256: Mapped[str] = mapped_column(String(64))
+    content_type: Mapped[str] = mapped_column(String(60))
+    byte_size: Mapped[int] = mapped_column(BigInteger)
+    # Deferred: a ledger query must never drag image bytes along with it.
+    data: Mapped[bytes] = deferred(mapped_column(LargeBinary))
+
+    __table_args__ = (UniqueConstraint("pack_version_id", "path"),)
+
+
 class AnswerKey(db.Model):
     __tablename__ = "answer_key"
 
@@ -180,6 +203,7 @@ __all__ = [
     "Party",
     "SourceDocument",
     "AnswerKey",
+    "PackAsset",
     "AccountOpeningBalance",
     "PartyOpeningBalance",
 ]

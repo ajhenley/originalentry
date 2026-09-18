@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-18 · 16 commits · 219 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-18 · 17 commits · 228 tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -31,8 +31,10 @@ now be set up entirely through screens**: a section with a join code, an assignm
 from the catalogue, cloning last term's with the dates moved, and a student who types the code and
 lands in their own books. **Packs arrive as zips now**: the catalogue takes the archive the
 generator makes, checks it against every rule before writing anything, and refuses a repeat upload
-or a version that is not newer. The multi-company UI, the JavaScript layer (`save.js`/pickers),
-real magic-link auth, document images, deployment config and CI are what remain. Details below.
+or a version that is not newer — **images included**, so screen mode works: the document is shown
+and can be zoomed, and its text alternative is there for everyone. The multi-company UI, the rest
+of the JavaScript layer (`save.js`/pickers), real magic-link auth, deployment config and CI are
+what remain. Details below.
 
 ## How to run and test
 
@@ -42,7 +44,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 219 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 228 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -65,7 +67,8 @@ flask db upgrade
       general), debit-positive balances, trial balances by stage, subsidiary proof (T6.2–T6.4)
 - [x] `ledger/snapshot.py` — the one DB→engine loader (bounded queries)
 - [x] `packs/schema.py` — pydantic schema for `pack.json` + answer keys (T5.2/T5.3)
-- [x] `packs/validate.py` — rules **V1–V11, V13, V15** (V12 and W1 wait on images and pack text);
+- [x] `packs/validate.py` — rules **V1–V11, V13, V15**, and **V12** at import (an image per
+      variant, a real PNG under 2 MB, alt text present); only W1 is left;
       each problem carries its JSON path, and an upload reports every problem at once
 - [x] `packs/zip_reader.py` — opens the generator's zip with the **V16** safety rules: no path
       that escapes the archive, no more than 2,000 entries or 200 MB unpacked, and a checksum
@@ -103,6 +106,11 @@ flask db upgrade
       subsidiary single + all), `reverse_run`, `set_disposition`, `record_attempt`, `submit_workspace`
 - [x] Journal UI: journals list, journal page (entries, post/void/reverse), entry grid form (no JS)
 - [x] Documents + dispositions: queue, detail (view-as-text from pack, guidance), record / no-entry
+- [x] **Document images** (S2.1, S2.8): stored in Postgres as `pack_asset`, served by a route
+      inside the workspace that checks the student, the mode and their variant — no bucket, no
+      signed URL to forward. Screen mode shows the image with `zoom.js` (buttons and + − 0 keys);
+      paper mode serves nothing and links to nothing. The text alternative is shown to everyone,
+      not offered as a fallback
 - [x] Checkpoints: `grading/checkpoints.py` `evaluate` returns **boolean only** (A8); attempts /
       remaining / locked; submit-a-figure UI
 - [x] **Statement builder** (S5.5, tension 7): `statement_draft`/`statement_line` with composite
@@ -187,7 +195,7 @@ flask db upgrade
 - [x] **Cohort CSV export** with a stable header: one row per student, every component, the time
       on task and the signatures recognised
 
-### Guards and tests (219 in all)
+### Guards and tests (228 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -206,9 +214,7 @@ flask db upgrade
 
 ### Phase 0 — generator and packs
 - [ ] Generator script (workbook → pack zip + one PNG per document per variant)
-- [ ] Validation rules **V12** (images) and **W1** (pack text warnings) — both wait on images
-- [ ] Image entries in a zip are read but not stored: `pack_asset` / `document_variant` do not
-      exist yet, so a screen-mode pack loads as a paper one
+- [ ] Validation rule **W1** (warn on pack text using the four banned words)
 - [ ] `testco-beta` fixture and the real `riverbend-supply` pack (only `testco-alpha` exists)
 
 ### Phase 2 — journals (partial)
@@ -219,7 +225,6 @@ flask db upgrade
       `batch.js`. Everything currently works **without** JavaScript
 
 ### Phase 3 — documents (partial)
-- [ ] Document **images** (screen mode): image bytes route, zoom/pan, **V12**
 - [ ] Guided mode gating and the M3.6 cross-company picker message
 - [ ] Join codes / enrolment UI (join flow, roster CSV)
 

@@ -7,10 +7,11 @@ from __future__ import annotations
 import os
 import pathlib
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect
 from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from . import messages
 from .config import load_config
 from .errors import init_errors
 from .extensions import csrf, db, login_manager, migrate
@@ -85,6 +86,7 @@ def _register_jinja(app: Flask) -> None:
             "company": getattr(g, "company", None),
             "read_only": getattr(g, "read_only", False),
             "read_only_message": getattr(g, "read_only_message", None),
+            "save_messages": messages.save_banner_strings(),
         }
 
 
@@ -100,6 +102,23 @@ def _register_blueprints(app: Flask) -> None:
 
 def _register_login(app: Flask) -> None:
     from .models import User
+
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        """A save from a session that has expired gets 401, not the sign-in page (T7.4).
+
+        The script keeps what the student typed, sends them to sign in, and puts it back
+        afterwards. A page request still redirects, as it always did.
+        """
+        from flask import make_response, request, url_for
+
+        next_url = request.full_path if request.method == "GET" else request.referrer
+        sign_in = url_for("auth.sign_in_form", next=next_url)
+        if request.headers.get("X-Parchment-Save"):
+            response = make_response("", 401)
+            response.headers["X-Redirect-To"] = sign_in
+            return response
+        return redirect(sign_in)
 
     @login_manager.user_loader
     def load_user(token: str):

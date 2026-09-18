@@ -22,8 +22,13 @@
     This app is built for a wider screen. Use a tablet or computer for recording.
   </p>
 
-  {# Connection banner region — save.js writes save/retry/stale messages here (T7.4/T7.5). #}
-  <div id="connection-banner" role="status" aria-live="polite"></div>
+  {# Connection banner region — save.js writes save/retry/stale messages here (T7.4/T7.5).
+     The words come from messages.py, so the interface has one place its strings live (A7). #}
+  <div id="connection-banner" role="status" aria-live="polite"
+       data-retrying="{{ save_messages.retrying }}"
+       data-stale="{{ save_messages.stale }}"
+       data-stuck="{{ save_messages.stuck }}"
+       data-unreachable="{{ save_messages.unreachable }}"></div>
 
   {% block chrome %}{% endblock %}
 

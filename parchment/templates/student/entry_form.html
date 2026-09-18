@@ -12,12 +12,15 @@
 </div>
 {% endif %}
 
-<form method="post"
+{# data-save turns this into a form that retries rather than losing what was typed (T7.4).
+   Without the script it is an ordinary POST and behaves exactly as it always did. #}
+<form method="post" data-save
       action="{{ url_for('student.entry_create', workspace=workspace.public_id,
                          company_slug=company.slug, key=journal.key) }}"
       class="space-y-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="client_key" value="{{ values.get('client_key', '') }}">
+  <input type="hidden" name="workspace_version" value="{{ values.get('workspace_version', '') }}">
 
   <div class="flex flex-wrap gap-4">
     <div>
@@ -121,4 +124,9 @@
                         company_slug=company.slug, key=journal.key) }}">Cancel</a>
   </div>
 </form>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" nonce="{{ csp_nonce }}"
+        src="{{ url_for('static', filename='js/save.js') }}"></script>
 {% endblock %}

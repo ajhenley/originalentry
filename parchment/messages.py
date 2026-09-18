@@ -130,3 +130,16 @@ def cannot_reach_server(time_label: str) -> str:
 
 
 STALE_TAB = "These books were changed in another tab or window. Reload to see the latest."
+
+SAVE_STUCK = "That did not save. Your entry is still on this page. Try again in a moment."
+
+
+def save_banner_strings() -> dict[str, str]:
+    """What the connection banner may say. Rendered onto the page for save.js (T7.4)."""
+    return {
+        "retrying": NOT_SAVED_RETRYING,
+        "stale": STALE_TAB,
+        "stuck": SAVE_STUCK,
+        # The time is filled in by the script, which knows when the last save actually landed.
+        "unreachable": cannot_reach_server("{time}"),
+    }

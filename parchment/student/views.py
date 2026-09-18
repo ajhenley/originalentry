@@ -4,6 +4,9 @@ and the write path — journalising, posting, subsidiary posting, reversal and v
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from uuid import uuid4
+
 from flask import (
     Blueprint,
     abort,
@@ -306,6 +309,49 @@ def disposition(ref):
 
 # ── Journalising and posting (write path) ────────────────────────────────────────────────
 
+# ── The save protocol (T7.2, T7.4) ───────────────────────────────────────────────────────
+# Every form here is an ordinary POST that works on its own. When save.js is running it adds one
+# header, and the answer carries three more: where to go next, when the work was saved, and the
+# workspace version, so a second tab can be told it has fallen behind.
+
+SAVE_HEADER = "X-Parchment-Save"
+
+
+def _is_save_request() -> bool:
+    return bool(request.headers.get(SAVE_HEADER))
+
+
+def _save_headers(response, redirect_to: str | None = None, submitted_version=None):
+    workspace = getattr(g, "workspace", None)
+    if workspace is not None:
+        response.headers["X-Workspace-Version"] = str(workspace.version)
+        try:
+            if submitted_version is not None and int(submitted_version) < workspace.version - 1:
+                # Someone else — another tab of theirs — has written since this form was drawn.
+                response.headers["X-Workspace-Stale"] = "1"
+        except (TypeError, ValueError):
+            pass
+    response.headers["X-Saved-At"] = datetime.now(UTC).isoformat(timespec="seconds")
+    if redirect_to:
+        response.headers["X-Redirect-To"] = redirect_to
+    return response
+
+
+def _saved(redirect_to: str, submitted_version=None):
+    """Saved. Without the script this is a redirect; with it, the script does the navigating."""
+    if not _is_save_request():
+        return redirect(redirect_to)
+    return _save_headers(make_response("", 200), redirect_to, submitted_version)
+
+
+def _save_refused(redirect_to: str, message: str):
+    """The books are closed or read-only: nothing to retry, so the script is told where to look."""
+    flash(message)
+    if not _is_save_request():
+        return redirect(redirect_to)
+    return _save_headers(make_response("", 423), redirect_to)
+
+
 def _journals(manifest):
     return manifest.get("journals", [])
 
@@ -453,7 +499,9 @@ def entry_new(key):
         documents=_documents(g.pack_version.id),
         period=_entry_context(key),
         errors={},
-        values={},
+        # The key the browser retries on, and the version a second tab is measured against
+        # (T7.4/T7.5). A retry with the same key is one entry, not two.
+        values={"client_key": uuid4().hex, "workspace_version": g.workspace.version},
         line_range=range(1, 9),
     )
 
@@ -462,9 +510,12 @@ def entry_new(key):
 @workspace_view
 def entry_create(key):
     journal_cfg = _journal_or_404(key)
-    if not _guard_writable():
-        return redirect(url_for("student.journal", workspace=g.workspace.public_id,
-                                company_slug=g.company.slug, key=key))
+    journal_url = url_for("student.journal", workspace=g.workspace.public_id,
+                          company_slug=g.company.slug, key=key)
+    submitted_version = request.form.get("workspace_version")
+    if g.read_only:
+        return _save_refused(journal_url,
+                             g.read_only_message or messages.READ_ONLY_SUBMITTED)
     result = parse_general_entry(request.form, _entry_context(key))
     if not result.ok:
         # What the student was stuck on, for the instructor's Progress screen (I2.5). The message
@@ -475,7 +526,7 @@ def entry_create(key):
             reason=result.errors[0][1],
         )
         db.session.commit()
-        return render_template(
+        page = render_template(
             "student/entry_form.html",
             journal=journal_cfg,
             accounts=_accounts(g.pack_version.id),
@@ -486,7 +537,8 @@ def entry_create(key):
             error_list=[m for _, m in result.errors],
             values=request.form,
             line_range=range(1, 9),
-        ), 422
+        )
+        return _save_headers(make_response(page, 422), submitted_version=submitted_version)
     command = result.command
     try:
         workspace_write(
@@ -495,11 +547,11 @@ def entry_create(key):
             mutate=lambda s, ws: record_entry(s, ws, command),
             detail={"journal": key, "client_key": command.client_key},
         )
-        flash("Entry recorded.")
     except WriteRefused as refused:
-        flash(refused.message)
-    return redirect(url_for("student.journal", workspace=g.workspace.public_id,
-                            company_slug=g.company.slug, key=key))
+        return _save_refused(journal_url, refused.message)
+
+    flash("Entry recorded.")
+    return _saved(journal_url, submitted_version)
 
 
 def _write_and_flash(activity_kind, mutate, ok_message, redirect_key=None):

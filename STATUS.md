@@ -1,6 +1,6 @@
 # Parchment — build status
 
-_Last updated: 2026-09-18 · 17 commits · 228 tests passing · ruff clean · running live against Neon._
+_Last updated: 2026-09-18 · 18 commits · 239 Python tests + 9 JavaScript tests passing · ruff clean · running live against Neon._
 
 This tracks what is built and what is not, against the phases in
 [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md). It is a companion to the
@@ -44,7 +44,7 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
-pytest                           # 228 tests; DB tests hit Neon (creds in .env, gitignored)
+pytest                           # 239 tests; DB tests hit Neon (creds in .env, gitignored)
 ruff check parchment tests
 
 # migrations run through the direct Neon endpoint:
@@ -106,6 +106,12 @@ flask db upgrade
       subsidiary single + all), `reverse_run`, `set_disposition`, `record_attempt`, `submit_workspace`
 - [x] Journal UI: journals list, journal page (entries, post/void/reverse), entry grid form (no JS)
 - [x] Documents + dispositions: queue, detail (view-as-text from pack, guidance), record / no-entry
+- [x] **The no-loss save protocol** (T7.2/T7.4, S3.10): a form marked `data-save` is submitted by
+      `save.js`, which keeps every field, keeps a copy in the browser, and retries with the same
+      `client_key` — which the server treats as one entry however often it arrives. The answer
+      carries where to go next, when the save landed, and the workspace version, so a second tab
+      is told it has fallen behind. An expired session keeps the entry, signs the student in, and
+      puts it back. Without the script every form is an ordinary POST that works
 - [x] **Document images** (S2.1, S2.8): stored in Postgres as `pack_asset`, served by a route
       inside the workspace that checks the student, the mode and their variant — no bucket, no
       signed URL to forward. Screen mode shows the image with `zoom.js` (buttons and + − 0 keys);
@@ -195,7 +201,7 @@ flask db upgrade
 - [x] **Cohort CSV export** with a stable header: one row per student, every component, the time
       on task and the signatures recognised
 
-### Guards and tests (228 in all)
+### Guards and tests (248 in all)
 - [x] Import-boundary guard: `ledger/` stays pure (T3.1)
 - [x] Structure guards: every `/w/` route uses `@workspace_view`; no inline `style`/handlers (T11)
 - [x] Partial A7 (banned words over rendered student screens), partial A8 (checkpoint answer never
@@ -220,9 +226,9 @@ flask db upgrade
 ### Phase 2 — journals (partial)
 - [ ] **Special-journal column entry form** (columns → lines). Recording currently uses the
       general-journal grid; the engine and posting already handle special journals
-- [ ] JavaScript: `save.js` (no-loss protocol, T7.4 — **A26**), `entry-grid.js` (live cents totals,
-      add/remove lines), `picker.js` (ARIA combobox for accounts/documents, M3.6), `zoom.js`,
-      `batch.js`. Everything currently works **without** JavaScript
+- [ ] JavaScript still to write: `entry-grid.js` (live cents totals, add/remove lines),
+      `picker.js` (ARIA combobox for accounts/documents, M3.6), `batch.js`. `save.js` and
+      `zoom.js` are done, and everything still works **without** JavaScript
 
 ### Phase 3 — documents (partial)
 - [ ] Guided mode gating and the M3.6 cross-company picker message
@@ -294,7 +300,7 @@ flask db upgrade
 | A14 | Cloning an assignment with new dates takes under 1 minute | **Partial** (one form, one field, tested; timing still to be observed) |
 | A20 | Two companies' workspaces cannot reach each other | **Partial** (composite-FK + 404 proven; full A20 pending) |
 | A23 | Two charts with account 101 coexist everywhere | **Partial** (scoping in place; dedicated test pending) |
-| A26 | No lost work (expired session, retry, deploy) | **Not done** (needs `save.js`) |
+| A26 | No lost work (expired session, retry, deploy) | **Partial** (the protocol and its decisions are tested on both sides; the browser behaviour itself needs Playwright) |
 | A28 | Late policy holds; unsubmitted graded as "Not submitted" | **Done** (`late_hours` on submit; each run records open / submitted / submitted_late / not_submitted) |
 | A29 | Built CSS in git matches a fresh build | **Done** (committed; CI check pending) |
 | A15 | A regenerated pack uploads without hand-editing | **Partial** (a pack zip uploads, validates and lands in the catalogue; images are not stored yet) |

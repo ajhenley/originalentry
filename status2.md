@@ -1,6 +1,6 @@
 # Parchment — everything done and not done
 
-_2026-09-18 · 17 commits · 228 tests passing · ruff clean · 7 migrations applied to Neon._
+_2026-09-18 · 18 commits · 239 Python tests + 9 JavaScript tests passing · ruff clean · 7 migrations applied to Neon._
 
 Every row below was checked against the code, not against the last status note. Written against
 the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-PRD-Flask.md).
@@ -16,7 +16,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | --- | --- | --- | --- |
 | 0 | Content pipeline: pack format, validation, zip import | 🟡 | The **generator** (workbook → zip) is not written; rule W1 |
 | 1 | Data model, ledger engine, deployed skeleton | 🟡 | Engine and schema done; **nothing is deployed** |
-| 2 | Journals and posting | 🟡 | Special-journal **column form** and the JavaScript entry layer |
+| 2 | Journals and posting | 🟡 | Special-journal **column form**, live totals and the account picker |
 | 3 | Documents and triage, both modes | ✅ | — |
 | 4 | Trial balances, adjustments, statements, closing | 🟡 | Worksheet (cut list #1), row reordering, stage gating |
 | 5 | Grading engine and storage | ✅ | — |
@@ -52,7 +52,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | S3.7 | Control-account lines need a party | ✅ | |
 | S3.8 | Edit or void before posting; voids stay visible | ✅ | Revision snapshot before every edit |
 | S3.9 | Keyboard-only entry | 🟡 | Forms are keyboard-usable; the shortcut map needs JavaScript |
-| S3.10 | An entry is never lost | ⬜ | **`save.js` is not built** |
+| S3.10 | An entry is never lost | ✅ | `save.js`: retries on the same key, keeps a copy in the browser, survives an expired session |
 | S4.1 | Posting is an explicit action | ✅ | |
 | S4.2 | Special journals post column totals | ✅ | Derived at read time |
 | S4.3 | Subsidiary posts per entry, and "post all" | ✅ | |
@@ -166,7 +166,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | A15 | A regenerated pack uploads unedited | 🟡 | Zips upload; the generator does not exist |
 | A16 | Marks CSV imports into an LMS | ⬜ | |
 | A17 | Every workflow by keyboard alone | 🟡 | Server-rendered forms are; unverified with a screen reader |
-| A18 | Killing the server loses no saved work | ⬜ | Needs `save.js` |
+| A18 | Killing the server loses no saved work | 🟡 | The protocol is tested both sides; the browser itself needs Playwright |
 | A19 | A2 for every company in the catalogue | 🟡 | One real company exists |
 | A20 | Companies cannot reach each other | 🟡 | Composite FK + 404 proven; no two-pack test |
 | A21 | No account-number literals in code | ⬜ | No lint rule |
@@ -174,7 +174,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | A23 | Two charts with account 101 coexist | 🟡 | Scoping in place; no dedicated test |
 | A24 | A student can tell which company, in 2 s | 🟡 | Chrome, colour, URL; unobserved |
 | A25 | Sign-in survives the real world | ⬜ | Auth not built |
-| A26 | No lost work | ⬜ | Needs `save.js` |
+| A26 | No lost work | 🟡 | Contract and decisions tested; browser behaviour needs Playwright |
 | A27 | Recovery proven | ⬜ | No backup script or drill |
 | A28 | Late policy holds | ✅ | |
 | A29 | Built CSS matches a fresh build | 🟡 | Committed; no CI check |
@@ -195,7 +195,8 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | Document images | ✅ | In Postgres, behind an authorised route |
 | Tailwind build, committed CSS | ✅ | No Node at deploy time |
 | `zoom.js` | ✅ | The only JavaScript so far |
-| `save.js`, `entry-grid.js`, `picker.js`, `batch.js` | ⬜ | A26 and S3.4/S3.6/S3.10 wait on these |
+| `save.js` | ✅ | The no-loss protocol, with its decisions under `node --test` |
+| `entry-grid.js`, `picker.js`, `batch.js` | ⬜ | S3.4, S3.6 and batched grading wait on these |
 | Auth: magic link, codes, rate limits, Resend | ⬜ | **Dev-only sign-in**, refused in production |
 | CLI commands (`staff add`, `packs`, `grade`, `purge`…) | ⬜ | |
 | Heroku config: Procfile, gunicorn, release phase | ⬜ | |
@@ -246,15 +247,16 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | Packs: schema, rules, zip | 27 | V1–V11, V13, V15, and the zip safety rules |
 | Grading engine | 26 | Ten components, signatures, time on task |
 | Golden | 7 | A3 and A9, each pure **and** through the database |
-| Guards | 4 | Import boundaries, route decoration, no inline styles or handlers |
+| Guards | 6 | Import boundaries, route decoration, no inline styles or handlers, the JavaScript tests, no banned word in a script |
+| Save protocol | 9 | Where to go next, when it saved, the version, idempotent retries, refusals, closed books, expired sessions |
+| JavaScript (`node --test`) | 9 | What save.js decides: navigate, replace, retry, sign in, give up, and the backoff |
 | Integration (live Neon) | 100 | Constraints, write path, dispositions, checkpoints, submission, statements, grading, storage, marks, progress, console, diagnostics, setup, uploads, images |
 
 ---
 
 ## 10. What I would do next, in order
 
-1. **`save.js`** — the no-loss protocol. A26, and the PRD lists it among the things never to cut.
-2. **Auth** — magic link, six-digit codes, Resend. Nothing can leave a laptop without it.
+1. **Auth** — magic link, six-digit codes, Resend. Nothing can leave a laptop without it.
 3. **Deploy and CI** — Procfile, release phase, the workflow that runs these tests on every push.
 4. **The generator** — workbook to pack zip. Until it exists, every pack is hand-written.
 5. The console's remaining items: accommodations, checkpoint deadlines, roster import, marks CSV.

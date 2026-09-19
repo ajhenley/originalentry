@@ -41,7 +41,7 @@
     </div>
     <div class="min-w-56 flex-1">
       <label for="document_ref" class="block text-sm font-medium">Document (for regular entries)</label>
-      <select id="document_ref" name="document_ref"
+      <select id="document_ref" name="document_ref" data-picker
               class="mt-1 w-full rounded border border-rule px-2 py-1">
         <option value="">— choose the document this entry records —</option>
         {% for d in documents %}
@@ -60,7 +60,7 @@
   </div>
 
   <div class="overflow-x-auto rounded border border-rule">
-    <table class="w-full border-collapse text-sm">
+    <table class="w-full border-collapse text-sm" data-entry-grid>
       <caption class="px-3 py-2 text-left font-semibold">Lines</caption>
       <thead>
         <tr class="border-b border-rule text-muted">
@@ -77,7 +77,7 @@
           <td class="text-muted">{{ i }}</td>
           <td>
             <label class="sr-only" for="line-{{ i }}-account">Line {{ i }}, account</label>
-            <select id="line-{{ i }}-account" name="line-{{ i }}-account"
+            <select id="line-{{ i }}-account" name="line-{{ i }}-account" data-picker
                     class="w-full rounded border border-rule px-2 py-1">
               <option value="">—</option>
               {% for a in accounts %}
@@ -129,4 +129,8 @@
 {% block scripts %}
 <script type="module" nonce="{{ csp_nonce }}"
         src="{{ url_for('static', filename='js/save.js') }}"></script>
+<script type="module" nonce="{{ csp_nonce }}"
+        src="{{ url_for('static', filename='js/entry-grid.js') }}"></script>
+<script type="module" nonce="{{ csp_nonce }}"
+        src="{{ url_for('static', filename='js/picker.js') }}"></script>
 {% endblock %}

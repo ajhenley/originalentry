@@ -18,7 +18,11 @@ pytestmark = pytest.mark.db
 
 @pytest.fixture(scope="session")
 def app():
-    return create_app()
+    app = create_app()
+    # Safety net: the tests must never send a real email, whatever EMAIL_BACKEND says in .env.
+    # The auth tests still override this to "memory" to read what would have been sent.
+    app.extensions["parchment_config"].EMAIL_BACKEND = "memory"
+    return app
 
 
 @pytest.fixture

@@ -23,7 +23,12 @@ from flask_login import current_user, login_required
 from .. import messages, money
 from ..decorators import workspace_view
 from ..extensions import db
-from ..forms.entries import AccountInfo, EntryContext, parse_general_entry
+from ..forms.entries import (
+    AccountInfo,
+    EntryContext,
+    parse_general_entry,
+    parse_special_entry,
+)
 from ..forms.statements import StatementContext, parse_statement
 from ..grading.checkpoints import evaluate as evaluate_checkpoint
 from ..ledger import STAGE_KINDS, balances, subsidiary_proof, trial_balance
@@ -606,22 +611,36 @@ def journal(key):
     return render_template("student/journal.html", journal=journal_cfg, entries=rows, runs=runs)
 
 
-@bp.get("/w/<workspace>/<company_slug>/journals/<key>/entries/new")
-@workspace_view
-def entry_new(key):
-    journal_cfg = _journal_or_404(key)
-    return render_template(
-        "student/entry_form.html",
+def _render_entry_form(journal_cfg, key, *, values, errors=None, error_list=None):
+    """Pick the right entry form for the journal: the column grid for a special journal, the
+    line grid for the general journal."""
+    kwargs = dict(
         journal=journal_cfg,
         accounts=_accounts(g.pack_version.id),
         parties=_parties(g.pack_version.id),
         documents=_documents(g.pack_version.id),
         period=_entry_context(key),
-        errors={},
-        # The key the browser retries on, and the version a second tab is measured against
-        # (T7.4/T7.5). A retry with the same key is one entry, not two.
+        errors=errors or {},
+        values=values,
+    )
+    if error_list is not None:
+        kwargs["error_list"] = error_list
+    if journal_cfg.get("kind") == "special":
+        kwargs["columns"] = journal_cfg.get("columns", [])
+        return render_template("student/special_entry_form.html", **kwargs)
+    kwargs["line_range"] = range(1, 9)
+    return render_template("student/entry_form.html", **kwargs)
+
+
+@bp.get("/w/<workspace>/<company_slug>/journals/<key>/entries/new")
+@workspace_view
+def entry_new(key):
+    journal_cfg = _journal_or_404(key)
+    # The key the browser retries on, and the version a second tab is measured against
+    # (T7.4/T7.5). A retry with the same key is one entry, not two.
+    return _render_entry_form(
+        journal_cfg, key,
         values={"client_key": uuid4().hex, "workspace_version": g.workspace.version},
-        line_range=range(1, 9),
     )
 
 
@@ -635,7 +654,11 @@ def entry_create(key):
     if g.read_only:
         return _save_refused(journal_url,
                              g.read_only_message or messages.READ_ONLY_SUBMITTED)
-    result = parse_general_entry(request.form, _entry_context(key))
+    if journal_cfg.get("kind") == "special":
+        result = parse_special_entry(request.form, _entry_context(key),
+                                     journal_cfg.get("columns", []))
+    else:
+        result = parse_general_entry(request.form, _entry_context(key))
     if not result.ok:
         # What the student was stuck on, for the instructor's Progress screen (I2.5). The message
         # is the one the student saw; their figures are not recorded.
@@ -645,17 +668,11 @@ def entry_create(key):
             reason=result.errors[0][1],
         )
         db.session.commit()
-        page = render_template(
-            "student/entry_form.html",
-            journal=journal_cfg,
-            accounts=_accounts(g.pack_version.id),
-            parties=_parties(g.pack_version.id),
-            documents=_documents(g.pack_version.id),
-            period=_entry_context(key),
+        page = _render_entry_form(
+            journal_cfg, key,
+            values=request.form,
             errors={f: m for f, m in result.errors},
             error_list=[m for _, m in result.errors],
-            values=request.form,
-            line_range=range(1, 9),
         )
         return _save_headers(make_response(page, 422), submitted_version=submitted_version)
     command = result.command

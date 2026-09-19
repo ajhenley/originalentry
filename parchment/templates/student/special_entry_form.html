@@ -1,0 +1,124 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}Record in {{ journal.name }}{% endblock %}
+
+{% block workspace %}
+{% if error_list %}
+<div class="mb-4 rounded border border-attention/40 bg-attention/10 p-3 text-sm text-attention"
+     role="alert">
+  <p class="font-semibold">This entry was not saved. Your work is still here.</p>
+  <ul class="mt-1 list-disc pl-5">
+    {% for m in error_list %}<li>{{ m }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{# data-save turns this into a form that retries rather than losing what was typed (T7.4). #}
+<form method="post" data-save
+      action="{{ url_for('student.entry_create', workspace=workspace.public_id,
+                         company_slug=company.slug, key=journal.key) }}"
+      class="space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="client_key" value="{{ values.get('client_key', '') }}">
+  <input type="hidden" name="workspace_version" value="{{ values.get('workspace_version', '') }}">
+
+  <div class="flex flex-wrap gap-4">
+    <div>
+      <label for="entry_date" class="block text-sm font-medium">Date</label>
+      <input id="entry_date" name="entry_date" type="date"
+             min="{{ period.period_start.isoformat() }}" max="{{ period.period_end.isoformat() }}"
+             value="{{ values.get('entry_date', period.period_start.isoformat()) }}"
+             class="mt-1 rounded border border-rule px-2 py-1">
+    </div>
+    <div class="min-w-56 flex-1">
+      <label for="document_ref" class="block text-sm font-medium">Document</label>
+      <select id="document_ref" name="document_ref" data-picker
+              class="mt-1 w-full rounded border border-rule px-2 py-1">
+        <option value="">— choose the document this entry records —</option>
+        {% for d in documents %}
+        <option value="{{ d.ref }}" {% if values.get('document_ref') == d.ref %}selected{% endif %}>
+          {{ d.display_ref }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div>
+    <label for="description" class="block text-sm font-medium">Description (optional)</label>
+    <input id="description" name="description" type="text"
+           value="{{ values.get('description', '') }}"
+           class="mt-1 w-full rounded border border-rule px-2 py-1">
+  </div>
+
+  <div class="overflow-x-auto rounded border border-rule">
+    <table class="w-full border-collapse text-sm">
+      <caption class="px-3 py-2 text-left font-semibold">
+        Columns — fill the ones this transaction uses
+      </caption>
+      <thead>
+        <tr class="border-b border-rule text-muted">
+          <th scope="col" class="text-left font-medium">Column</th>
+          <th scope="col" class="text-left font-medium">Party / account</th>
+          <th scope="col" class="text-right font-medium">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for col in columns %}
+        <tr class="border-b border-rule/60">
+          <td>
+            {{ col.label }}
+            <span class="text-muted">({{ col.side }})</span>
+          </td>
+          <td>
+            {% if col.subsidiary_kind %}
+            <label class="sr-only" for="col-{{ col.key }}-party">{{ col.label }} party</label>
+            <select id="col-{{ col.key }}-party" name="col-{{ col.key }}-party" data-picker
+                    class="w-full rounded border border-rule px-2 py-1">
+              <option value="">—</option>
+              {% for p in parties %}
+              <option value="{{ p.code }}"
+                {% if values.get('col-' ~ col.key ~ '-party') == p.code %}selected{% endif %}>
+                {{ p.name }}</option>
+              {% endfor %}
+            </select>
+            {% elif not col.account %}
+            <label class="sr-only" for="col-{{ col.key }}-account">{{ col.label }} account</label>
+            <select id="col-{{ col.key }}-account" name="col-{{ col.key }}-account" data-picker
+                    class="w-full rounded border border-rule px-2 py-1">
+              <option value="">— choose an account —</option>
+              {% for a in accounts %}
+              <option value="{{ a.number }}"
+                {% if values.get('col-' ~ col.key ~ '-account') == a.number %}selected{% endif %}>
+                {{ a.number }} · {{ a.name }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <span class="text-muted">{{ col.account }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <label class="sr-only" for="col-{{ col.key }}-amount">{{ col.label }} amount</label>
+            <input id="col-{{ col.key }}-amount" name="col-{{ col.key }}-amount" inputmode="decimal"
+                   value="{{ values.get('col-' ~ col.key ~ '-amount', '') }}"
+                   class="w-32 rounded border border-rule px-2 py-1 text-right tabular-nums">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex gap-2">
+    <button type="submit" class="rounded bg-company px-4 py-2 text-paper">Record entry</button>
+    <a class="rounded border border-rule px-4 py-2"
+       href="{{ url_for('student.journal', workspace=workspace.public_id,
+                        company_slug=company.slug, key=journal.key) }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" nonce="{{ csp_nonce }}"
+        src="{{ url_for('static', filename='js/save.js') }}"></script>
+<script type="module" nonce="{{ csp_nonce }}"
+        src="{{ url_for('static', filename='js/picker.js') }}"></script>
+{% endblock %}

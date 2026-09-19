@@ -3,7 +3,14 @@
 variable-length journal grid).
 """
 
-from .entries import EntryCommand, EntryContext, LineCommand, ParseResult, parse_general_entry
+from .entries import (
+    EntryCommand,
+    EntryContext,
+    LineCommand,
+    ParseResult,
+    parse_general_entry,
+    parse_special_entry,
+)
 
 __all__ = [
     "EntryCommand",
@@ -11,4 +18,5 @@ __all__ = [
     "EntryContext",
     "ParseResult",
     "parse_general_entry",
+    "parse_special_entry",
 ]

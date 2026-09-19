@@ -123,6 +123,76 @@ def parse_general_entry(form, ctx: EntryContext) -> ParseResult:
     return result
 
 
+def parse_special_entry(form, ctx: EntryContext, columns: list[dict]) -> ParseResult:
+    """Parse one special-journal transaction: a filled cell per column becomes a line carrying its
+    ``column_key`` (T6.1). The column fixes the account and side; a control column takes a party,
+    and an "Other accounts" column (no fixed account) takes the account the student chose."""
+    result = ParseResult()
+    entry_date = _parse_date(form.get("entry_date"), ctx, result)
+
+    document_ref = (form.get("document_ref") or "").strip() or None
+    if document_ref is None or document_ref not in ctx.document_refs:
+        result.add("document_ref", messages.ENTRY_NEEDS_DOCUMENT)
+
+    lines: list[LineCommand] = []
+    for column in columns:
+        key = column["key"]
+        raw = (form.get(f"col-{key}-amount") or "").strip()
+        if not raw:
+            continue
+        try:
+            cents = money.parse_money(raw)
+        except money.MoneyError as exc:
+            result.add(f"col-{key}-amount", messages.money_error(exc.reason))
+            continue
+
+        number = column.get("account")
+        if number is None:  # an "Other accounts" column: the student names the account
+            number = (form.get(f"col-{key}-account") or "").strip()
+            if not number:
+                result.add(f"col-{key}-account", messages.LINE_NEEDS_ACCOUNT)
+                continue
+        account = ctx.accounts.get(number)
+        if account is None:
+            result.add(f"col-{key}-account", messages.LINE_NEEDS_ACCOUNT)
+            continue
+
+        kind = column.get("subsidiary_kind") or account.subsidiary_kind
+        party = (form.get(f"col-{key}-party") or "").strip() or None
+        if kind and party is None:
+            result.add(f"col-{key}-party", messages.line_needs_party(kind))
+            continue
+        if party is not None and party not in ctx.party_codes:
+            result.add(f"col-{key}-party", messages.line_needs_party(kind or "customer"))
+            continue
+
+        debit = cents if column["side"] == "debit" else 0
+        credit = cents if column["side"] == "credit" else 0
+        lines.append(LineCommand(number, party, debit, credit, column_key=key))
+
+    if len(lines) < 2 and not result.errors:
+        result.add("lines", "Fill at least two columns so the entry balances.")
+    if lines:
+        total_debit = sum(line.debit_cents for line in lines)
+        total_credit = sum(line.credit_cents for line in lines)
+        if total_debit != total_credit:
+            result.add("lines", messages.out_of_balance(abs(total_debit - total_credit)))
+
+    if result.errors:
+        return result
+
+    result.command = EntryCommand(
+        journal_key=ctx.journal_key,
+        kind=KIND_REGULAR,  # special journals hold regular entries
+        document_ref=document_ref,
+        entry_date=entry_date,
+        description=(form.get("description") or "").strip() or None,
+        lines=lines,
+        client_key=(form.get("client_key") or "").strip() or uuid.uuid4().hex,
+    )
+    return result
+
+
 def _parse_date(raw: str | None, ctx: EntryContext, result: ParseResult) -> date | None:
     if not raw:
         result.add("entry_date", messages.date_outside_period(ctx.period_label))

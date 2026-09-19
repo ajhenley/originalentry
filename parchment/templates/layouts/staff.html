@@ -2,12 +2,16 @@
    the chrome is navy with a teal rule, so it never reads as any one company's books. #}
 {% extends "base.html" %}
 
+{# The console shows a section at a time, so it takes a wider column than a student's books —
+   and the header, the tables and the footer all take it together. #}
+{% set shell_width = "max-w-6xl" %}
+
 {% block title %}{{ self.heading() }} · Parchment{% endblock %}
 
 {% block chrome %}
 <header class="bg-navy text-paper">
   <div class="h-1.5 bg-teal"></div>
-  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
+  <div data-shell class="mx-auto flex {{ shell_width }} flex-wrap items-center gap-4 px-4 py-3">
     <p class="mr-auto font-display text-lg">Parchment <span class="label-meta text-paper/60">console</span></p>
     <nav aria-label="Console" class="flex flex-wrap gap-1">
       <a href="{{ url_for('staff.index') }}" class="nav-link"

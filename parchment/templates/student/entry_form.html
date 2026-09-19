@@ -3,7 +3,7 @@
 
 {% block workspace %}
 {% if error_list %}
-<div class="mb-4 rounded border border-attention/40 bg-attention/10 p-3 text-sm text-attention"
+<div class="callout callout--attention mb-4"
      role="alert">
   <p class="font-semibold">This entry was not saved. Your work is still here.</p>
   <ul class="mt-1 list-disc pl-5">
@@ -24,8 +24,8 @@
 
   <div class="flex flex-wrap gap-4">
     <div>
-      <label for="kind" class="block text-sm font-medium">Kind</label>
-      <select id="kind" name="kind" class="mt-1 rounded border border-rule px-2 py-1">
+      <label for="kind" class="field-label">Kind</label>
+      <select id="kind" name="kind" class="field mt-1 w-auto">
         {% for k in ['regular', 'adjusting', 'closing'] %}
         <option value="{{ k }}" {% if values.get('kind', 'regular') == k %}selected{% endif %}>
           {{ k | capitalize }}</option>
@@ -33,16 +33,16 @@
       </select>
     </div>
     <div>
-      <label for="entry_date" class="block text-sm font-medium">Date</label>
+      <label for="entry_date" class="field-label">Date</label>
       <input id="entry_date" name="entry_date" type="date"
              min="{{ period.period_start.isoformat() }}" max="{{ period.period_end.isoformat() }}"
              value="{{ values.get('entry_date', period.period_start.isoformat()) }}"
-             class="mt-1 rounded border border-rule px-2 py-1">
+             class="field mt-1 w-auto">
     </div>
     <div class="min-w-56 flex-1">
-      <label for="document_ref" class="block text-sm font-medium">Document (for regular entries)</label>
+      <label for="document_ref" class="field-label">Document (for regular entries)</label>
       <select id="document_ref" name="document_ref" data-picker
-              class="mt-1 w-full rounded border border-rule px-2 py-1">
+              class="field mt-1">
         <option value="">— choose the document this entry records —</option>
         {% for d in documents %}
         <option value="{{ d.ref }}" {% if values.get('document_ref') == d.ref %}selected{% endif %}>
@@ -53,32 +53,32 @@
   </div>
 
   <div>
-    <label for="description" class="block text-sm font-medium">Description (optional)</label>
+    <label for="description" class="field-label">Description (optional)</label>
     <input id="description" name="description" type="text"
            value="{{ values.get('description', '') }}"
-           class="mt-1 w-full rounded border border-rule px-2 py-1">
+           class="field mt-1">
   </div>
 
-  <div class="overflow-x-auto rounded border border-rule">
+  <div class="panel overflow-x-auto">
     <table class="w-full border-collapse text-sm" data-entry-grid>
-      <caption class="px-3 py-2 text-left font-semibold">Lines</caption>
+      <caption>Lines</caption>
       <thead>
-        <tr class="border-b border-rule text-muted">
-          <th scope="col" class="text-left font-medium">Line</th>
-          <th scope="col" class="text-left font-medium">Account</th>
-          <th scope="col" class="text-left font-medium">Party</th>
-          <th scope="col" class="text-right font-medium">Debit</th>
-          <th scope="col" class="text-right font-medium">Credit</th>
+        <tr>
+          <th scope="col" class="text-left">Line</th>
+          <th scope="col" class="text-left">Account</th>
+          <th scope="col" class="text-left">Party</th>
+          <th scope="col" class="text-right">Debit</th>
+          <th scope="col" class="text-right">Credit</th>
         </tr>
       </thead>
       <tbody>
         {% for i in line_range %}
-        <tr class="border-b border-rule/60">
+        <tr>
           <td class="text-muted">{{ i }}</td>
           <td>
             <label class="sr-only" for="line-{{ i }}-account">Line {{ i }}, account</label>
             <select id="line-{{ i }}-account" name="line-{{ i }}-account" data-picker
-                    class="w-full rounded border border-rule px-2 py-1">
+                    class="field">
               <option value="">—</option>
               {% for a in accounts %}
               <option value="{{ a.number }}"
@@ -90,7 +90,7 @@
           <td>
             <label class="sr-only" for="line-{{ i }}-party">Line {{ i }}, party</label>
             <select id="line-{{ i }}-party" name="line-{{ i }}-party"
-                    class="w-full rounded border border-rule px-2 py-1">
+                    class="field">
               <option value="">—</option>
               {% for p in parties %}
               <option value="{{ p.code }}"
@@ -103,13 +103,13 @@
             <label class="sr-only" for="line-{{ i }}-debit">Line {{ i }}, debit</label>
             <input id="line-{{ i }}-debit" name="line-{{ i }}-debit" inputmode="decimal"
                    value="{{ values.get('line-' ~ i ~ '-debit', '') }}"
-                   class="w-28 rounded border border-rule px-2 py-1 text-right tabular-nums">
+                   class="field field--figure w-28">
           </td>
           <td>
             <label class="sr-only" for="line-{{ i }}-credit">Line {{ i }}, credit</label>
             <input id="line-{{ i }}-credit" name="line-{{ i }}-credit" inputmode="decimal"
                    value="{{ values.get('line-' ~ i ~ '-credit', '') }}"
-                   class="w-28 rounded border border-rule px-2 py-1 text-right tabular-nums">
+                   class="field field--figure w-28">
           </td>
         </tr>
         {% endfor %}
@@ -118,8 +118,8 @@
   </div>
 
   <div class="flex gap-2">
-    <button type="submit" class="rounded bg-company px-4 py-2 text-paper">Record entry</button>
-    <a class="rounded border border-rule px-4 py-2"
+    <button type="submit" class="btn btn--primary">Record entry</button>
+    <a class="btn btn--outline"
        href="{{ url_for('student.journal', workspace=workspace.public_id,
                         company_slug=company.slug, key=journal.key) }}">Cancel</a>
   </div>

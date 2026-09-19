@@ -9,7 +9,7 @@
 
 <ul class="space-y-4">
   {% for c in checkpoints %}
-  <li class="rounded border border-rule p-4">
+  <li class="panel p-4">
     <p class="font-semibold">Checkpoint {{ c.ordinal }}</p>
     <p class="text-sm" data-pack-content>{{ c.prompt }}</p>
 
@@ -23,11 +23,11 @@
                              company_slug=company.slug, key=c.key) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
-        <label for="value-{{ c.key }}" class="block text-sm font-medium">Your figure</label>
+        <label for="value-{{ c.key }}" class="field-label">Your figure</label>
         <input id="value-{{ c.key }}" name="value" inputmode="decimal" required
-               class="mt-1 w-40 rounded border border-rule px-2 py-1 text-right tabular-nums">
+               class="field field--figure mt-1 w-40">
       </div>
-      <button type="submit" class="rounded bg-company px-3 py-2 text-sm text-paper">Check</button>
+      <button type="submit" class="btn btn--primary btn--small">Check</button>
       <span class="text-sm text-muted">{{ c.state.remaining }} attempt{{ '' if c.state.remaining == 1 else 's' }} remain</span>
     </form>
     {% endif %}

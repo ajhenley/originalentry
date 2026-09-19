@@ -21,7 +21,7 @@ from flask import (
 from flask_login import current_user, login_required
 
 from .. import messages, money
-from ..decorators import workspace_view
+from ..decorators import STAFF_ROLES, workspace_view
 from ..extensions import db
 from ..forms.entries import (
     AccountInfo,
@@ -92,6 +92,11 @@ _STAGE_LABEL = {s["key"]: s["label"] for s in _STAGES}
 @bp.get("/home")
 @login_required
 def home():
+    # Staff have no books of their own. Telling them to find a join code is no help, so they go
+    # where their work is (I2).
+    if current_user.role in STAFF_ROLES:
+        return redirect(url_for("staff.index"))
+
     rows = db.session.execute(
         db.select(Workspace, Assignment, ContentPack)
         .join(Assignment, Workspace.assignment_id == Assignment.id)

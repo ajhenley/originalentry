@@ -7,6 +7,6 @@
 <form method="post" action="{{ url_for('auth.verify') }}" class="mt-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="token" value="{{ token }}">
-  <button type="submit" class="rounded bg-company px-4 py-2 text-paper">Sign in</button>
+  <button type="submit" class="btn btn--primary">Sign in</button>
 </form>
 {% endblock %}

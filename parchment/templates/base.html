@@ -5,22 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Parchment{% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  {# The faces are served from here, not a font CDN: a student opening a ledger should not also
+     be announcing themselves to a third party. #}
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="{{ url_for('static', filename='fonts/outfit-400.woff2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='dist/app.css') }}">
 </head>
-<body class="min-h-screen bg-paper text-ink">
+<body class="min-h-screen bg-cream text-ink">
   <a href="#main"
      class="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50
-            focus:bg-paper focus:px-3 focus:py-2 focus:shadow">Skip to main content</a>
+            focus:rounded focus:bg-paper focus:px-3 focus:py-2 focus:shadow-lg">Skip to main content</a>
 
   <noscript>
-    <p class="bg-attention/10 px-4 py-2 text-sm">
+    <p class="callout callout--attention rounded-none px-4 py-2">
       Some conveniences need JavaScript, but every page works without it.
     </p>
   </noscript>
 
   {# App-only bars (the small-screen notice and the save banner). The public landing omits them. #}
   {% block appbars %}
-  <p class="hidden bg-attention/10 px-4 py-2 text-sm max-[768px]:block">
+  <p class="callout callout--attention hidden rounded-none px-4 py-2 max-[768px]:block">
     This app is built for a wider screen. Use a tablet or computer for recording.
   </p>
 
@@ -35,13 +39,12 @@
 
   {% block chrome %}{% endblock %}
 
-  <main id="main" class="mx-auto max-w-5xl px-4 py-6">
+  <main id="main" class="mx-auto max-w-5xl px-4 py-8">
     {% with flashes = get_flashed_messages() %}
       {% if flashes %}
-      <div class="mb-4 space-y-2">
+      <div class="mb-6 space-y-2">
         {% for m in flashes %}
-        <p class="rounded border border-rule bg-attention/10 px-3 py-2 text-sm text-attention"
-           role="status">{{ m }}</p>
+        <p class="callout" role="status">{{ m }}</p>
         {% endfor %}
       </div>
       {% endif %}

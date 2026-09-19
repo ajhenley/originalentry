@@ -16,32 +16,32 @@
 {% if not marks %}
 <p class="text-muted">This workspace has not been graded yet.</p>
 {% else %}
-<div class="overflow-x-auto rounded border border-rule" role="region" aria-label="Components"
+<div class="panel overflow-x-auto" role="region" aria-label="Components"
      tabindex="0">
-  <table class="w-full border-collapse text-sm">
-    <caption class="px-3 py-2 text-left font-semibold">
+  <table class="data-table">
+    <caption>
       {{ '%.1f' | format(marks.total_points) }} of {{ '%.0f' | format(marks.max_points) }}
       ({{ '%.0f' | format(marks.percent) }}%)
     </caption>
     <thead>
-      <tr class="border-b border-rule text-muted">
-        <th scope="col" class="text-left font-medium">Component</th>
-        <th scope="col" class="text-right font-medium">Marks</th>
-        <th scope="col" class="text-left font-medium">What the rule credited</th>
-        <th scope="col" class="text-left font-medium">Mark by hand</th>
+      <tr>
+        <th scope="col" class="text-left">Component</th>
+        <th scope="col" class="text-right">Marks</th>
+        <th scope="col" class="text-left">What the rule credited</th>
+        <th scope="col" class="text-left">Mark by hand</th>
       </tr>
     </thead>
     <tbody>
       {% for component in marks.components %}
       {% set detail = result.component(component.key) if result else none %}
-      <tr class="border-b border-rule/60 align-top">
+      <tr class="align-top">
         <th scope="row" class="text-left font-normal">
           {{ component.label }}
           {% if component.overridden %}
           <span class="block text-xs text-muted">By hand: {{ component.reason }}</span>
           {% endif %}
         </th>
-        <td class="text-right tabular-nums">
+        <td class="figure text-right">
           {{ '%.1f' | format(component.points) }} / {{ '%.1f' | format(component.max_points) }}
         </td>
         <td class="text-xs">
@@ -67,12 +67,12 @@
               Marks for {{ component.label }}</label>
             <input id="points-{{ component.key }}" name="points" inputmode="decimal"
                    value="{{ '%.1f' | format(component.points) }}"
-                   class="w-16 rounded border border-rule px-2 py-1 text-right tabular-nums">
+                   class="field field--figure w-16">
             <label class="sr-only" for="reason-{{ component.key }}">
               Why this mark was changed</label>
             <input id="reason-{{ component.key }}" name="reason" type="text" placeholder="Reason"
-                   class="w-40 rounded border border-rule px-2 py-1">
-            <button type="submit" class="rounded border border-rule px-2 py-1">Save</button>
+                   class="field w-40">
+            <button type="submit" class="btn btn--outline btn--small">Save</button>
           </form>
         </td>
       </tr>
@@ -103,8 +103,8 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="sr-only" for="body">Comment for the student</label>
     <textarea id="body" name="body" rows="3"
-              class="w-full rounded border border-rule px-2 py-1">{{ marks.comment or '' }}</textarea>
-    <button type="submit" class="mt-2 rounded bg-ink px-3 py-2 text-sm text-paper">Save comment</button>
+              class="field">{{ marks.comment or '' }}</textarea>
+    <button type="submit" class="btn btn--secondary btn--small mt-2">Save comment</button>
   </form>
 </section>
 
@@ -120,8 +120,8 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="sr-only" for="archive-reason">Reason</label>
     <input id="archive-reason" name="reason" required placeholder="Reason"
-           class="rounded border border-rule px-2 py-1 text-sm">
-    <button type="submit" class="rounded border border-rule px-3 py-2 text-sm">
+           class="field text-sm">
+    <button type="submit" class="btn btn--outline btn--small">
       Archive and restart</button>
   </form>
 </section>

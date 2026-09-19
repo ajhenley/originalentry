@@ -23,7 +23,7 @@
 {% endif %}
 
 {% if workspaces %}
-<ul class="mt-6 divide-y divide-rule rounded border border-rule">
+<ul class="mt-6 divide-y divide-rule rounded border border-silver">
   {% for w in workspaces %}
   <li class="flex flex-wrap items-center gap-3 p-4">
     <div class="mr-auto">
@@ -33,13 +33,19 @@
       </a>
       <p class="text-sm text-muted">{{ w.assignment_title }}</p>
     </div>
-    <span class="rounded bg-rule/40 px-2 py-1 text-xs">{{ w.status_label }}</span>
+    <span class="label-meta rounded bg-cloud px-2 py-1">{{ w.status_label }}</span>
   </li>
   {% endfor %}
 </ul>
 {% else %}
-<p class="mt-6 rounded border border-rule p-4 text-muted">
-  You have no workspaces yet. Use a join code from your instructor to get started.
-</p>
+{# An empty screen is an invitation to act, so it carries the way in rather than describing it. #}
+<div class="panel mt-6 p-6">
+  <h2 class="text-2xl">Nothing here yet</h2>
+  <p class="mt-2 max-w-prose text-muted">
+    Your instructor gives out a join code for the section. Enter it and your own set of books
+    opens for every assignment that has started.
+  </p>
+  <a class="btn btn--primary mt-5" href="{{ url_for('student.join') }}">Join with a class code</a>
+</div>
 {% endif %}
 {% endblock %}

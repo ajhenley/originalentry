@@ -246,3 +246,26 @@ def test_a_pack_that_fails_validation_is_refused_with_its_problems(client, secti
     body = response.get_data(as_text=True)
     assert "income_summary" in body
     assert "V5" in body
+
+
+def test_staff_landing_on_the_student_home_are_sent_to_their_console(client, section):
+    """An instructor has no books of their own; telling them to find a join code is no help."""
+    _, _, _, instructor = section
+    client.sign_in(instructor)
+
+    response = client.get("/home")
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/staff/")
+
+
+def test_a_student_with_no_workspaces_is_offered_the_way_in(client, section, session):
+    newcomer = User(email="newcomer@example.edu", given_name="Ada", family_name="Nkemelu")
+    session.add(newcomer)
+    session.flush()
+    client.sign_in(newcomer)
+
+    body = client.get("/home").get_data(as_text=True)
+
+    assert "/join" in body            # the empty screen is an invitation to act
+    assert "join code" in body.lower()

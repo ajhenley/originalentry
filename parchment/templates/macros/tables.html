@@ -2,31 +2,31 @@
    right-aligned with tabular figures. No colour carries correct/incorrect meaning (A7). #}
 
 {% macro trial_balance_table(tb, caption) %}
-<div class="overflow-x-auto rounded border border-rule" role="region" tabindex="0"
+<div class="panel overflow-x-auto" role="region" tabindex="0"
      aria-label="{{ caption }}">
-  <table class="w-full border-collapse text-sm">
-    <caption class="px-3 py-2 text-left font-semibold">{{ caption }}</caption>
+  <table class="data-table">
+    <caption>{{ caption }}</caption>
     <thead>
-      <tr class="border-b border-rule text-muted">
-        <th scope="col" class="text-left font-medium">Account</th>
-        <th scope="col" class="text-right font-medium">Debit</th>
-        <th scope="col" class="text-right font-medium">Credit</th>
+      <tr>
+        <th scope="col" class="text-left">Account</th>
+        <th scope="col" class="text-right">Debit</th>
+        <th scope="col" class="text-right">Credit</th>
       </tr>
     </thead>
     <tbody>
       {% for r in tb.rows %}
-      <tr class="border-b border-rule/60">
+      <tr>
         <td><span class="text-muted">{{ r.account_number }}</span> {{ r.account_name }}</td>
-        <td class="text-right tabular-nums">{% if r.debit_cents %}{{ r.debit_cents | money }}{% endif %}</td>
-        <td class="text-right tabular-nums">{% if r.credit_cents %}{{ r.credit_cents | money }}{% endif %}</td>
+        <td class="figure text-right">{% if r.debit_cents %}{{ r.debit_cents | money }}{% endif %}</td>
+        <td class="figure text-right">{% if r.credit_cents %}{{ r.credit_cents | money }}{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr class="border-t-2 border-ink font-semibold">
+      <tr>
         <th scope="row" class="text-left">Total</th>
-        <td class="text-right tabular-nums">{{ tb.total_debit_cents | money }}</td>
-        <td class="text-right tabular-nums">{{ tb.total_credit_cents | money }}</td>
+        <td class="figure text-right">{{ tb.total_debit_cents | money }}</td>
+        <td class="figure text-right">{{ tb.total_credit_cents | money }}</td>
       </tr>
     </tfoot>
   </table>
@@ -39,23 +39,23 @@
 
 {% macro balance_table(rows, caption) %}
 {# rows: iterable of objects with account_number, account_name, debit_cents, credit_cents #}
-<div class="overflow-x-auto rounded border border-rule" role="region" tabindex="0"
+<div class="panel overflow-x-auto" role="region" tabindex="0"
      aria-label="{{ caption }}">
-  <table class="w-full border-collapse text-sm">
-    <caption class="px-3 py-2 text-left font-semibold">{{ caption }}</caption>
+  <table class="data-table">
+    <caption>{{ caption }}</caption>
     <thead>
-      <tr class="border-b border-rule text-muted">
-        <th scope="col" class="text-left font-medium">Account</th>
-        <th scope="col" class="text-right font-medium">Debit</th>
-        <th scope="col" class="text-right font-medium">Credit</th>
+      <tr>
+        <th scope="col" class="text-left">Account</th>
+        <th scope="col" class="text-right">Debit</th>
+        <th scope="col" class="text-right">Credit</th>
       </tr>
     </thead>
     <tbody>
       {% for r in rows %}
-      <tr class="border-b border-rule/60">
+      <tr>
         <td><span class="text-muted">{{ r.account_number }}</span> {{ r.account_name }}</td>
-        <td class="text-right tabular-nums">{% if r.debit_cents %}{{ r.debit_cents | money }}{% endif %}</td>
-        <td class="text-right tabular-nums">{% if r.credit_cents %}{{ r.credit_cents | money }}{% endif %}</td>
+        <td class="figure text-right">{% if r.debit_cents %}{{ r.debit_cents | money }}{% endif %}</td>
+        <td class="figure text-right">{% if r.credit_cents %}{{ r.credit_cents | money }}{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -65,32 +65,32 @@
 
 
 {% macro subsidiary_proof(proof, caption) %}
-<div class="overflow-x-auto rounded border border-rule" role="region" tabindex="0"
+<div class="panel overflow-x-auto" role="region" tabindex="0"
      aria-label="{{ caption }}">
-  <table class="w-full border-collapse text-sm">
-    <caption class="px-3 py-2 text-left font-semibold">{{ caption }}</caption>
+  <table class="data-table">
+    <caption>{{ caption }}</caption>
     <thead>
-      <tr class="border-b border-rule text-muted">
-        <th scope="col" class="text-left font-medium">Account</th>
-        <th scope="col" class="text-right font-medium">Balance</th>
+      <tr>
+        <th scope="col" class="text-left">Account</th>
+        <th scope="col" class="text-right">Balance</th>
       </tr>
     </thead>
     <tbody>
       {% for r in proof.party_rows %}
-      <tr class="border-b border-rule/60">
+      <tr>
         <td>{{ r.party_name }}</td>
-        <td class="text-right tabular-nums">{{ r.balance_cents | money }}</td>
+        <td class="figure text-right">{{ r.balance_cents | money }}</td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr class="border-t-2 border-ink font-semibold">
+      <tr>
         <th scope="row" class="text-left">Total of the subsidiary ledger</th>
-        <td class="text-right tabular-nums">{{ proof.party_total_cents | money }}</td>
+        <td class="figure text-right">{{ proof.party_total_cents | money }}</td>
       </tr>
       <tr>
         <th scope="row" class="text-left font-normal">Control account balance</th>
-        <td class="text-right tabular-nums">{{ proof.control_balance_cents | money }}</td>
+        <td class="figure text-right">{{ proof.control_balance_cents | money }}</td>
       </tr>
     </tfoot>
   </table>

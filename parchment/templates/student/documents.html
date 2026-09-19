@@ -7,26 +7,26 @@
   needs no entry.
 </p>
 
-<div class="overflow-x-auto rounded border border-rule" role="region" tabindex="0"
+<div class="panel overflow-x-auto" role="region" tabindex="0"
      aria-label="Documents">
-  <table class="w-full border-collapse text-sm">
-    <caption class="px-3 py-2 text-left font-semibold">Source documents, in the order received</caption>
+  <table class="data-table">
+    <caption>Source documents, in the order received</caption>
     <thead>
-      <tr class="border-b border-rule text-muted">
-        <th scope="col" class="text-left font-medium">Document</th>
-        <th scope="col" class="text-left font-medium">Type</th>
-        <th scope="col" class="text-left font-medium">Date</th>
-        <th scope="col" class="text-left font-medium">Handled</th>
+      <tr>
+        <th scope="col" class="text-left">Document</th>
+        <th scope="col" class="text-left">Type</th>
+        <th scope="col" class="text-left">Date</th>
+        <th scope="col" class="text-left">Handled</th>
       </tr>
     </thead>
     <tbody>
       {% for d in documents %}
-      <tr class="border-b border-rule/60">
+      <tr>
         <td>
           <a class="underline"
              href="{{ url_for('student.document', workspace=workspace.public_id,
                               company_slug=company.slug, ref=d.ref) }}">{{ d.display_ref }}</a>
-          {% if d.guided %}<span class="ml-1 rounded bg-rule/40 px-1 text-xs">guided</span>{% endif %}
+          {% if d.guided %}<span class="ml-1 rounded bg-cloud px-1 text-xs">guided</span>{% endif %}
         </td>
         <td>{{ d.doc_type.replace('_', ' ') }}</td>
         <td>{{ d.date.strftime('%b %-d') }}</td>

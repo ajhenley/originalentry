@@ -3,7 +3,7 @@
 
 {% block workspace %}
 {% if submitted %}
-<p class="rounded border border-rule bg-attention/10 p-4 text-sm text-attention" role="status">
+<p class="callout callout--attention" role="status">
   These books have been submitted. Your work is saved and is now read-only.
 </p>
 {% else %}
@@ -23,7 +23,7 @@
         action="{{ url_for('student.submit_confirm', workspace=workspace.public_id,
                            company_slug=company.slug) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="rounded bg-company px-4 py-2 text-paper">Submit my work</button>
+    <button type="submit" class="btn btn--primary">Submit my work</button>
   </form>
 </div>
 {% endif %}

@@ -7,20 +7,20 @@
   keep working and stay gradable.
 </p>
 
-<div class="overflow-x-auto rounded border border-rule" role="region" tabindex="0"
+<div class="panel overflow-x-auto" role="region" tabindex="0"
      aria-label="Company availability">
-  <table class="w-full border-collapse text-sm">
-    <caption class="px-3 py-2 text-left font-semibold">Catalogue</caption>
+  <table class="data-table">
+    <caption>Catalogue</caption>
     <thead>
-      <tr class="border-b border-rule text-muted">
-        <th scope="col" class="text-left font-medium">Company</th>
-        <th scope="col" class="text-left font-medium">Available</th>
-        <th scope="col" class="text-left font-medium">Change</th>
+      <tr>
+        <th scope="col" class="text-left">Company</th>
+        <th scope="col" class="text-left">Available</th>
+        <th scope="col" class="text-left">Change</th>
       </tr>
     </thead>
     <tbody>
       {% for p in packs %}
-      <tr class="border-b border-rule/60">
+      <tr>
         <td>{{ p.name }}</td>
         <td>{{ "Yes" if p.available else "No" }}</td>
         <td>
@@ -29,7 +29,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="content_pack_id" value="{{ p.id }}">
             <input type="hidden" name="available" value="{{ '0' if p.available else '1' }}">
-            <button type="submit" class="rounded border border-rule px-2 py-1 text-xs">
+            <button type="submit" class="btn btn--outline btn--small">
               {{ "Withdraw" if p.available else "Make available" }}</button>
           </form>
         </td>

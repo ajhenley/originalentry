@@ -3,31 +3,31 @@
 
 {% block console %}
 <p class="mb-4">
-  <a class="rounded bg-ink px-3 py-2 text-sm text-paper"
+  <a class="btn btn--secondary btn--small"
      href="{{ url_for('staff.assignment_new') }}">New assignment</a>
 </p>
 
 {% if not assignments %}
 <p class="text-muted">No assignments yet.</p>
 {% else %}
-<div class="overflow-x-auto rounded border border-rule" role="region" aria-label="Assignments"
+<div class="panel overflow-x-auto" role="region" aria-label="Assignments"
      tabindex="0">
-  <table class="w-full border-collapse text-sm">
-    <caption class="px-3 py-2 text-left font-semibold">Assignments and their sections</caption>
+  <table class="data-table">
+    <caption>Assignments and their sections</caption>
     <thead>
-      <tr class="border-b border-rule text-muted">
-        <th scope="col" class="text-left font-medium">Assignment</th>
-        <th scope="col" class="text-left font-medium">Section</th>
-        <th scope="col" class="text-left font-medium">Join code</th>
-        <th scope="col" class="text-left font-medium">Company</th>
-        <th scope="col" class="text-left font-medium">Documents</th>
-        <th scope="col" class="text-right font-medium">Students</th>
-        <th scope="col" class="text-left font-medium">Screens</th>
+      <tr>
+        <th scope="col" class="text-left">Assignment</th>
+        <th scope="col" class="text-left">Section</th>
+        <th scope="col" class="text-left">Join code</th>
+        <th scope="col" class="text-left">Company</th>
+        <th scope="col" class="text-left">Documents</th>
+        <th scope="col" class="text-right">Students</th>
+        <th scope="col" class="text-left">Screens</th>
       </tr>
     </thead>
     <tbody>
       {% for a in assignments %}
-      <tr class="border-b border-rule/60">
+      <tr>
         <th scope="row" class="text-left font-normal">
           <a class="underline" href="{{ url_for('staff.progress', assignment=a.public_id) }}">{{ a.title }}</a>
         </th>
@@ -35,7 +35,7 @@
         <td class="font-mono tracking-widest">{{ a.join_code }}</td>
         <td>{{ a.company_name }}</td>
         <td>{{ a.mode }}</td>
-        <td class="text-right tabular-nums">{{ a.students }}</td>
+        <td class="figure text-right">{{ a.students }}</td>
         <td class="text-xs">
           <a class="underline" href="{{ url_for('staff.grading', assignment=a.public_id) }}">Grading</a>
           ·
@@ -45,8 +45,8 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label class="sr-only" for="shift-{{ a.public_id }}">Move dates by, in days</label>
             <input id="shift-{{ a.public_id }}" name="shift_days" inputmode="numeric" value="364"
-                   class="w-16 rounded border border-rule px-1 py-0.5 text-right tabular-nums">
-            <button type="submit" class="rounded border border-rule px-2 py-0.5">Clone</button>
+                   class="w-16 field figure text-right">
+            <button type="submit" class="btn btn--outline btn--small">Clone</button>
           </form>
         </td>
       </tr>

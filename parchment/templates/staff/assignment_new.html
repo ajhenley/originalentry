@@ -5,7 +5,7 @@
 
 {% block console %}
 {% if errors %}
-<div class="mb-4 rounded border border-attention/40 bg-attention/10 p-3 text-sm text-attention"
+<div class="callout callout--attention mb-4"
      role="alert">
   <p class="font-semibold">This assignment was not made. Nothing you typed is lost.</p>
   <ul class="mt-1 list-disc pl-5">
@@ -18,7 +18,7 @@
       action="{{ url_for('staff.assignment_create') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  <fieldset class="rounded border border-rule p-4">
+  <fieldset class="panel p-4">
     <legend class="px-1 text-sm font-semibold">Section</legend>
     <div class="space-y-2">
       <label class="flex items-center gap-2 text-sm">
@@ -26,7 +26,7 @@
         Use an existing section
       </label>
       <label class="sr-only" for="section_id">Existing section</label>
-      <select id="section_id" name="section_id" class="w-full rounded border border-rule px-2 py-1">
+      <select id="section_id" name="section_id" class="field">
         <option value="">— choose a section —</option>
         {% for section in sections %}
         <option value="{{ section.id }}">{{ section.name }} ({{ section.term }})</option>
@@ -42,25 +42,25 @@
           <label class="block text-xs text-muted" for="section_name">Name</label>
           <input id="section_name" name="section_name" type="text" placeholder="ACCT 1010-02"
                  value="{{ values.get('section_name', '') }}"
-                 class="w-full rounded border border-rule px-2 py-1">
+                 class="field">
         </div>
         <div class="flex-1">
           <label class="block text-xs text-muted" for="section_term">Term</label>
           <input id="section_term" name="section_term" type="text" placeholder="Fall 2026"
                  value="{{ values.get('section_term', '') }}"
-                 class="w-full rounded border border-rule px-2 py-1">
+                 class="field">
         </div>
       </div>
     </div>
   </fieldset>
 
   <div>
-    <label class="block text-sm font-medium" for="title">Title</label>
+    <label class="field-label" for="title">Title</label>
     <input id="title" name="title" type="text" value="{{ values.get('title', '') }}"
-           class="mt-1 w-full rounded border border-rule px-2 py-1">
+           class="field mt-1">
   </div>
 
-  <fieldset class="rounded border border-rule p-4">
+  <fieldset class="panel p-4">
     <legend class="px-1 text-sm font-semibold">Company</legend>
     <label class="flex items-center gap-2 text-sm">
       <input type="radio" name="company_policy" value="fixed" checked>
@@ -68,7 +68,7 @@
     </label>
     <label class="sr-only" for="pack_version_id">Company</label>
     <select id="pack_version_id" name="pack_version_id"
-            class="mt-1 w-full rounded border border-rule px-2 py-1">
+            class="field mt-1">
       <option value="">— choose a company —</option>
       {% for entry in catalogue %}
       <option value="{{ entry.id }}">{{ entry.label }}</option>
@@ -91,16 +91,16 @@
 
   <div class="flex flex-wrap gap-4">
     <div>
-      <label class="block text-sm font-medium" for="mode">Documents</label>
-      <select id="mode" name="mode" class="mt-1 rounded border border-rule px-2 py-1">
+      <label class="field-label" for="mode">Documents</label>
+      <select id="mode" name="mode" class="field mt-1 w-auto">
         <option value="paper">On paper</option>
         <option value="screen">On screen</option>
       </select>
     </div>
     <div>
-      <label class="block text-sm font-medium" for="variant_policy">Variants</label>
+      <label class="field-label" for="variant_policy">Variants</label>
       <select id="variant_policy" name="variant_policy"
-              class="mt-1 rounded border border-rule px-2 py-1">
+              class="field mt-1 w-auto">
         <option value="round_robin">In turn</option>
         <option value="random">At random</option>
         <option value="manual">I will assign them</option>
@@ -110,36 +110,36 @@
 
   <div class="flex flex-wrap gap-4">
     <div>
-      <label class="block text-sm font-medium" for="opens_at">Opens</label>
+      <label class="field-label" for="opens_at">Opens</label>
       <input id="opens_at" name="opens_at" type="datetime-local"
              value="{{ values.get('opens_at', '') }}"
-             class="mt-1 rounded border border-rule px-2 py-1">
+             class="field mt-1 w-auto">
     </div>
     <div>
-      <label class="block text-sm font-medium" for="due_at">Due</label>
+      <label class="field-label" for="due_at">Due</label>
       <input id="due_at" name="due_at" type="datetime-local" value="{{ values.get('due_at', '') }}"
-             class="mt-1 rounded border border-rule px-2 py-1">
+             class="field mt-1 w-auto">
     </div>
     <div>
-      <label class="block text-sm font-medium" for="late_policy">Late work</label>
-      <select id="late_policy" name="late_policy" class="mt-1 rounded border border-rule px-2 py-1">
+      <label class="field-label" for="late_policy">Late work</label>
+      <select id="late_policy" name="late_policy" class="field mt-1 w-auto">
         <option value="closed">Writing stops at the due date</option>
         <option value="accept_late">Accept it until a cut-off</option>
       </select>
     </div>
     <div>
-      <label class="block text-sm font-medium" for="late_until">Cut-off</label>
+      <label class="field-label" for="late_until">Cut-off</label>
       <input id="late_until" name="late_until" type="datetime-local"
              value="{{ values.get('late_until', '') }}"
-             class="mt-1 rounded border border-rule px-2 py-1">
+             class="field mt-1 w-auto">
     </div>
   </div>
 
   <p class="text-xs text-muted">Times are read in the course's time zone.</p>
 
   <div class="flex gap-2">
-    <button type="submit" class="rounded bg-ink px-4 py-2 text-sm text-paper">Make the assignment</button>
-    <a class="rounded border border-rule px-4 py-2 text-sm" href="{{ url_for('staff.index') }}">Cancel</a>
+    <button type="submit" class="btn btn--secondary">Make the assignment</button>
+    <a class="btn btn--outline btn--small" href="{{ url_for('staff.index') }}">Cancel</a>
   </div>
 </form>
 {% endblock %}

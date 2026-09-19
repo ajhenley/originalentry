@@ -11,7 +11,7 @@
 
 {% block workspace %}
 {% if errors %}
-<div class="mb-4 rounded border border-attention/40 bg-attention/10 p-3 text-sm text-attention"
+<div class="callout callout--attention mb-4"
      role="alert">
   <p class="font-semibold">This statement was not saved. Your rows are still here.</p>
   <ul class="mt-1 list-disc pl-5">
@@ -28,44 +28,44 @@
 
     <div class="flex flex-wrap gap-4">
       <div class="min-w-64 flex-1">
-        <label for="header-title" class="block text-sm font-medium">Statement title</label>
+        <label for="header-title" class="field-label">Statement title</label>
         <input id="header-title" name="header-title" type="text"
                value="{{ header.get('title', statement.title) }}"
-               class="mt-1 w-full rounded border border-rule px-2 py-1">
+               class="field mt-1">
       </div>
       <div class="min-w-64 flex-1">
-        <label for="header-period" class="block text-sm font-medium">Period line</label>
+        <label for="header-period" class="field-label">Period line</label>
         <input id="header-period" name="header-period" type="text"
                placeholder="For the Month Ended December 31, 2026"
                value="{{ header.get('period', '') }}"
-               class="mt-1 w-full rounded border border-rule px-2 py-1">
+               class="field mt-1">
       </div>
     </div>
 
-    <div class="overflow-x-auto rounded border border-rule">
-      <table class="w-full border-collapse text-sm">
-        <caption class="px-3 py-2 text-left font-semibold">
+    <div class="panel overflow-x-auto">
+      <table class="data-table">
+        <caption>
           {{ statement.title }} — your rows
         </caption>
         <thead>
-          <tr class="border-b border-rule text-muted">
-            <th scope="col" class="text-left font-medium">Row</th>
-            <th scope="col" class="text-left font-medium">Kind</th>
-            <th scope="col" class="text-left font-medium">Account or subtotal</th>
-            <th scope="col" class="text-left font-medium">Heading text</th>
-            <th scope="col" class="text-left font-medium">Indent</th>
-            <th scope="col" class="text-right font-medium">Figure</th>
+          <tr>
+            <th scope="col" class="text-left">Row</th>
+            <th scope="col" class="text-left">Kind</th>
+            <th scope="col" class="text-left">Account or subtotal</th>
+            <th scope="col" class="text-left">Heading text</th>
+            <th scope="col" class="text-left">Indent</th>
+            <th scope="col" class="text-right">Figure</th>
           </tr>
         </thead>
         <tbody>
           {% for i in range(rows | length + blank_rows) %}
           {% set row = rows[i] if i < (rows | length) else none %}
-          <tr class="border-b border-rule/60 align-top">
+          <tr class="align-top">
             <td class="text-muted">{{ i + 1 }}</td>
             <td>
               <label class="sr-only" for="row-{{ i }}-kind">Row {{ i + 1 }}, kind</label>
               <select id="row-{{ i }}-kind" name="row-{{ i }}-kind"
-                      class="w-full rounded border border-rule px-2 py-1">
+                      class="field">
                 <option value="">—</option>
                 {% for k in [('heading', 'Heading'), ('account', 'Account'),
                              ('subtotal', 'Subtotal'), ('total', 'Total'), ('blank', 'Blank')] %}
@@ -77,7 +77,7 @@
             <td>
               <label class="sr-only" for="row-{{ i }}-account">Row {{ i + 1 }}, account</label>
               <select id="row-{{ i }}-account" name="row-{{ i }}-account"
-                      class="w-full rounded border border-rule px-2 py-1">
+                      class="field">
                 <option value="">— account —</option>
                 {% for a in accounts %}
                 <option value="{{ a.number }}"
@@ -88,7 +88,7 @@
               <label class="sr-only" for="row-{{ i }}-subtotal_type">
                 Row {{ i + 1 }}, subtotal</label>
               <select id="row-{{ i }}-subtotal_type" name="row-{{ i }}-subtotal_type"
-                      class="mt-1 w-full rounded border border-rule px-2 py-1">
+                      class="field mt-1">
                 <option value="">— subtotal —</option>
                 {% for s in statement.subtotal_types %}
                 <option value="{{ s.key }}"
@@ -107,7 +107,7 @@
               <label class="sr-only" for="row-{{ i }}-label">Row {{ i + 1 }}, heading text</label>
               <input id="row-{{ i }}-label" name="row-{{ i }}-label" type="text"
                      value="{{ row.label if row and row.label else '' }}"
-                     class="w-full rounded border border-rule px-2 py-1">
+                     class="field">
               {% if errors.get('row-' ~ i ~ '-label') %}
               <p class="mt-1 text-xs text-attention">{{ errors.get('row-' ~ i ~ '-label') }}</p>
               {% endif %}
@@ -115,7 +115,7 @@
             <td>
               <label class="sr-only" for="row-{{ i }}-indent">Row {{ i + 1 }}, indent</label>
               <select id="row-{{ i }}-indent" name="row-{{ i }}-indent"
-                      class="rounded border border-rule px-2 py-1">
+                      class="btn btn--outline btn--small">
                 {% for n in [0, 1, 2] %}
                 <option value="{{ n }}"
                   {% if row and row.indent == n %}selected{% endif %}>{{ n }}</option>
@@ -126,7 +126,7 @@
               <label class="sr-only" for="row-{{ i }}-amount">Row {{ i + 1 }}, figure</label>
               <input id="row-{{ i }}-amount" name="row-{{ i }}-amount" inputmode="decimal"
                      value="{{ row.amount if row else '' }}"
-                     class="w-32 rounded border border-rule px-2 py-1 text-right tabular-nums">
+                     class="field field--figure w-32">
               {% if errors.get('row-' ~ i ~ '-amount') %}
               <p class="mt-1 text-xs text-attention">{{ errors.get('row-' ~ i ~ '-amount') }}</p>
               {% endif %}
@@ -144,10 +144,10 @@
 
     {% if not read_only %}
     <div class="flex flex-wrap gap-2">
-      <button type="submit" class="rounded bg-company px-4 py-2 text-paper">Save statement</button>
+      <button type="submit" class="btn btn--primary">Save statement</button>
       <button type="submit" name="add_rows" value="5"
-              class="rounded border border-rule px-4 py-2">Add rows</button>
-      <a class="rounded border border-rule px-4 py-2"
+              class="btn btn--outline">Add rows</button>
+      <a class="btn btn--outline"
          href="{{ url_for('student.statements', workspace=workspace.public_id,
                           company_slug=company.slug) }}">Back to statements</a>
     </div>
@@ -159,20 +159,20 @@
     <p class="mb-2 text-xs text-muted">
       These come from your own ledgers. Copy across whatever this statement needs.
     </p>
-    <div class="overflow-x-auto rounded border border-rule">
-      <table class="w-full border-collapse text-sm">
+    <div class="panel overflow-x-auto">
+      <table class="data-table">
         <caption class="sr-only">Your adjusted account balances</caption>
         <thead>
-          <tr class="border-b border-rule text-muted">
-            <th scope="col" class="text-left font-medium">Account</th>
-            <th scope="col" class="text-right font-medium">Balance</th>
+          <tr>
+            <th scope="col" class="text-left">Account</th>
+            <th scope="col" class="text-right">Balance</th>
           </tr>
         </thead>
         <tbody>
           {% for f in figures %}
-          <tr class="border-b border-rule/60">
+          <tr>
             <th scope="row" class="text-left font-normal">{{ f.number }} · {{ f.name }}</th>
-            <td class="text-right tabular-nums">
+            <td class="figure text-right">
               {{ f.amount_cents | abs | money }} {{ 'Dr' if f.amount_cents > 0 else 'Cr' }}
             </td>
           </tr>

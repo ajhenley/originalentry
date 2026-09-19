@@ -9,24 +9,26 @@
 {% block chrome %}
 <style nonce="{{ csp_nonce }}">:root { --company-accent: {{ company.accent_hex }}; }</style>
 
-<header>
+<header class="bg-navy text-paper">
+  {# The company's own colour is the one thing that is not navy: it is how a student knows whose
+     books they are in at a glance (M3.2). #}
   <div class="h-1.5 bg-company"></div>
   <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-4 px-4 py-3">
     <span aria-hidden="true"
-          class="grid h-9 w-9 place-items-center rounded bg-company text-sm font-semibold text-paper">
+          class="grid h-10 w-10 place-items-center rounded bg-company font-display text-base text-paper">
       {{ company.monogram }}
     </span>
     <div class="mr-auto">
-      <p class="font-semibold leading-tight">{{ company.name }}</p>
-      <p class="text-sm text-muted leading-tight">{{ company.period_label }}</p>
+      <p class="font-display text-lg leading-tight text-paper">{{ company.name }}</p>
+      <p class="label-meta leading-tight text-paper/70">{{ company.period_label }}</p>
     </div>
     {% if switch_targets %}
     <details class="relative text-sm">
-      <summary class="cursor-pointer rounded border border-rule px-2 py-1 list-none">Switch company</summary>
-      <ul class="absolute right-0 z-10 mt-1 min-w-48 rounded border border-rule bg-paper shadow">
+      <summary class="nav-link cursor-pointer list-none border border-paper/25">Switch company</summary>
+      <ul class="panel absolute right-0 z-10 mt-1 min-w-48 overflow-hidden text-ink shadow-lg">
         {% for t in switch_targets %}
         <li>
-          <a class="block px-3 py-2 hover:bg-rule/40"
+          <a class="block px-3 py-2 hover:bg-cloud"
              href="{{ url_for('student.overview', workspace=t.public_id, company_slug=t.slug) }}">
             {{ t.name }}</a>
         </li>
@@ -49,28 +51,25 @@
           {'href': url_for('student.marks', workspace=ws, company_slug=slug), 'label': 'Marks'},
           {'href': url_for('student.print_record', workspace=ws, company_slug=slug), 'label': 'Print'}
         ] %}
-      <a href="{{ item.href }}"
-         class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == item.href %}bg-rule/50 font-semibold{% endif %}"
+      <a href="{{ item.href }}" class="nav-link"
          {% if request.path == item.href %}aria-current="page"{% endif %}>{{ item.label }}</a>
       {% endfor %}
       {% for kind in company.subsidiary_kinds %}
       {% set href = url_for('student.subsidiary', workspace=ws, company_slug=slug, kind=kind) %}
-      <a href="{{ href }}"
-         class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == href %}bg-rule/50 font-semibold{% endif %}"
+      <a href="{{ href }}" class="nav-link"
          {% if request.path == href %}aria-current="page"{% endif %}>{{ kind | kind_label }}</a>
       {% endfor %}
     </nav>
   </div>
 
   {% if read_only %}
-  <div class="border-y border-rule bg-attention/10 px-4 py-2 text-sm text-attention" role="status">
-    {{ read_only_message }}
-  </div>
+  <div class="callout callout--attention rounded-none border-l-0 border-t border-t-amber px-4 py-2"
+       role="status">{{ read_only_message }}</div>
   {% endif %}
 </header>
 {% endblock %}
 
 {% block main %}
-  <h1 class="mb-4 text-xl font-semibold">{% block heading %}{% endblock %}</h1>
+  <h1 class="mb-5 text-3xl">{% block heading %}{% endblock %}</h1>
   {% block workspace %}{% endblock %}
 {% endblock %}

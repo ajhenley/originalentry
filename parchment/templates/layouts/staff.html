@@ -1,27 +1,26 @@
 {# The instructor's console (I1–I5): five screens, no settings page. Plain chrome on purpose —
-   nothing here competes with the company colour a student's workspace carries. #}
+   the chrome is navy with a teal rule, so it never reads as any one company's books. #}
 {% extends "base.html" %}
 
 {% block title %}{{ self.heading() }} · Parchment{% endblock %}
 
 {% block chrome %}
-<header class="border-b border-rule">
+<header class="bg-navy text-paper">
+  <div class="h-1.5 bg-teal"></div>
   <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
-    <p class="mr-auto font-semibold">Parchment · console</p>
-    <nav aria-label="Console" class="flex flex-wrap gap-1 text-sm">
-      <a href="{{ url_for('staff.index') }}"
-         class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == url_for('staff.index') %}bg-rule/50 font-semibold{% endif %}"
+    <p class="mr-auto font-display text-lg">Parchment <span class="label-meta text-paper/60">console</span></p>
+    <nav aria-label="Console" class="flex flex-wrap gap-1">
+      <a href="{{ url_for('staff.index') }}" class="nav-link"
          {% if request.path == url_for('staff.index') %}aria-current="page"{% endif %}>Assignments</a>
-      <a href="{{ url_for('staff.catalogue') }}"
-         class="rounded px-2 py-1 hover:bg-rule/40 {% if request.path == url_for('staff.catalogue') %}bg-rule/50 font-semibold{% endif %}"
+      <a href="{{ url_for('staff.catalogue') }}" class="nav-link"
          {% if request.path == url_for('staff.catalogue') %}aria-current="page"{% endif %}>Catalogue</a>
-      <a href="{{ url_for('auth.sign_out') }}" class="rounded px-2 py-1 hover:bg-rule/40">Sign out</a>
+      <a href="{{ url_for('auth.sign_out') }}" class="nav-link">Sign out</a>
     </nav>
   </div>
 </header>
 {% endblock %}
 
 {% block main %}
-  <h1 class="mb-4 text-xl font-semibold">{% block heading %}{% endblock %}</h1>
+  <h1 class="mb-5 text-3xl">{% block heading %}{% endblock %}</h1>
   {% block console %}{% endblock %}
 {% endblock %}

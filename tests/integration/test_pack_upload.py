@@ -97,7 +97,11 @@ def test_a_pack_that_fails_a_rule_is_refused_with_every_problem_named(session, i
         import_pack_zip(session, _zip(broken), actor=instructor)
 
     assert any(problem.rule == "V5" for problem in refused.value.problems)
-    assert session.execute(select(func.count()).select_from(PackVersion)).scalar_one() == 0
+    # Nothing was written for *this* pack. The count is scoped rather than global, because the
+    # database a developer runs against may hold other companies already.
+    assert session.scalars(
+        select(ContentPack).where(ContentPack.slug == broken["company"]["slug"])
+    ).one_or_none() is None
 
 
 def test_a_pack_whose_key_does_not_replay_is_refused(session, instructor):

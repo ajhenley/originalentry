@@ -93,6 +93,12 @@ flask db upgrade
 
 ### Student experience
 - [x] Tailwind v4 (standalone CLI, pinned + checksummed; committed `dist/app.css`, A29)
+- [x] **The CityReady look** (`cityready-design-doc/design.html`): navy chrome, teal actions, amber
+      for the states a student must notice, cream page and white panels; DM Serif Display for
+      headings, Outfit for the interface, JetBrains Mono for labels and every figure — which is
+      also what makes a ledger's columns line up. The faces are served from the app, not a font
+      CDN. Where a colour of theirs could not carry text at 4.5:1 it was darkened, because the
+      same document asks for WCAG 2.1 AA
 - [x] Templates: base shell, workspace layout (company chrome, nonce'd accent), auth layout, macros
 - [x] `decorators.workspace_view` (T3.3): sign-in, load-excluding-archived, 404-not-403,
       company-slug mismatch page

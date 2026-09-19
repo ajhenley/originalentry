@@ -6,7 +6,7 @@
 <h1 class="text-lg font-semibold">Join your section</h1>
 
 {% for message in get_flashed_messages() %}
-<p class="mt-3 rounded bg-attention/10 px-3 py-2 text-sm text-attention" role="status">{{ message }}</p>
+<p class="callout callout--attention mt-3" role="status">{{ message }}</p>
 {% endfor %}
 
 <p class="mt-3 text-sm text-muted">
@@ -16,10 +16,10 @@
 <form method="post" action="{{ url_for('student.join') }}" class="mt-4 space-y-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div>
-    <label class="block text-sm font-medium" for="code">Join code</label>
+    <label class="field-label" for="code">Join code</label>
     <input id="code" name="code" type="text" required autocomplete="off" spellcheck="false"
-           class="mt-1 w-full rounded border border-rule px-3 py-2 uppercase tracking-widest">
+           class="mt-1 w-full field uppercase tracking-widest">
   </div>
-  <button type="submit" class="rounded bg-company px-4 py-2 text-paper">Join</button>
+  <button type="submit" class="btn btn--primary">Join</button>
 </form>
 {% endblock %}

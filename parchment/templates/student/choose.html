@@ -9,9 +9,9 @@
 {% if options %}
 <div class="mt-6 grid gap-4 sm:grid-cols-2">
   {% for o in options %}
-  <div class="flex items-center gap-3 rounded border border-rule p-4">
+  <div class="flex items-center gap-3 panel p-4">
     <span aria-hidden="true"
-          class="grid h-10 w-10 place-items-center rounded bg-rule/50 text-sm font-semibold">
+          class="grid h-10 w-10 place-items-center rounded bg-cloud text-sm font-semibold">
       {{ o.monogram }}
     </span>
     <div class="mr-auto">
@@ -25,14 +25,14 @@
           action="{{ url_for('student.choose_submit', assignment=assignment.public_id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="pack_version_id" value="{{ o.pack_version_id }}">
-      <button type="submit" class="rounded bg-company px-3 py-2 text-sm text-paper">Choose</button>
+      <button type="submit" class="btn btn--primary btn--small">Choose</button>
     </form>
     {% endif %}
   </div>
   {% endfor %}
 </div>
 {% else %}
-<p class="mt-6 rounded border border-rule p-4 text-muted">
+<p class="mt-6 panel p-4 text-muted">
   No companies are offered yet. Check back when your instructor says.
 </p>
 {% endif %}

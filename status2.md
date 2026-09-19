@@ -194,6 +194,8 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | Pack schema, validation, zip import | ✅ | W1 outstanding |
 | Document images | ✅ | In Postgres, behind an authorised route |
 | Tailwind build, committed CSS | ✅ | No Node at deploy time |
+| **CityReady design system** | ✅ | Navy chrome, teal actions, amber states; DM Serif Display / Outfit / JetBrains Mono, self-hosted; named component classes (`.panel`, `.data-table`, `.btn`, `.field`, `.callout`, `.nav-link`) rather than repeated utility strings |
+| Contrast | ✅ | Every text pairing holds 4.5:1; teal carries text only in its deeper shade (5.16:1) |
 | `zoom.js` | ✅ | The only JavaScript so far |
 | `save.js` | ✅ | The no-loss protocol, with its decisions under `node --test` |
 | `entry-grid.js`, `picker.js`, `batch.js` | ⬜ | S3.4, S3.6 and batched grading wait on these |

@@ -2,7 +2,7 @@
 {% block heading %}Journals{% endblock %}
 
 {% block workspace %}
-<ul class="divide-y divide-rule rounded border border-rule">
+<ul class="divide-y divide-rule rounded border border-silver">
   {% for j in journals %}
   <li class="flex flex-wrap items-center gap-3 p-4">
     <div class="mr-auto">
@@ -15,7 +15,7 @@
       </p>
     </div>
     {% if not read_only %}
-    <a class="rounded border border-rule px-3 py-1 text-sm"
+    <a class="btn btn--outline btn--small"
        href="{{ url_for('student.entry_new', workspace=workspace.public_id,
                         company_slug=company.slug, key=j.key) }}">Record entry</a>
     {% endif %}

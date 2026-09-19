@@ -15,43 +15,43 @@
   These are the marks awarded for each part of the work, and what each one was awarded for.
 </p>
 
-<div class="overflow-x-auto rounded border border-rule" role="region"
+<div class="panel overflow-x-auto" role="region"
      aria-label="Marks by component" tabindex="0">
-  <table class="w-full border-collapse text-sm">
-    <caption class="px-3 py-2 text-left font-semibold">Marks awarded</caption>
+  <table class="data-table">
+    <caption>Marks awarded</caption>
     <thead>
-      <tr class="border-b border-rule text-muted">
-        <th scope="col" class="text-left font-medium">Part of the work</th>
-        <th scope="col" class="text-right font-medium">Awarded</th>
-        <th scope="col" class="text-right font-medium">Out of</th>
+      <tr>
+        <th scope="col" class="text-left">Part of the work</th>
+        <th scope="col" class="text-right">Awarded</th>
+        <th scope="col" class="text-right">Out of</th>
       </tr>
     </thead>
     <tbody>
       {% for component in marks.components %}
-      <tr class="border-b border-rule/60">
+      <tr>
         <th scope="row" class="text-left font-normal">
           {{ component.label }}
           {% if component.overridden and component.reason %}
           <span class="block text-xs text-muted">Marked by your instructor: {{ component.reason }}</span>
           {% endif %}
         </th>
-        <td class="text-right tabular-nums">{{ '%.1f' | format(component.points) }}</td>
-        <td class="text-right tabular-nums">{{ '%.1f' | format(component.max_points) }}</td>
+        <td class="figure text-right">{{ '%.1f' | format(component.points) }}</td>
+        <td class="figure text-right">{{ '%.1f' | format(component.max_points) }}</td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr class="border-t-2 border-ink font-semibold">
+      <tr>
         <th scope="row" class="text-left">Total</th>
-        <td class="text-right tabular-nums">{{ '%.1f' | format(marks.total_points) }}</td>
-        <td class="text-right tabular-nums">of {{ '%.0f' | format(marks.max_points) }}</td>
+        <td class="figure text-right">{{ '%.1f' | format(marks.total_points) }}</td>
+        <td class="figure text-right">of {{ '%.0f' | format(marks.max_points) }}</td>
       </tr>
     </tfoot>
   </table>
 </div>
 
 {% if marks.comment %}
-<section class="mt-6 max-w-prose rounded border border-rule p-4" aria-labelledby="comment">
+<section class="mt-6 max-w-prose panel p-4" aria-labelledby="comment">
   <h2 id="comment" class="mb-1 text-sm font-semibold">From your instructor</h2>
   <p class="text-sm">{{ marks.comment }}</p>
 </section>

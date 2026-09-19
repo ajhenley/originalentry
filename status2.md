@@ -20,7 +20,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | 3 | Documents and triage, both modes | ✅ | — |
 | 4 | Trial balances, adjustments, statements, closing | 🟡 | Worksheet (cut list #1), row reordering, stage gating |
 | 5 | Grading engine and storage | ✅ | — |
-| 6 | Instructor console | 🟡 | Accommodations, checkpoint deadlines, roster import, exports beyond the cohort CSV |
+| 6 | Instructor console | 🟡 | Checkpoint deadlines, roster import, answer-key print |
 | 7 | Multi-company | 🟡 | Schema and catalogue done; per-section availability and the student switcher are not |
 | 8 | Accessibility pass, failure handling, deploy | ⬜ | None of it |
 
@@ -91,7 +91,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | I1.8 | Enable / disable / archive per section | ⬜ | Needs `section_pack_availability` |
 | I1.9 | Choose companies for a student-choice assignment | ⬜ | |
 | I1.10 | Catalogue view | ✅ | Versions, period, scope, workspaces per version |
-| I1.11 | Per-student accommodations | ⬜ | Table designed, not built |
+| I1.11 | Per-student accommodations | ✅ | Their own deadline, set and withdrawn from Progress, with the reason recorded |
 | I1.12 | Clear or archive a workspace | ⬜ | |
 | I1.13 | Late policy per assignment | ✅ | |
 | I2.1 | One row per student: stage, documents, journals, activity | ✅ | Six bulk queries |
@@ -234,7 +234,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | --- | --- |
 | `user`, `section`, `enrollment`, `staff_action` | `login_token` (waits on auth) |
 | `content_pack`, `pack_version`, `variant`, `account`, `party`, `source_document`, `answer_key`, `account_opening_balance`, `party_opening_balance`, `pack_asset` | — |
-| `assignment`, `workspace`, `disposition`, `journal_entry`, `journal_entry_revision`, `entry_line`, `posting_run`, `posting_run_entry` | `assignment_choice`, `assignment_checkpoint`, `assignment_override`, `section_pack_availability` |
+| `assignment`, `workspace`, `disposition`, `journal_entry`, `journal_entry_revision`, `entry_line`, `posting_run`, `posting_run_entry` | `assignment_checkpoint` |
 | `statement_draft`, `statement_line`, `checkpoint_attempt`, `activity_event` | `worksheet_cell`, `checkpoint_grant` |
 | `grade_run`, `grade_override`, `grade_comment` | — |
 

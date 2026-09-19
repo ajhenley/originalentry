@@ -33,7 +33,11 @@ def _now() -> datetime:
 
 
 def effective_close(assignment: Assignment) -> datetime | None:
-    """When writes stop for this assignment (accommodations land with the staff console)."""
+    """When writes stop for a section, before anyone's accommodation is considered.
+
+    Callers that know the student should ask ``accommodations.close_for`` instead: a student with
+    extended time is held to their own deadline (I1.11).
+    """
     if assignment.late_policy == LATE_ACCEPT and assignment.late_until:
         return assignment.late_until
     return assignment.due_at
@@ -47,8 +51,11 @@ def _check_gates(session: Session, workspace: Workspace, actor) -> None:
         raise WriteRefused(messages.READ_ONLY_SUBMITTED)
     if workspace.variant_id is None:
         raise WriteRefused(messages.READ_ONLY_SUBMITTED)
-    assignment = session.get(Assignment, workspace.assignment_id)
-    close = effective_close(assignment) if assignment else None
+    # Local import: accommodations reads the write path's own rules, so importing it at module
+    # level would be circular.
+    from .accommodations import close_for
+
+    close = close_for(session, workspace)
     if close is not None and _now() >= close:
         raise WriteRefused(messages.READ_ONLY_CLOSED)
 

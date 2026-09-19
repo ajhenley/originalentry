@@ -22,6 +22,7 @@
         <th scope="col" class="text-left">Handed in</th>
         <th scope="col" class="text-left">Last activity</th>
         <th scope="col" class="text-left">Needs a word about</th>
+        <th scope="col" class="text-left">Their deadline</th>
       </tr>
     </thead>
     <tbody>
@@ -58,6 +59,33 @@
           </span>
           {% endif %}
           {% if not row.locked_checkpoints and not row.last_refused %}—{% endif %}
+        </td>
+        <td class="text-xs">
+          {% if row.accommodation %}
+          <span class="block font-medium text-amber-deep">Extended</span>
+          <span class="block">{{ (row.accommodation.late_until or row.accommodation.due_at).strftime('%-d %b %H:%M') }}</span>
+          <span class="block text-muted">{{ row.accommodation.reason }}</span>
+          {% endif %}
+          <details class="mt-1">
+            <summary class="cursor-pointer underline">
+              {% if row.accommodation %}Change{% else %}Give extra time{% endif %}</summary>
+            <form method="post" class="mt-2 space-y-1"
+                  action="{{ url_for('staff.progress_accommodation', assignment=assignment.public_id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="workspace" value="{{ row.workspace_public_id }}">
+              <label class="sr-only" for="due-{{ row.workspace_public_id }}">New deadline</label>
+              <input id="due-{{ row.workspace_public_id }}" name="due_at" type="datetime-local"
+                     class="field">
+              <label class="sr-only" for="why-{{ row.workspace_public_id }}">Reason</label>
+              <input id="why-{{ row.workspace_public_id }}" name="reason" type="text"
+                     placeholder="Reason" class="field">
+              <button type="submit" class="btn btn--outline btn--small">Save</button>
+              {% if row.accommodation %}
+              <button type="submit" name="withdraw" value="1"
+                      class="btn btn--outline btn--small">Withdraw</button>
+              {% endif %}
+            </form>
+          </details>
         </td>
       </tr>
       {% endfor %}

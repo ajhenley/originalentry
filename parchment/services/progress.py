@@ -27,6 +27,7 @@ from ..models import (
     Workspace,
 )
 from ..models.work import KIND_ADJUSTING, KIND_CLOSING, KIND_REGULAR, TARGET_GENERAL
+from .accommodations import overrides_for
 from .activity import REFUSED_SAVE
 from .checkpoints import DEFAULT_MAX_ATTEMPTS
 from .grades import submission_status
@@ -58,6 +59,15 @@ class RefusedSave:
 
 
 @dataclass(frozen=True)
+class Accommodation:
+    """What this student's own deadline is, and why they have one (I1.11)."""
+
+    due_at: datetime | None
+    late_until: datetime | None
+    reason: str
+
+
+@dataclass(frozen=True)
 class ProgressRow:
     workspace_public_id: str
     student_name: str
@@ -70,6 +80,7 @@ class ProgressRow:
     last_activity_at: datetime | None
     submission_status: str
     locked_checkpoints: tuple[Lockout, ...] = ()
+    accommodation: Accommodation | None = None
     last_refused: RefusedSave | None = None
     not_started_flag: bool = False
 
@@ -99,6 +110,7 @@ def assignment_progress(session: Session, assignment: Assignment) -> list[Progre
     statements = _statement_counts(session, ids)
     lockouts = _lockouts(session, ids)
     refusals = _last_refusals(session, ids)
+    accommodations = overrides_for(session, assignment)
 
     rows = []
     for ws, student in workspaces:
@@ -124,6 +136,11 @@ def assignment_progress(session: Session, assignment: Assignment) -> list[Progre
                 submission_status=status,
                 locked_checkpoints=lockouts.get(ws.id, ()),
                 last_refused=refusals.get(ws.id),
+                accommodation=(
+                    Accommodation(o.due_at, o.late_until, o.reason)
+                    if (o := accommodations.get(ws.student_id)) is not None
+                    else None
+                ),
                 not_started_flag=_not_started_flag(ws, assignment),
             )
         )

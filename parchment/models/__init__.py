@@ -39,6 +39,7 @@ from .work import (
     ActivityEvent,
     Assignment,
     AssignmentChoice,
+    AssignmentOverride,
     CheckpointAttempt,
     Disposition,
     EntryLine,
@@ -82,6 +83,7 @@ __all__ = [
     "PartyOpeningBalance",
     # work
     "Assignment",
+    "AssignmentOverride",
     "AssignmentChoice",
     "SectionPackAvailability",
     "Workspace",

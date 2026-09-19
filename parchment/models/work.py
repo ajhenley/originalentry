@@ -405,6 +405,37 @@ class StatementLine(db.Model):
     )
 
 
+class AssignmentOverride(db.Model):
+    """One student's own deadline for one assignment (I1.11).
+
+    Extended time is not a favour; for some students it is the difference between being able to
+    sit the assignment and not. The reason given at the time is kept with it.
+    """
+
+    __tablename__ = "assignment_override"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignment.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    late_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    checkpoint_extension_hours: Mapped[int | None] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(Text)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        Index(
+            "uq_assignment_override_current",
+            "assignment_id",
+            "user_id",
+            unique=True,
+            postgresql_where=db.text("withdrawn_at IS NULL"),
+        ),
+    )
+
+
 class GradeRun(db.Model):
     """One run of the grading engine (T8.1). Immutable: regrading adds a run, never edits one."""
 
@@ -510,6 +541,7 @@ __all__ = [
     "CheckpointAttempt",
     "StatementDraft",
     "StatementLine",
+    "AssignmentOverride",
     "GradeRun",
     "GradeOverride",
     "GradeComment",

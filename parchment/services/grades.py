@@ -18,7 +18,6 @@ from sqlalchemy.orm import Session
 
 from ..grading.models import GradeResult, result_to_dict
 from ..models import Assignment, GradeComment, GradeOverride, GradeRun, Workspace
-from .write import effective_close
 
 # How a workspace was handed in, at the moment it was graded (tension 10, I3.8).
 OPEN = "open"
@@ -185,8 +184,9 @@ def submission_status(session: Session, workspace: Workspace) -> str:
     if workspace.status == "submitted":
         return SUBMITTED_LATE if (workspace.submitted_late_hours or 0) > 0 else SUBMITTED
 
-    assignment = session.get(Assignment, workspace.assignment_id)
-    close = effective_close(assignment) if assignment else None
+    from .accommodations import close_for
+
+    close = close_for(session, workspace)
     if close is not None and datetime.now(UTC) > close:
         return NOT_SUBMITTED  # closed, and never handed in (I3.8)
     return OPEN

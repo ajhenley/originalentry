@@ -126,6 +126,10 @@ flask db upgrade
 - [x] **Reference** (S1.5): the company's background, policies and anything else its pack carries,
       rendered from structured blocks rather than HTML, with the chart of accounts always there —
       reachable from every workspace page and never showing another company's material
+- [x] **Accommodations** (I1.11): a student can be given their own deadline from Progress, with
+      the reason kept. Everything that asks when writing stops — the write path, grading's view of
+      how the work was handed in, the screen itself — asks one function, so no screen can drift
+      from the rule the write path enforces
 - [x] **Marks CSV** (I5.1): Generic and Canvas presets, downloaded from the Grading screen
 - [x] Checkpoints: `grading/checkpoints.py` `evaluate` returns **boolean only** (A8); attempts /
       remaining / locked; submit-a-figure UI

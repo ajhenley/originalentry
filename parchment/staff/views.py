@@ -28,6 +28,7 @@ from ..models import Assignment, ContentPack, PackVersion, Section, User, Worksp
 from ..models.work import LATE_ACCEPT, LATE_CLOSED
 from ..packs.importing import PackImportRefused, import_pack_zip
 from ..services import multicompany, staff_actions
+from ..services.accommodations import clear_accommodation, set_accommodation
 from ..services.assignments import (
     archive_and_restart,
     clone_assignment,
@@ -570,3 +571,34 @@ def grading_marks_csv(assignment: str):
         mimetype="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@bp.post("/progress/<assignment>/accommodation")
+@staff_view
+def progress_accommodation(assignment: str):
+    """Give one student their own deadline, or withdraw it (I1.11)."""
+    found = _assignment_or_404(assignment)
+    back = redirect(url_for("staff.progress", assignment=found.public_id))
+    workspace = _workspace_or_404(found, request.form.get("workspace", ""))
+    student = db.session.get(User, workspace.student_id)
+    reason = (request.form.get("reason") or "").strip()
+
+    try:
+        if request.form.get("withdraw"):
+            clear_accommodation(db.session, assignment=found, student=student,
+                                reason=reason or "Withdrawn", actor=current_user)
+            flash(f"{student.email} is back on the section's deadline.")
+        else:
+            when = _parse_when(request.form.get("due_at"))
+            if when is None:
+                flash("Give the date and time their work should close.")
+                return back
+            set_accommodation(db.session, assignment=found, student=student, due_at=when,
+                              late_until=when, reason=reason, actor=current_user)
+            flash(f"{student.email} now works to {when:%-d %b %H:%M}.")
+    except ValueError as refused:
+        flash(str(refused))
+        return back
+
+    db.session.commit()
+    return back

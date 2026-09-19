@@ -128,6 +128,181 @@ def register_cli(app: Flask) -> None:
             db.session.rollback()
             click.echo("Dry run only — re-run with --apply to migrate.")
 
+    @packs.command("validate")
+    @click.argument("zip_path")
+    def packs_validate(zip_path: str) -> None:
+        """Validate a pack zip against every rule, without writing anything."""
+        from .packs import schema
+        from .packs.importing import _v12_images
+        from .packs.validate import validate_pack
+        from .packs.zip_reader import PackZipRefused, read_pack_zip
+
+        with open(zip_path, "rb") as fh:
+            try:
+                bundle = read_pack_zip(fh)
+            except PackZipRefused as refused:
+                raise click.ClickException(str(refused)) from refused
+        try:
+            pack = schema.load_pack(bundle.pack)
+        except Exception as exc:
+            raise click.ClickException(f"pack.json: {exc}") from exc
+        keys = {code: schema.load_answer_key(p) for code, p in bundle.keys.items()}
+        problems = list(validate_pack(pack, keys or None)) + _v12_images(pack, bundle)
+        if problems:
+            for p in problems:
+                click.echo(f"  [{p.rule}] {p.path}: {p.message}", err=True)
+            raise click.ClickException(f"{len(problems)} problem(s).")
+        click.echo("Valid.")
+
+    def _assignment(pub: str):
+        from .models import Assignment
+
+        a = db.session.scalars(
+            select(Assignment).where(Assignment.public_id == pub)
+        ).one_or_none()
+        if a is None:
+            raise click.ClickException(f"No assignment {pub}.")
+        return a
+
+    grade = AppGroup("grade", help="Grading, without the web time limit.")
+
+    @grade.command("assignment")
+    @click.argument("assignment_pub")
+    def grade_assignment(assignment_pub: str) -> None:
+        """Grade every workspace of an assignment."""
+        from .services.grades import grade_section
+
+        graded, total = grade_section(db.session, _assignment(assignment_pub), actor=None)
+        db.session.commit()
+        click.echo(f"Graded {len(graded)} of {total} workspace(s).")
+
+    export = AppGroup("export", help="Exports.")
+
+    @export.command("marks")
+    @click.argument("assignment_pub")
+    @click.option("--preset", type=click.Choice(["generic", "canvas"]), default="generic")
+    @click.option("--out", type=click.Path(), default=None, help="Write to a file (else stdout).")
+    def export_marks(assignment_pub: str, preset: str, out: str | None) -> None:
+        """Export a marks CSV (generic or Canvas-style; both carry late_hours + status)."""
+        from pathlib import Path
+
+        from .services.marks_export import marks_csv
+
+        text = marks_csv(db.session, _assignment(assignment_pub), preset)
+        if out:
+            Path(out).write_text(text)
+            click.echo(f"Wrote {out}.")
+        else:
+            click.echo(text)
+
+    seed = AppGroup("seed", help="Staging fixtures.")
+
+    @seed.command("staging")
+    @click.option("--students", type=int, default=5)
+    def seed_staging(students: int) -> None:
+        """Create a staging section with fake students (refused in production)."""
+        from .models import Assignment, ContentPack, PackVersion, User
+        from .services.assignments import create_assignment, create_section, join_with_code
+
+        if app.extensions["parchment_config"].IS_PRODUCTION:
+            raise click.ClickException("Refusing to seed staging in production.")
+
+        section = create_section(db.session, name="Staging section", term="Staging")
+        made = []
+        for i in range(1, students + 1):
+            user = User(email=f"student{i}@staging.example.edu", role="student",
+                        given_name=f"Student{i}", family_name="Staging")
+            db.session.add(user)
+            made.append(user)
+        db.session.flush()
+
+        newest = db.session.scalars(
+            select(PackVersion, ContentPack)
+            .join(ContentPack, PackVersion.content_pack_id == ContentPack.id)
+            .order_by(PackVersion.id.desc()).limit(1)
+        ).first()
+        if newest is not None:
+            create_assignment(db.session, section=section, title="Staging assignment",
+                              pack_version=newest)
+            for user in made:
+                join_with_code(db.session, code=section.join_code, student=user)
+            note = "with an assignment on the newest catalogue pack"
+        else:
+            existing = db.session.scalars(select(Assignment).limit(1)).first()  # noqa: F841
+            note = "no pack in the catalogue yet — upload one, then students can join"
+        db.session.commit()
+        click.echo(f"Seeded '{section.name}' (join {section.join_code}), "
+                   f"{len(made)} students, {note}.")
+
+    purge = AppGroup("purge", help="Retention deletion (OPS-7).")
+
+    @purge.command("section")
+    @click.argument("section_id", type=int)
+    @click.option("--confirm", is_flag=True, help="Required: this hard-deletes.")
+    def purge_section_cmd(section_id: int, confirm: bool) -> None:
+        """Hard-delete a section's work, grades, enrolments and orphaned students (OPS-7)."""
+        from .models import Section
+        from .services.purge import purge_section
+
+        if not confirm:
+            raise click.ClickException("Add --confirm to hard-delete this section's data.")
+        section = db.session.get(Section, section_id)
+        if section is None:
+            raise click.ClickException(f"No section {section_id}.")
+        summary = purge_section(db.session, section, actor=None)
+        db.session.commit()
+        click.echo(f"Purged section {section_id}: {summary.assignments} assignment(s), "
+                   f"{summary.workspaces} workspace(s), {summary.students_removed} student(s).")
+
+    @app.cli.command("replay-key")
+    @click.option("--pack", "slug", required=True, help="Company slug.")
+    @click.option("--variant", default=None, help="One variant code (else all).")
+    def replay_key(slug: str, variant: str | None) -> None:
+        """A2 against the live database: replay each key and confirm the balances to the cent."""
+        from .ledger import balances
+        from .models import AnswerKey, ContentPack, PackVersion, Variant
+        from .packs import schema
+        from .packs.replay import build_replay_snapshot
+
+        cp = db.session.scalars(
+            select(ContentPack).where(ContentPack.slug == slug)
+        ).one_or_none()
+        if cp is None:
+            raise click.ClickException(f"No company {slug}.")
+        pv = db.session.scalars(
+            select(PackVersion).where(PackVersion.content_pack_id == cp.id)
+            .order_by(PackVersion.version.desc()).limit(1)
+        ).first()
+        pack = schema.load_pack(pv.manifest)
+
+        variant_code = {v.id: v.code for v in db.session.scalars(
+            select(Variant).where(Variant.pack_version_id == pv.id))}
+        keys = db.session.scalars(
+            select(AnswerKey).where(AnswerKey.pack_version_id == pv.id)
+        ).all()
+        failures = 0
+        for key_row in keys:
+            code = variant_code.get(key_row.variant_id, "?")
+            if variant and code != variant:
+                continue
+            key = schema.load_answer_key(key_row.payload)
+            snapshot = build_replay_snapshot(pack, key)
+            for stage, expected in key.expected_balances.items():
+                actual = balances(snapshot, stage)
+                for number, want in expected.items():
+                    if actual.get(number, 0) != want:
+                        failures += 1
+                        click.echo(f"  {code}/{stage}/{number}: "
+                                   f"{actual.get(number, 0)} != {want}", err=True)
+            click.echo(f"  {slug} v{pv.version} variant {code}: replayed")
+        if failures:
+            raise click.ClickException(f"{failures} balance mismatch(es).")
+        click.echo("A2 holds: every balance matches the key.")
+
     app.cli.add_command(staff)
     app.cli.add_command(auth)
     app.cli.add_command(packs)
+    app.cli.add_command(grade)
+    app.cli.add_command(export)
+    app.cli.add_command(seed)
+    app.cli.add_command(purge)

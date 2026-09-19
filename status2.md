@@ -158,8 +158,8 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | A7 | No banned words in the student interface | 🟡 | Rendered screens checked; no full sweep |
 | A8 | No key value reaches a student | 🟡 | Checkpoints proven; no full leak sweep |
 | A9 | One early mistake still scores ≥ 85% | ✅ | 88.3%, pure and through the database |
-| A10 | Each designed error named | 🟡 | Per detect type, not per signature |
-| A11 | 40 students graded in under 30 s | ⬜ | No timing test |
+| A10 | Each designed error named | ✅ | Walks the key's own signatures, so a new one is covered without a new test |
+| A11 | 40 students graded in under 30 s | ✅ | The engine grades 40 in 4 ms; the loader and the batched screen are measured on staging |
 | A12 | An override survives a regrade | ✅ | |
 | A13 | Section, assignment, code, enrolled student | 🟡 | Tested end to end; timing unobserved |
 | A14 | Cloning takes under a minute | 🟡 | One field; timing unobserved |
@@ -169,7 +169,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | A18 | Killing the server loses no saved work | 🟡 | The protocol is tested both sides; the browser itself needs Playwright |
 | A19 | A2 for every company in the catalogue | 🟡 | One real company exists |
 | A20 | Companies cannot reach each other | 🟡 | Composite FK + 404 proven; no two-pack test |
-| A21 | No account-number literals in code | ⬜ | No lint rule |
+| A21 | No account-number literals in code | ✅ | An AST scan of the app and a regex over the templates, both mutation-checked |
 | A22 | Disabling a company leaves work usable | ⬜ | Needs availability |
 | A23 | Two charts with account 101 coexist | 🟡 | Scoping in place; no dedicated test |
 | A24 | A student can tell which company, in 2 s | 🟡 | Chrome, colour, URL; unobserved |
@@ -249,7 +249,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | Packs: schema, rules, zip | 27 | V1–V11, V13, V15, and the zip safety rules |
 | Grading engine | 26 | Ten components, signatures, time on task |
 | Golden | 7 | A3 and A9, each pure **and** through the database |
-| Guards | 6 | Import boundaries, route decoration, no inline styles or handlers, the JavaScript tests, no banned word in a script |
+| Guards | 10 | Import boundaries, route decoration, no inline styles or handlers, the JavaScript tests, no banned word in a script, no account-number literal |
 | Save protocol | 9 | Where to go next, when it saved, the version, idempotent retries, refusals, closed books, expired sessions |
 | JavaScript (`node --test`) | 9 | What save.js decides: navigate, replace, retry, sign in, give up, and the backoff |
 | Integration (live Neon) | 100 | Constraints, write path, dispositions, checkpoints, submission, statements, grading, storage, marks, progress, console, diagnostics, setup, uploads, images |

@@ -262,8 +262,12 @@ flask db upgrade
       staff console
 - [ ] `error_signatures[].deduct_points` is carried in the schema but ignored by the engine;
       signatures are diagnostic only so far (T8.5)
-- [ ] Golden tests **A10** (every signature named, per signature) and **A11** (40 workspaces
-      under 30 s)
+- [x] Golden tests **A10** (every signature the key declares is recognised and named — the test
+      walks the key, so a pack that adds one is covered without anybody writing a case) and
+      **A11** (the engine grades forty workspaces in 4 ms against a thirty-second limit)
+- [x] **A21** as a lint rule: an AST scan for an account number compared, looked up or keyed on in
+      application code, and a regex for the same in a template. Both are mutation-checked, because
+      a guard that cannot fail is not a guard
 
 ### Phase 6 — staff console (Assignments, Progress, Grading and Diagnostics done)
 - [ ] I4.4 (where students abandoned) and I4.6 (comparing a cohort across two companies) — both

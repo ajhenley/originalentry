@@ -55,8 +55,17 @@ def _render_workspace(app, path, template, **ctx):
 
 # ── routing / auth ──────────────────────────────────────────────────────────────────────
 
-def test_home_requires_sign_in(app):
+def test_landing_is_public(app):
     resp = app.test_client().get("/")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "Parchment" in body
+    assert "Join with a class code" in body
+    assert not BANNED.search(_visible_text(body))
+
+
+def test_home_requires_sign_in(app):
+    resp = app.test_client().get("/home")
     assert resp.status_code == 302
     assert "/auth/sign-in" in resp.headers["Location"]
 

@@ -123,8 +123,8 @@ def test_get_link_is_scanner_safe_then_post_signs_in(client, session, mail):
     assert tokens.find_valid_link(session, token) is not None
 
     resp = client.post("/auth/verify", data={"token": token})
-    assert resp.status_code == 302 and resp.headers["Location"] in ("/", "/w")  # home
-    assert client.get("/").status_code == 200  # signed in
+    assert resp.status_code == 302 and resp.headers["Location"].endswith("/home")
+    assert client.get("/home").status_code == 200  # signed in
 
     # The link is spent now.
     assert "expired" in client.get(f"/auth/verify/{token}").get_data(as_text=True).lower()
@@ -136,7 +136,7 @@ def test_code_path_signs_in(client, session, mail):
     code = mail[0]["code"]
     resp = client.post("/auth/code", data={"email": "s3@example.edu", "code": code})
     assert resp.status_code == 302
-    assert client.get("/").status_code == 200
+    assert client.get("/home").status_code == 200
 
 
 def test_unknown_address_same_response_no_email(client, session, mail):

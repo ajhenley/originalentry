@@ -18,6 +18,8 @@
     </p>
   </noscript>
 
+  {# App-only bars (the small-screen notice and the save banner). The public landing omits them. #}
+  {% block appbars %}
   <p class="hidden bg-attention/10 px-4 py-2 text-sm max-[768px]:block">
     This app is built for a wider screen. Use a tablet or computer for recording.
   </p>
@@ -29,6 +31,7 @@
        data-stale="{{ save_messages.stale }}"
        data-stuck="{{ save_messages.stuck }}"
        data-unreachable="{{ save_messages.unreachable }}"></div>
+  {% endblock %}
 
   {% block chrome %}{% endblock %}
 

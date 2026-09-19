@@ -84,7 +84,7 @@ _STAGES = [
 _STAGE_LABEL = {s["key"]: s["label"] for s in _STAGES}
 
 
-@bp.get("/")
+@bp.get("/home")
 @login_required
 def home():
     rows = db.session.execute(

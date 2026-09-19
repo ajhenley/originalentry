@@ -97,6 +97,8 @@ def _register_jinja(app: Flask) -> None:
             "read_only_message": getattr(g, "read_only_message", None),
             "save_messages": messages.save_banner_strings(),
             "switch_targets": getattr(g, "switch_targets", []),
+            # The date the public documents carry, in one place so they cannot disagree.
+            "policy_updated": "19 September 2026",
         }
 
 

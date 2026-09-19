@@ -126,6 +126,11 @@ flask db upgrade
 - [x] **Reference** (S1.5): the company's background, policies and anything else its pack carries,
       rendered from structured blocks rather than HTML, with the chart of accounts always there —
       reachable from every workspace page and never showing another company's material
+- [x] **Checkpoint deadlines and stage gating** (I1.2, S6.3): an instructor can close a checkpoint
+      at a time and can require it to be passed before adjusting entries, statements or closing —
+      so a student cannot spend four hours adjusting a trial balance that never agreed. Both are
+      options: an assignment with no rules behaves exactly as before. A gate says which checkpoint
+      stands in the way and nothing about the figures
 - [x] **Accommodations** (I1.11): a student can be given their own deadline from Progress, with
       the reason kept. Everything that asks when writing stops — the write path, grading's view of
       how the work was handed in, the screen itself — asks one function, so no screen can drift

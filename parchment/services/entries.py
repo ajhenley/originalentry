@@ -11,7 +11,16 @@ from sqlalchemy.orm import Session
 
 from .. import messages
 from ..forms.entries import EntryCommand
-from ..models import Account, EntryLine, JournalEntry, Party, SourceDocument, Workspace
+from ..models import (
+    KIND_ADJUSTING,
+    KIND_CLOSING,
+    Account,
+    EntryLine,
+    JournalEntry,
+    Party,
+    SourceDocument,
+    Workspace,
+)
 from .errors import WriteRefused
 from .posting import active_posted_entry_ids
 
@@ -27,6 +36,16 @@ def record_entry(session: Session, workspace: Workspace, command: EntryCommand) 
     ).scalar_one_or_none()
     if existing is not None:
         return existing
+
+    # A checkpoint the instructor put in front of this stage has to be passed first (S6.3).
+    # Local import: checkpoint_rules reads the entry kinds this module owns.
+    from .checkpoint_rules import ADJUSTING, CLOSING, gate_refusal
+
+    stage = {KIND_ADJUSTING: ADJUSTING, KIND_CLOSING: CLOSING}.get(command.kind)
+    if stage is not None:
+        shut = gate_refusal(session, workspace, stage)
+        if shut is not None:
+            raise WriteRefused(shut)
 
     pv_id = workspace.pack_version_id
     account_id = {

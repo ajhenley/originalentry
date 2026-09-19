@@ -12,9 +12,17 @@
   <li class="panel p-4">
     <p class="font-semibold">Checkpoint {{ c.ordinal }}</p>
     <p class="text-sm" data-pack-content>{{ c.prompt }}</p>
+    {% if c.gates %}
+    <p class="mt-1 text-sm text-muted">Pass this before recording {{ c.gates }}.</p>
+    {% endif %}
+    {% if c.closes_at %}
+    <p class="label-meta mt-1">Closes {{ c.closes_at.strftime('%-d %b, %H:%M') }}</p>
+    {% endif %}
 
     {% if c.state.passed %}
     <p class="mt-2 text-sm text-muted">Checkpoint passed.</p>
+    {% elif c.closed %}
+    <p class="mt-2 text-sm text-amber-deep">This checkpoint has closed. Please see your instructor.</p>
     {% elif c.state.locked %}
     <p class="mt-2 text-sm text-attention">This checkpoint is locked. Please see your instructor.</p>
     {% elif not read_only %}

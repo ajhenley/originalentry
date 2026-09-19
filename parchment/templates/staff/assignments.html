@@ -40,6 +40,25 @@
           <a class="underline" href="{{ url_for('staff.grading', assignment=a.public_id) }}">Grading</a>
           ·
           <a class="underline" href="{{ url_for('staff.diagnostics', assignment=a.public_id) }}">Diagnostics</a>
+          <form method="post" class="mt-1 flex flex-wrap items-center gap-1"
+                action="{{ url_for('staff.assignment_checkpoints', assignment=a.public_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="sr-only" for="cp-{{ a.public_id }}">Checkpoint number</label>
+            <input id="cp-{{ a.public_id }}" name="ordinal" inputmode="numeric" value="1"
+                   class="field w-12">
+            <label class="sr-only" for="cpdue-{{ a.public_id }}">Checkpoint closes</label>
+            <input id="cpdue-{{ a.public_id }}" name="deadline_at" type="datetime-local"
+                   class="field w-auto">
+            <label class="sr-only" for="cpgate-{{ a.public_id }}">Stands in front of</label>
+            <select id="cpgate-{{ a.public_id }}" name="gates_stage" class="field w-auto">
+              <option value="">gates nothing</option>
+              <option value="adjusting">adjusting entries</option>
+              <option value="statements">statements</option>
+              <option value="closing">closing entries</option>
+            </select>
+            <button type="submit" class="btn btn--outline btn--small">Set</button>
+          </form>
+
           <form method="post" class="mt-1 flex items-center gap-1"
                 action="{{ url_for('staff.assignment_clone', assignment=a.public_id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

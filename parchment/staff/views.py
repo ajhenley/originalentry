@@ -36,6 +36,7 @@ from ..services.assignments import (
     create_section,
     rotate_join_code,
 )
+from ..services.checkpoint_rules import STAGES, set_checkpoint_rule
 from ..services.diagnostics import cohort_csv, cohort_diagnostics
 from ..services.grades import (
     final_marks,
@@ -601,4 +602,29 @@ def progress_accommodation(assignment: str):
         return back
 
     db.session.commit()
+    return back
+
+
+@bp.post("/assignments/<assignment>/checkpoints")
+@staff_view
+def assignment_checkpoints(assignment: str):
+    """Put a deadline on a checkpoint, and decide what it stands in front of (I1.2, S6.3)."""
+    found = _assignment_or_404(assignment)
+    back = redirect(url_for("staff.index"))
+
+    ordinal = request.form.get("ordinal", type=int)
+    if ordinal is None:
+        flash("Say which checkpoint this is about.")
+        return back
+
+    gates = (request.form.get("gates_stage") or "").strip() or None
+    if gates is not None and gates not in STAGES:
+        flash(f"A checkpoint can stand in front of {', '.join(STAGES)}.")
+        return back
+
+    set_checkpoint_rule(db.session, assignment=found, ordinal=ordinal,
+                        deadline_at=_parse_when(request.form.get("deadline_at")),
+                        gates_stage=gates, actor=current_user)
+    db.session.commit()
+    flash(f"Checkpoint {ordinal} updated.")
     return back

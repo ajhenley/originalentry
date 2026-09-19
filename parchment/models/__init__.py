@@ -38,6 +38,7 @@ from .work import (
     TARGET_SUBSIDIARY,
     ActivityEvent,
     Assignment,
+    AssignmentCheckpoint,
     AssignmentChoice,
     AssignmentOverride,
     CheckpointAttempt,
@@ -83,6 +84,7 @@ __all__ = [
     "PartyOpeningBalance",
     # work
     "Assignment",
+    "AssignmentCheckpoint",
     "AssignmentOverride",
     "AssignmentChoice",
     "SectionPackAvailability",

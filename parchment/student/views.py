@@ -826,11 +826,27 @@ def _checkpoint_or_404(key):
 @bp.get("/w/<workspace>/<company_slug>/checkpoints")
 @workspace_view
 def checkpoints():
+    from ..services.checkpoint_rules import (
+        STAGE_LABELS,
+        checkpoint_deadline,
+        checkpoint_is_closed,
+        rules_for,
+    )
+
+    rules = rules_for(db.session, g.workspace.assignment_id)
     rows = []
     for c in _manifest_checkpoints():
-        state = checkpoint_state(db.session, g.workspace, c["key"])
-        rows.append({"key": c["key"], "ordinal": c.get("ordinal"), "prompt": c.get("prompt", ""),
-                     "state": state})
+        rule = rules.get(c.get("ordinal"))
+        rows.append({
+            "key": c["key"],
+            "ordinal": c.get("ordinal"),
+            "prompt": c.get("prompt", ""),
+            "state": checkpoint_state(db.session, g.workspace, c["key"]),
+            "closes_at": checkpoint_deadline(db.session, g.workspace, c["key"]),
+            "closed": checkpoint_is_closed(db.session, g.workspace, c["key"]),
+            # What this checkpoint stands in front of, so a shut stage is never a surprise.
+            "gates": STAGE_LABELS.get(rule.gates_stage) if rule and rule.gates_stage else None,
+        })
     rows.sort(key=lambda r: r["ordinal"] or 0)
     return render_template("student/checkpoints.html", checkpoints=rows)
 

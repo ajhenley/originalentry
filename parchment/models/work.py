@@ -405,6 +405,31 @@ class StatementLine(db.Model):
     )
 
 
+class AssignmentCheckpoint(db.Model):
+    """What an instructor decided about one of a pack's checkpoints (I1.2, S6.3).
+
+    Keyed by the checkpoint's **ordinal** rather than its key, so one assignment's rules still
+    make sense where students may be working on different companies (D4).
+    """
+
+    __tablename__ = "assignment_checkpoint"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignment.id"))
+    ordinal: Mapped[int] = mapped_column(Integer)
+    deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The stage this checkpoint stands in front of: adjusting, statements or closing.
+    gates_stage: Mapped[str | None] = mapped_column(String(20))
+
+    __table_args__ = (
+        UniqueConstraint("assignment_id", "ordinal"),
+        CheckConstraint(
+            "gates_stage IS NULL OR gates_stage IN ('adjusting', 'statements', 'closing')",
+            name="assignment_checkpoint_stage",
+        ),
+    )
+
+
 class AssignmentOverride(db.Model):
     """One student's own deadline for one assignment (I1.11).
 
@@ -541,6 +566,7 @@ __all__ = [
     "CheckpointAttempt",
     "StatementDraft",
     "StatementLine",
+    "AssignmentCheckpoint",
     "AssignmentOverride",
     "GradeRun",
     "GradeOverride",

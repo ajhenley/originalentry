@@ -95,6 +95,7 @@ def viewing_students_books(student_name: str) -> str:
 
 CHECKPOINT_PASSED = "Checkpoint passed."
 CHECKPOINT_LOCKED = "This checkpoint is locked. Please see your instructor."
+CHECKPOINT_CLOSED = "This checkpoint has closed. Please see your instructor."
 
 
 def checkpoint_not_passed(attempts_remaining: int) -> str:

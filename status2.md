@@ -18,9 +18,9 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | 1 | Data model, ledger engine, deployed skeleton | 🟡 | Engine and schema done; **nothing is deployed** |
 | 2 | Journals and posting | 🟡 | Special-journal **column form**, live totals and the account picker |
 | 3 | Documents and triage, both modes | ✅ | — |
-| 4 | Trial balances, adjustments, statements, closing | 🟡 | Worksheet (cut list #1), row reordering, stage gating |
+| 4 | Trial balances, adjustments, statements, closing | 🟡 | Worksheet (cut list #1), row reordering |
 | 5 | Grading engine and storage | ✅ | — |
-| 6 | Instructor console | 🟡 | Checkpoint deadlines, roster import, answer-key print |
+| 6 | Instructor console | 🟡 | Roster import, answer-key print |
 | 7 | Multi-company | 🟡 | Schema and catalogue done; per-section availability and the student switcher are not |
 | 8 | Accessibility pass, failure handling, deploy | ⬜ | None of it |
 
@@ -69,7 +69,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | S5.7 | Nothing says whether a statement is right | ✅ | A7 guard |
 | S6.1 | Checkpoints: one figure, three attempts, lock | ✅ | |
 | S6.2 | A locked checkpoint shows nothing else | ✅ | |
-| S6.3 | Stages gated behind a checkpoint | ⬜ | Needs `assignment_checkpoint` |
+| S6.3 | Stages gated behind a checkpoint | ✅ | The instructor's option, per assignment; the student is told what a checkpoint stands in front of before they meet the gate |
 | S6.4 | Submission checklist | ✅ | Documents, entries, statements started |
 | S6.5 | Read-only after submission; instructor can reopen | 🟡 | Read-only yes; **no reopen screen** |
 | S6.6 | Marks and comment after release | ✅ | `/marks` |
@@ -82,7 +82,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | # | Requirement | State | Where / what is missing |
 | --- | --- | --- | --- |
 | I1.1 | Create an assignment: company, paper or screen | ✅ | `/staff/assignments/new` |
-| I1.2 | Due date and checkpoint deadlines | 🟡 | Dates yes; **checkpoint deadlines not** |
+| I1.2 | Due date and checkpoint deadlines | ✅ | Both, set from the assignments list; extended time moves a student's checkpoint too |
 | I1.3 | Variant policy: in turn, random, manual | 🟡 | In turn and random work; manual leaves no way to assign by hand |
 | I1.4 | Join code | ✅ | Generated, shown, rotatable |
 | I1.5 | Roster CSV import | ⬜ | |
@@ -235,7 +235,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | --- | --- |
 | `user`, `section`, `enrollment`, `staff_action` | `login_token` (waits on auth) |
 | `content_pack`, `pack_version`, `variant`, `account`, `party`, `source_document`, `answer_key`, `account_opening_balance`, `party_opening_balance`, `pack_asset` | — |
-| `assignment`, `workspace`, `disposition`, `journal_entry`, `journal_entry_revision`, `entry_line`, `posting_run`, `posting_run_entry` | `assignment_checkpoint` |
+| `assignment`, `workspace`, `disposition`, `journal_entry`, `journal_entry_revision`, `entry_line`, `posting_run`, `posting_run_entry` | — |
 | `statement_draft`, `statement_line`, `checkpoint_attempt`, `activity_event` | `worksheet_cell`, `checkpoint_grant` |
 | `grade_run`, `grade_override`, `grade_comment` | — |
 

@@ -10,7 +10,9 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import messages
 from ..models import CheckpointAttempt, Workspace
+from .errors import WriteRefused
 
 DEFAULT_MAX_ATTEMPTS = 3
 
@@ -52,6 +54,13 @@ def record_attempt(
     session: Session, workspace: Workspace, checkpoint_key: str,
     submitted_cents: int, passed: bool,
 ) -> CheckpointAttempt:
+    # A checkpoint with a deadline stops taking attempts once it passes (I1.2). Local import:
+    # checkpoint_rules reads this module's own view of the attempts.
+    from .checkpoint_rules import checkpoint_is_closed
+
+    if checkpoint_is_closed(session, workspace, checkpoint_key):
+        raise WriteRefused(messages.CHECKPOINT_CLOSED)
+
     state = checkpoint_state(session, workspace, checkpoint_key)
     attempt = CheckpointAttempt(
         workspace_id=workspace.id,

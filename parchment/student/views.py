@@ -335,6 +335,55 @@ def _manifest_document(ref):
     return None
 
 
+# ── Reference (S1.5) ─────────────────────────────────────────────────────────────────────
+# The company's own material, reachable from every screen and never showing another company's:
+# it reads only the pack version this workspace is pinned to. The pack supplies structured
+# blocks rather than HTML, so a company can describe itself without being able to put anything
+# into the page (T5.2).
+
+CHART_KEY = "chart-of-accounts"
+
+
+def _reference_sections():
+    """What this company offers, with its chart of accounts always at the end."""
+    sections = [
+        {"key": s["key"], "title": s["title"]}
+        for s in (g.pack_version.manifest or {}).get("reference", [])
+    ]
+    sections.append({"key": CHART_KEY, "title": "Chart of accounts"})
+    return sections
+
+
+@bp.get("/w/<workspace>/<company_slug>/reference")
+@workspace_view
+def reference_index():
+    return render_template("student/reference.html", sections=_reference_sections(),
+                           section=None, blocks=[], accounts=None)
+
+
+@bp.get("/w/<workspace>/<company_slug>/reference/<section>")
+@workspace_view
+def reference(section):
+    sections = _reference_sections()
+    chosen = next((s for s in sections if s["key"] == section), None)
+    if chosen is None:
+        abort(404)
+
+    if section == CHART_KEY:
+        return render_template(
+            "student/reference.html", sections=sections, section=chosen, blocks=[],
+            accounts=_accounts(g.pack_version.id),
+        )
+
+    blocks = next(
+        (s.get("blocks", []) for s in (g.pack_version.manifest or {}).get("reference", [])
+         if s["key"] == section),
+        [],
+    )
+    return render_template("student/reference.html", sections=sections, section=chosen,
+                           blocks=blocks, accounts=None)
+
+
 @bp.get("/w/<workspace>/<company_slug>/documents")
 @workspace_view
 def documents():

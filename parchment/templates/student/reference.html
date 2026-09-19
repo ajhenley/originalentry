@@ -1,0 +1,90 @@
+{# The company's own material (S1.5): background, policies, payroll data and the chart of
+   accounts. The pack supplies structured blocks, never HTML, so nothing a company writes about
+   itself can reach the page as markup (T5.2). #}
+{% extends "layouts/workspace.html" %}
+{% block heading %}{% if section %}{{ section.title }}{% else %}Reference{% endif %}{% endblock %}
+
+{% block workspace %}
+<div class="flex flex-col gap-6 lg:flex-row-reverse">
+  <nav aria-label="Reference sections" class="lg:w-64">
+    <ul class="panel divide-y divide-silver overflow-hidden text-sm">
+      {% for s in sections %}
+      <li>
+        <a class="block px-4 py-2 hover:bg-cloud {% if section and s.key == section.key %}bg-cloud font-medium{% endif %}"
+           {% if section and s.key == section.key %}aria-current="page"{% endif %}
+           href="{{ url_for('student.reference', workspace=workspace.public_id,
+                            company_slug=company.slug, section=s.key) }}">{{ s.title }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  <div class="flex-1">
+    {% if not section %}
+    <p class="max-w-prose text-muted">
+      Everything {{ company.name }} gives you to work from. It stays here while you record, so you
+      can come back to a policy without losing your place.
+    </p>
+    {% endif %}
+
+    {% if accounts %}
+    <div class="panel overflow-x-auto" role="region" aria-label="Chart of accounts" tabindex="0">
+      <table class="data-table">
+        <caption>Chart of accounts</caption>
+        <thead>
+          <tr>
+            <th scope="col">Number</th>
+            <th scope="col">Account</th>
+            <th scope="col">Type</th>
+            <th scope="col">Normal balance</th>
+          </tr>
+        </thead>
+        <tbody data-pack-content>
+          {% for a in accounts %}
+          <tr>
+            <th scope="row" class="figure">{{ a.number }}</th>
+            <td>{{ a.name }}</td>
+            <td>{{ a.account_type | replace('_', ' ') }}</td>
+            <td>{{ a.normal_balance }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if blocks %}
+    <div class="max-w-prose space-y-4" data-pack-content>
+      {% for block in blocks %}
+        {% if block.type == 'p' %}
+        <p class="text-muted">{{ block.text }}</p>
+        {% elif block.type == 'h' %}
+        <h2 class="pt-2 text-2xl">{{ block.text }}</h2>
+        {% elif block.type == 'ul' %}
+        <ul class="list-disc space-y-1 pl-6 text-muted">
+          {% for item in block['items'] %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+        {% elif block.type == 'table' %}
+        <div class="panel overflow-x-auto" role="region"
+             aria-label="{{ block.caption or 'Reference table' }}" tabindex="0">
+          <table class="data-table">
+            {% if block.caption %}<caption>{{ block.caption }}</caption>{% endif %}
+            {% if block.headers %}
+            <thead>
+              <tr>{% for h in block.headers %}<th scope="col">{{ h }}</th>{% endfor %}</tr>
+            </thead>
+            {% endif %}
+            <tbody>
+              {% for row in block.rows %}
+              <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

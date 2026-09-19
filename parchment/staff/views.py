@@ -44,6 +44,7 @@ from ..services.grades import (
     set_comment,
     set_override,
 )
+from ..services.marks_export import CANVAS, GENERIC, marks_csv
 from ..services.progress import assignment_progress
 
 BATCH = 10  # workspaces graded per request, so nothing comes near the request limit (I3.7)
@@ -555,3 +556,17 @@ def catalogue_upload():
     pack = db.session.get(ContentPack, version.content_pack_id)
     flash(f"{pack.company_name} version {version.version} is in the catalogue.")
     return redirect(url_for("staff.catalogue"))
+
+
+@bp.get("/grading/<assignment>/marks.csv")
+@staff_view
+def grading_marks_csv(assignment: str):
+    """The released marks in a shape a gradebook will import (I5.1)."""
+    found = _assignment_or_404(assignment)
+    preset = CANVAS if request.args.get("preset") == CANVAS else GENERIC
+    filename = f"{found.public_id}-marks-{preset}.csv"
+    return Response(
+        marks_csv(db.session, found, preset=preset),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

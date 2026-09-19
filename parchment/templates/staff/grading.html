@@ -26,6 +26,11 @@
   {% endif %}
 
   <a class="btn btn--outline btn--small"
+     href="{{ url_for('staff.grading_marks_csv', assignment=assignment.public_id) }}">Marks CSV</a>
+  <a class="btn btn--outline btn--small"
+     href="{{ url_for('staff.grading_marks_csv', assignment=assignment.public_id, preset='canvas') }}">Canvas CSV</a>
+
+  <a class="btn btn--outline btn--small"
      href="{{ url_for('staff.grading', assignment=assignment.public_id,
                       filter=none if only_review else 'review') }}">
     {{ 'Show everyone' if only_review else 'Needs a look' }}</a>

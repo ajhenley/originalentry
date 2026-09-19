@@ -34,7 +34,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | S1.2 | Work saves as it is completed, no save button | ✅ | Entries on record; statements and worksheet cells on change |
 | S1.3 | Leave and return on any device | ✅ | All state server-side |
 | S1.4 | Progress indicator | 🟡 | Overview shows documents triaged; stage and journals posted only on the staff screen |
-| S1.5 | Reference section (background, policies, chart, payroll) | ⬜ | The pack carries the blocks; no screen renders them |
+| S1.5 | Reference section (background, policies, chart, payroll) | ✅ | Structured blocks from the pack, never HTML; the chart of accounts is always offered; in the nav on every workspace page |
 | S2.1 | Screen mode: zoomable images, order received | ✅ | `pack_asset` + authorised route + `zoom.js` |
 | S2.2 | Paper mode: references only | ✅ | Same queue, no image, route returns 404 |
 | S2.3 | Record / No entry required | ✅ | |
@@ -114,7 +114,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | I4.4 | Where students abandoned | ⬜ | PRD *Should* |
 | I4.5 | Cohort CSV export | ✅ | Stable header |
 | I4.6 | Compare a cohort across two companies | ⬜ | PRD *Should* |
-| I5.1 | Marks CSV for an LMS | ⬜ | The cohort CSV is not the gradebook shape |
+| I5.1 | Marks CSV for an LMS | ✅ | Generic and Canvas presets, downloadable from Grading |
 | I5.2 | One student's work as PDF | ⬜ | Print route not built |
 | I5.3 | Answer key as PDF | ⬜ | |
 
@@ -164,7 +164,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | A13 | Section, assignment, code, enrolled student | 🟡 | Tested end to end; timing unobserved |
 | A14 | Cloning takes under a minute | 🟡 | One field; timing unobserved |
 | A15 | A regenerated pack uploads unedited | 🟡 | Zips upload; the generator does not exist |
-| A16 | Marks CSV imports into an LMS | ⬜ | |
+| A16 | Marks CSV imports into an LMS | 🟡 | Both presets download; no real gradebook has taken one yet |
 | A17 | Every workflow by keyboard alone | 🟡 | Server-rendered forms are; unverified with a screen reader |
 | A18 | Killing the server loses no saved work | 🟡 | The protocol is tested both sides; the browser itself needs Playwright |
 | A19 | A2 for every company in the catalogue | 🟡 | One real company exists |

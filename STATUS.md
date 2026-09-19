@@ -123,6 +123,10 @@ flask db upgrade
       signed URL to forward. Screen mode shows the image with `zoom.js` (buttons and + − 0 keys);
       paper mode serves nothing and links to nothing. The text alternative is shown to everyone,
       not offered as a fallback
+- [x] **Reference** (S1.5): the company's background, policies and anything else its pack carries,
+      rendered from structured blocks rather than HTML, with the chart of accounts always there —
+      reachable from every workspace page and never showing another company's material
+- [x] **Marks CSV** (I5.1): Generic and Canvas presets, downloaded from the Grading screen
 - [x] Checkpoints: `grading/checkpoints.py` `evaluate` returns **boolean only** (A8); attempts /
       remaining / locked; submit-a-figure UI
 - [x] **Statement builder** (S5.5, tension 7): `statement_draft`/`statement_line` with composite

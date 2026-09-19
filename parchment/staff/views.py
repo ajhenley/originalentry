@@ -27,7 +27,7 @@ from ..extensions import db
 from ..models import Assignment, ContentPack, PackVersion, Section, User, Workspace
 from ..models.work import LATE_ACCEPT, LATE_CLOSED
 from ..packs.importing import PackImportRefused, import_pack_zip
-from ..services import staff_actions
+from ..services import multicompany, staff_actions
 from ..services.assignments import (
     clone_assignment,
     create_assignment,
@@ -418,6 +418,41 @@ def assignment_clone(assignment: str):
     db.session.commit()
     flash(f"{clone.title} cloned with dates moved by {days} days.")
     return redirect(url_for("staff.index"))
+
+
+@bp.get("/sections/<int:section_id>/availability")
+@staff_view
+def section_availability(section_id: int):
+    section = db.session.get(Section, section_id)
+    if section is None:
+        abort(404)
+    available = multicompany.available_content_pack_ids(db.session, section_id)
+    packs = db.session.execute(
+        db.select(ContentPack).order_by(ContentPack.company_name)
+    ).scalars()
+    rows = [
+        {"id": cp.id, "name": cp.company_name, "available": cp.id in available}
+        for cp in packs
+    ]
+    return render_template("staff/availability.html", section=section, packs=rows)
+
+
+@bp.post("/sections/<int:section_id>/availability")
+@staff_view
+def section_availability_set(section_id: int):
+    section = db.session.get(Section, section_id)
+    if section is None:
+        abort(404)
+    content_pack_id = request.form.get("content_pack_id", type=int)
+    available = request.form.get("available") == "1"
+    if content_pack_id:
+        multicompany.set_availability(
+            db.session, section_id=section_id, content_pack_id=content_pack_id,
+            available=available, actor=current_user,
+        )
+        db.session.commit()
+        flash("Availability updated. Books already open are not affected.")
+    return redirect(url_for("staff.section_availability", section_id=section_id))
 
 
 @bp.post("/sections/<int:section_id>/join-code")

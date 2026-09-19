@@ -78,6 +78,32 @@ class Assignment(db.Model):
     )
 
 
+class SectionPackAvailability(db.Model):
+    """Which companies a section may use (M1.4). Checked when a workspace is created or a company
+    is chosen — never mid-work, so withdrawing a company leaves existing workspaces usable (A22)."""
+
+    __tablename__ = "section_pack_availability"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    section_id: Mapped[int] = mapped_column(ForeignKey("section.id"))
+    content_pack_id: Mapped[int] = mapped_column(ForeignKey("content_pack.id"))
+    status: Mapped[str] = mapped_column(String(20), default="available")  # available | withdrawn
+
+    __table_args__ = (UniqueConstraint("section_id", "content_pack_id"),)
+
+
+class AssignmentChoice(db.Model):
+    """A pack version a student may choose for a choice assignment (tension 4)."""
+
+    __tablename__ = "assignment_choice"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignment.id"))
+    pack_version_id: Mapped[int] = mapped_column(ForeignKey("pack_version.id"))
+
+    __table_args__ = (UniqueConstraint("assignment_id", "pack_version_id"),)
+
+
 class Workspace(db.Model):
     __tablename__ = "workspace"
 
@@ -472,6 +498,8 @@ class PostingRunEntry(db.Model):
 
 __all__ = [
     "Assignment",
+    "SectionPackAvailability",
+    "AssignmentChoice",
     "Workspace",
     "Disposition",
     "JournalEntry",

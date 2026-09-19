@@ -15,10 +15,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sqlalchemy import text  # noqa: E402
-
 from parchment.app import create_app  # noqa: E402
 from parchment.extensions import db  # noqa: E402
+from sqlalchemy import text  # noqa: E402
 
 
 def clean() -> None:
@@ -91,8 +90,8 @@ def clean() -> None:
         if "section_pack_availability" in existing:
             run("delete from section_pack_availability where content_pack_id = any(:c)", {"c": cps})
         if "staff_action" in existing:
-            run("delete from staff_action where target_table='pack_version' and target_id = any(:p)",
-                {"p": pvs})
+            run("delete from staff_action where target_table='pack_version' "
+                "and target_id = any(:p)", {"p": pvs})
         run("delete from pack_version where id = any(:p)", {"p": pvs})
         run("delete from content_pack where id = any(:c)", {"c": cps})
         if "login_token" in existing:

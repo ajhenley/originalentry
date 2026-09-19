@@ -20,6 +20,20 @@
       <p class="font-semibold leading-tight">{{ company.name }}</p>
       <p class="text-sm text-muted leading-tight">{{ company.period_label }}</p>
     </div>
+    {% if switch_targets %}
+    <details class="relative text-sm">
+      <summary class="cursor-pointer rounded border border-rule px-2 py-1 list-none">Switch company</summary>
+      <ul class="absolute right-0 z-10 mt-1 min-w-48 rounded border border-rule bg-paper shadow">
+        {% for t in switch_targets %}
+        <li>
+          <a class="block px-3 py-2 hover:bg-rule/40"
+             href="{{ url_for('student.overview', workspace=t.public_id, company_slug=t.slug) }}">
+            {{ t.name }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
     <nav aria-label="Workspace" class="flex flex-wrap gap-1 text-sm">
       {% set ws = workspace.public_id %}
       {% set slug = company.slug %}

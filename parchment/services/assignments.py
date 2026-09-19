@@ -75,7 +75,8 @@ def create_assignment(
     *,
     section: Section,
     title: str,
-    pack_version: PackVersion,
+    pack_version: PackVersion | None = None,
+    choice_pack_versions: list[PackVersion] | None = None,
     mode: str = "screen",
     due_at: datetime | None = None,
     opens_at: datetime | None = None,
@@ -85,12 +86,18 @@ def create_assignment(
     guided_mode: bool = True,
     actor=None,
 ) -> Assignment:
+    """A fixed assignment names one company (``pack_version``); a choice assignment offers a list
+    (``choice_pack_versions``) and the student picks (tension 4). Offered companies are marked
+    available to the section so they can be chosen."""
+    choices = choice_pack_versions or []
+    is_choice = pack_version is None and bool(choices)
+
     assignment = Assignment(
         section_id=section.id,
         title=title,
         mode=mode,
-        company_policy="fixed",
-        fixed_pack_version_id=pack_version.id,
+        company_policy="choice" if is_choice else "fixed",
+        fixed_pack_version_id=None if is_choice else pack_version.id,
         variant_policy=variant_policy,
         opens_at=opens_at,
         due_at=due_at,
@@ -100,8 +107,25 @@ def create_assignment(
     )
     session.add(assignment)
     session.flush()
+
+    # Local import: multicompany imports variant_for from this module, so a module-level import
+    # would be circular.
+    from .multicompany import add_assignment_choice, set_availability
+
+    if is_choice:
+        for chosen in choices:
+            add_assignment_choice(session, assignment_id=assignment.id,
+                                  pack_version_id=chosen.id)
+            set_availability(session, section_id=section.id,
+                             content_pack_id=chosen.content_pack_id, available=True, actor=actor)
+        detail = {"choices": [c.id for c in choices]}
+    else:
+        set_availability(session, section_id=section.id,
+                         content_pack_id=pack_version.content_pack_id, available=True, actor=actor)
+        detail = {"pack_version": pack_version.id}
+
     staff_actions.record(session, actor, "create_assignment", "assignment", assignment.id,
-                         detail={"pack_version": pack_version.id})
+                         detail=detail)
     return assignment
 
 
@@ -197,7 +221,7 @@ def open_workspace(session: Session, assignment: Assignment, student) -> Workspa
         assignment_id=assignment.id,
         student_id=student.id,
         pack_version_id=assignment.fixed_pack_version_id,
-        variant_id=_next_variant(session, assignment),
+        variant_id=variant_for(session, assignment, assignment.fixed_pack_version_id),
         status="not_started",
     )
     session.add(workspace)
@@ -205,11 +229,13 @@ def open_workspace(session: Session, assignment: Assignment, student) -> Workspa
     return workspace
 
 
-def _next_variant(session: Session, assignment: Assignment) -> int | None:
+def variant_for(session: Session, assignment: Assignment, pack_version_id: int) -> int | None:
+    """Hand a variant to a new workspace on ``pack_version_id`` per the assignment's policy. Works
+    for the fixed pack version and for a company a student chooses."""
     variants = list(
         session.scalars(
             select(Variant.id)
-            .where(Variant.pack_version_id == assignment.fixed_pack_version_id)
+            .where(Variant.pack_version_id == pack_version_id)
             .order_by(Variant.code)
         )
     )

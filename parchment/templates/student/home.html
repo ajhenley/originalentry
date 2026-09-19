@@ -8,6 +8,20 @@
 </div>
 <p class="mt-1 text-sm text-muted">Signed in as {{ current_user.email }}.</p>
 
+{% if choices %}
+<div class="mt-6 rounded border border-company/40 bg-company/5 p-4">
+  <p class="font-semibold">Choose a company to begin</p>
+  <ul class="mt-2 space-y-1">
+    {% for c in choices %}
+    <li>
+      <a class="underline" href="{{ url_for('student.choose', assignment=c.public_id) }}">
+        {{ c.title }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 {% if workspaces %}
 <ul class="mt-6 divide-y divide-rule rounded border border-rule">
   {% for w in workspaces %}

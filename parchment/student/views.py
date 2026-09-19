@@ -33,6 +33,7 @@ from ..models import (
     Account,
     Assignment,
     ContentPack,
+    Enrollment,
     JournalEntry,
     PackAsset,
     PackVersion,
@@ -43,7 +44,7 @@ from ..models import (
     Workspace,
 )
 from ..presentation import kind_label
-from ..services import WriteRefused, workspace_write
+from ..services import WriteRefused, multicompany, workspace_write
 from ..services.activity import record_refused_save
 from ..services.assignments import JoinRefused, join_with_code
 from ..services.checkpoints import checkpoint_state, record_attempt
@@ -103,7 +104,39 @@ def home():
         }
         for ws, asg, cp in rows
     ]
-    return render_template("student/home.html", workspaces=workspaces)
+    return render_template("student/home.html", workspaces=workspaces,
+                           choices=_pending_company_choices())
+
+
+def _pending_company_choices():
+    """Open choice assignments the student is enrolled in but has not yet picked a company for."""
+    now = datetime.now(UTC)
+    chosen = {
+        ws.assignment_id
+        for ws in db.session.scalars(
+            db.select(Workspace).where(
+                Workspace.student_id == current_user.id, Workspace.archived_at.is_(None)
+            )
+        )
+    }
+    rows = db.session.execute(
+        db.select(Assignment)
+        .join(Enrollment, Enrollment.section_id == Assignment.section_id)
+        .where(
+            Enrollment.user_id == current_user.id,
+            Assignment.company_policy == "choice",
+            Assignment.archived_at.is_(None),
+        )
+        .order_by(Assignment.title)
+    ).scalars()
+    pending = []
+    for asg in rows:
+        if asg.id in chosen:
+            continue
+        if asg.opens_at is not None and asg.opens_at > now:
+            continue
+        pending.append({"public_id": asg.public_id, "title": asg.title})
+    return pending
 
 
 # ── Joining a section ────────────────────────────────────────────────────────────────────
@@ -131,6 +164,82 @@ def join_submit():
     else:
         flash("You are enrolled. Nothing has opened yet — check back when your instructor says.")
     return redirect(url_for("student.home"))
+
+
+# ── Choosing a company (M2.3, tension 4) ─────────────────────────────────────────────────
+
+def _choice_assignment_or_404(public_id: str) -> Assignment:
+    assignment = db.session.scalars(
+        db.select(Assignment).where(
+            Assignment.public_id == public_id,
+            Assignment.company_policy == "choice",
+            Assignment.archived_at.is_(None),
+        )
+    ).one_or_none()
+    if assignment is None:
+        abort(404)
+    # The student must be enrolled in the assignment's section to see it.
+    enrolled = db.session.scalars(
+        db.select(Enrollment).where(
+            Enrollment.section_id == assignment.section_id,
+            Enrollment.user_id == current_user.id,
+        )
+    ).one_or_none()
+    if enrolled is None:
+        abort(404)
+    return assignment
+
+
+def _company_of(pack_version_id: int) -> ContentPack:
+    pv = db.session.get(PackVersion, pack_version_id)
+    return db.session.get(ContentPack, pv.content_pack_id)
+
+
+def _live_workspace(assignment_id: int):
+    return db.session.scalars(
+        db.select(Workspace).where(
+            Workspace.assignment_id == assignment_id,
+            Workspace.student_id == current_user.id,
+            Workspace.archived_at.is_(None),
+        )
+    ).one_or_none()
+
+
+@bp.get("/a/<assignment>/choose")
+@login_required
+def choose(assignment: str):
+    found = _choice_assignment_or_404(assignment)
+    existing = _live_workspace(found.id)
+    if existing is not None:
+        cp = _company_of(existing.pack_version_id)
+        return redirect(url_for("student.overview", workspace=existing.public_id,
+                                company_slug=cp.slug))
+    options = multicompany.company_options(db.session, found)
+    return render_template("student/choose.html", assignment=found, options=options)
+
+
+@bp.post("/a/<assignment>/choose", endpoint="choose_submit")
+@login_required
+def choose_submit(assignment: str):
+    found = _choice_assignment_or_404(assignment)
+    try:
+        pack_version_id = int(request.form.get("pack_version_id", ""))
+    except ValueError:
+        flash("Choose a company to continue.")
+        return redirect(url_for("student.choose", assignment=assignment))
+    try:
+        workspace = multicompany.choose_company(
+            db.session, found, current_user, pack_version_id=pack_version_id
+        )
+    except multicompany.ChoiceRefused as refused:
+        db.session.rollback()
+        flash(refused.message)
+        return redirect(url_for("student.choose", assignment=assignment))
+    db.session.commit()
+    cp = _company_of(workspace.pack_version_id)
+    flash("Your books are ready.")
+    return redirect(url_for("student.overview", workspace=workspace.public_id,
+                            company_slug=cp.slug))
 
 
 @bp.get("/w/<workspace>/<company_slug>/")

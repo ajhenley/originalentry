@@ -54,6 +54,10 @@ def workspace_view(view):
         else:
             g.read_only_message = None
 
+        # The switch menu: the owning student's other live workspaces, so they can move between
+        # companies they have open (M3.4). Staff viewing a student do not get it.
+        g.switch_targets = _switch_targets(ws) if is_owner and not is_staff else []
+
         # A slug that is not this workspace's company shows a mismatch page — never a silent
         # redirect (M3.4).
         if company.slug != company_slug:
@@ -63,3 +67,22 @@ def workspace_view(view):
 
     wrapped._is_workspace_view = True  # let the structure guard confirm every /w/ route uses it
     return wrapped
+
+
+def _switch_targets(workspace) -> list[dict]:
+    """The owning student's other live workspaces, for the switch menu (M3.4)."""
+    rows = db.session.execute(
+        db.select(Workspace, ContentPack)
+        .join(PackVersion, Workspace.pack_version_id == PackVersion.id)
+        .join(ContentPack, PackVersion.content_pack_id == ContentPack.id)
+        .where(
+            Workspace.student_id == workspace.student_id,
+            Workspace.archived_at.is_(None),
+            Workspace.id != workspace.id,
+        )
+        .order_by(ContentPack.company_name)
+    ).all()
+    return [
+        {"public_id": ws.public_id, "name": cp.company_name, "slug": cp.slug}
+        for ws, cp in rows
+    ]

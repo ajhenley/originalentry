@@ -29,6 +29,7 @@ from ..models.work import LATE_ACCEPT, LATE_CLOSED
 from ..packs.importing import PackImportRefused, import_pack_zip
 from ..services import multicompany, staff_actions
 from ..services.assignments import (
+    archive_and_restart,
     clone_assignment,
     create_assignment,
     create_section,
@@ -213,6 +214,21 @@ def grading_detail(assignment: str, workspace: str):
     )
 
 
+@bp.post("/grading/<assignment>/<workspace>/archive")
+@staff_view
+def workspace_archive(assignment: str, workspace: str):
+    found = _assignment_or_404(assignment)
+    ws = _workspace_or_404(found, workspace)
+    reason = (request.form.get("reason") or "").strip()
+    if not reason:
+        flash("Say why you are archiving this workspace.")
+        return redirect(url_for("staff.grading_detail", assignment=assignment, workspace=workspace))
+    archive_and_restart(db.session, ws, reason=reason, actor=current_user)
+    db.session.commit()
+    flash("Workspace archived. A fresh one is open; the old one stays viewable.")
+    return redirect(url_for("staff.grading", assignment=assignment))
+
+
 @bp.post("/grading/<assignment>/<workspace>/override")
 @staff_view
 def grading_override(assignment: str, workspace: str):
@@ -348,9 +364,18 @@ def assignment_create():
     if not title:
         errors["title"] = "Give the assignment a title."
 
-    pack_version = db.session.get(PackVersion, form.get("pack_version_id", type=int) or 0)
-    if pack_version is None:
-        errors["pack_version_id"] = "Choose the company this assignment uses."
+    policy = form.get("company_policy") or "fixed"
+    pack_version = None
+    choice_versions: list = []
+    if policy == "choice":
+        ids = [int(v) for v in form.getlist("choice_pack_version_ids") if v.isdigit()]
+        choice_versions = [pv for pv in (db.session.get(PackVersion, i) for i in ids) if pv]
+        if len(choice_versions) < 2:
+            errors["pack_version_id"] = "Offer at least two companies for students to choose from."
+    else:
+        pack_version = db.session.get(PackVersion, form.get("pack_version_id", type=int) or 0)
+        if pack_version is None:
+            errors["pack_version_id"] = "Choose the company this assignment uses."
 
     section = None
     if (form.get("section_choice") or "existing") == "new":
@@ -390,6 +415,7 @@ def assignment_create():
         section=section,
         title=title,
         pack_version=pack_version,
+        choice_pack_versions=choice_versions or None,
         mode=form.get("mode") or "screen",
         due_at=due_at,
         opens_at=_parse_when(form.get("opens_at")),

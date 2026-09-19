@@ -60,8 +60,13 @@
            class="mt-1 w-full rounded border border-rule px-2 py-1">
   </div>
 
-  <div>
-    <label class="block text-sm font-medium" for="pack_version_id">Company</label>
+  <fieldset class="rounded border border-rule p-4">
+    <legend class="px-1 text-sm font-semibold">Company</legend>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="radio" name="company_policy" value="fixed" checked>
+      One company, the same for everyone
+    </label>
+    <label class="sr-only" for="pack_version_id">Company</label>
     <select id="pack_version_id" name="pack_version_id"
             class="mt-1 w-full rounded border border-rule px-2 py-1">
       <option value="">— choose a company —</option>
@@ -69,7 +74,20 @@
       <option value="{{ entry.id }}">{{ entry.label }}</option>
       {% endfor %}
     </select>
-  </div>
+
+    <label class="mt-3 flex items-center gap-2 text-sm">
+      <input type="radio" name="company_policy" value="choice">
+      Students choose from a list
+    </label>
+    <div class="mt-1 space-y-1">
+      {% for entry in catalogue %}
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="choice_pack_version_ids" value="{{ entry.id }}">
+        {{ entry.label }}
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
 
   <div class="flex flex-wrap gap-4">
     <div>

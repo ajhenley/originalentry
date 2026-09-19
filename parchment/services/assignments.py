@@ -229,6 +229,25 @@ def open_workspace(session: Session, assignment: Assignment, student) -> Workspa
     return workspace
 
 
+def archive_and_restart(session: Session, workspace: Workspace, *, reason: str, actor=None):
+    """Archive a student's workspace and open a fresh one (I1.12), for a student who recorded into
+    the wrong books. Nothing is destroyed — the old workspace stays, archived and viewable. A
+    fixed assignment reopens straight away; a choice assignment waits for the student to choose
+    again."""
+    from ..models import User
+
+    workspace.archived_at = datetime.now(UTC)
+    session.flush()
+    assignment = session.get(Assignment, workspace.assignment_id)
+    student = session.get(User, workspace.student_id)
+    fresh = open_workspace(session, assignment, student)
+    staff_actions.record(
+        session, actor, "archive_workspace", "workspace", workspace.id,
+        reason=reason, detail={"restarted_as": fresh.id if fresh else None},
+    )
+    return fresh
+
+
 def variant_for(session: Session, assignment: Assignment, pack_version_id: int) -> int | None:
     """Hand a variant to a new workspace on ``pack_version_id`` per the assignment's policy. Works
     for the fixed pack version and for a company a student chooses."""

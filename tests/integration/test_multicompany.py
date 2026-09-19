@@ -119,6 +119,35 @@ def test_two_students_get_isolated_companies(session):
     assert ws_a.pack_version_id != ws_b.pack_version_id
 
 
+def test_staff_creates_a_choice_assignment(client, session):
+    from parchment.models import Assignment, AssignmentChoice
+
+    pv_a = _pack(session, f"alpha-{secrets.token_hex(3)}")
+    pv_b = _pack(session, f"beta-{secrets.token_hex(3)}")
+    section = Section(name="Sec", join_code=f"C{secrets.token_hex(3).upper()}")
+    instructor = User(email=f"i-{secrets.token_hex(3)}@example.edu", role="instructor")
+    session.add_all([section, instructor])
+    session.flush()
+    client.sign_in(instructor)
+
+    resp = client.post("/staff/assignments/new", data={
+        "title": "Pick a company", "section_choice": "existing", "section_id": str(section.id),
+        "company_policy": "choice",
+        "choice_pack_version_ids": [str(pv_a.id), str(pv_b.id)],
+        "mode": "screen", "variant_policy": "round_robin", "late_policy": "closed",
+    })
+    assert resp.status_code == 302
+    assignment = session.scalars(
+        select(Assignment).where(Assignment.section_id == section.id)
+    ).one()
+    assert assignment.company_policy == "choice" and assignment.fixed_pack_version_id is None
+    offered = session.scalars(
+        select(AssignmentChoice.pack_version_id).where(
+            AssignmentChoice.assignment_id == assignment.id)
+    ).all()
+    assert set(offered) == {pv_a.id, pv_b.id}
+
+
 def test_http_choose_flow(client, session):
     section, student, assignment, pv_a, pv_b = _setup(session)
     a_name = session.get(PackVersion, pv_a.id)  # ensure loaded

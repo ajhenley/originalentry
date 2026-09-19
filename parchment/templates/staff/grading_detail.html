@@ -107,5 +107,23 @@
     <button type="submit" class="mt-2 rounded bg-ink px-3 py-2 text-sm text-paper">Save comment</button>
   </form>
 </section>
+
+<section class="mt-6 max-w-prose" aria-labelledby="archive">
+  <h2 id="archive" class="mb-2 text-sm font-semibold">Wrong books?</h2>
+  <p class="mb-2 text-sm text-muted">
+    Archive this workspace and start a fresh one for this student. Nothing is destroyed — the
+    archived books stay viewable.
+  </p>
+  <form method="post"
+        action="{{ url_for('staff.workspace_archive', assignment=assignment.public_id,
+                           workspace=workspace.public_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="sr-only" for="archive-reason">Reason</label>
+    <input id="archive-reason" name="reason" required placeholder="Reason"
+           class="rounded border border-rule px-2 py-1 text-sm">
+    <button type="submit" class="rounded border border-rule px-3 py-2 text-sm">
+      Archive and restart</button>
+  </form>
+</section>
 {% endif %}
 {% endblock %}

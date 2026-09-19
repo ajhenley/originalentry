@@ -26,6 +26,7 @@ def _find_user(email: str) -> User | None:
 def register_cli(app: Flask) -> None:
     staff = AppGroup("staff", help="Staff accounts.")
     auth = AppGroup("auth", help="Break-glass sign-in and revocation.")
+    packs = AppGroup("packs", help="Content packs.")
 
     @staff.command("add")
     @click.argument("email")
@@ -67,5 +68,66 @@ def register_cli(app: Flask) -> None:
         db.session.commit()
         click.echo(f"Signed out every device for {email}.")
 
+    @packs.command("import")
+    @click.argument("zip_path")
+    def packs_import(zip_path: str) -> None:
+        """Import a pack zip through the direct endpoint (CLI fallback for large packs, T5.5)."""
+        from .packs.importing import PackImportRefused, import_pack_zip
+
+        with open(zip_path, "rb") as fh:
+            try:
+                version = import_pack_zip(db.session, fh, actor=None)
+            except PackImportRefused as refused:
+                db.session.rollback()
+                click.echo("Import refused:", err=True)
+                for problem in refused.problems:
+                    click.echo(f"  [{problem.rule}] {problem.path}: {problem.message}", err=True)
+                raise SystemExit(1) from refused
+        db.session.commit()
+        click.echo(f"Imported pack version id {version.id}.")
+
+    @packs.command("migrate")
+    @click.option("--assignment", "assignment_pub", required=True, help="Assignment public id.")
+    @click.option("--to-version", type=int, required=True)
+    @click.option("--apply", "apply_it", is_flag=True, help="Apply (default is a dry run).")
+    def packs_migrate(assignment_pub: str, to_version: int, apply_it: bool) -> None:
+        """Migrate a running assignment to a newer version of its company (dry-run by default)."""
+        from sqlalchemy import select as _select
+
+        from .models import Assignment
+        from .packs.migrate import MigrationRefused, migrate_assignment
+
+        assignment = db.session.scalars(
+            _select(Assignment).where(Assignment.public_id == assignment_pub)
+        ).one_or_none()
+        if assignment is None:
+            raise click.ClickException(f"No assignment {assignment_pub}.")
+        try:
+            report = migrate_assignment(
+                db.session, assignment, to_version, dry_run=not apply_it, actor=None
+            )
+        except MigrationRefused as refused:
+            db.session.rollback()
+            raise click.ClickException(refused.message) from refused
+
+        click.echo(f"v{report.from_version} → v{report.to_version}: "
+                   f"{report.workspaces} workspace(s), {report.entry_lines} line(s).")
+        if not report.feasible:
+            db.session.rollback()
+            for label, missing in [("accounts", report.missing_accounts),
+                                   ("parties", report.missing_parties),
+                                   ("documents", report.missing_documents),
+                                   ("variants", report.missing_variants)]:
+                if missing:
+                    click.echo(f"  missing {label}: {', '.join(missing)}", err=True)
+            raise click.ClickException("Not feasible: some content students used is gone.")
+        if report.applied:
+            db.session.commit()
+            click.echo("Migrated.")
+        else:
+            db.session.rollback()
+            click.echo("Dry run only — re-run with --apply to migrate.")
+
     app.cli.add_command(staff)
     app.cli.add_command(auth)
+    app.cli.add_command(packs)

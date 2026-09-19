@@ -58,6 +58,7 @@ from ..services.posting import (
     post_journal_subsidiary_all,
     reverse_run,
 )
+from ..services.record import workspace_record
 from ..services.statements import (
     draft_rows,
     load_draft,
@@ -284,6 +285,15 @@ def general_ledger():
         )
     rows.sort(key=lambda r: (r.sort_order, r.account_number))
     return render_template("student/ledger_general.html", rows=rows)
+
+
+@bp.get("/w/<workspace>/<company_slug>/print")
+@workspace_view
+def print_record():
+    record = workspace_record(
+        db.session, g.workspace, g.pack_version.manifest or {}, g.company.subsidiary_kinds
+    )
+    return render_template("print/workspace.html", record=record)
 
 
 @bp.get("/w/<workspace>/<company_slug>/ledgers/<kind>")

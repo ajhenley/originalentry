@@ -83,8 +83,37 @@ suite shares fixture slugs and would collide with a parallel run): ruff → rebu
 on any difference (A29) → apply every migration to an empty database → run the whole test suite
 (unit, integration, golden, guards, and the node JavaScript tests).
 
-## Due-date evening runbook
+## Backups (OPS-2)
 
-_(OPS-3 — to be filled in during phase 8.)_ Check the uptime monitor, Heroku response times / memory
-/ H12 count, the Neon compute graph, the Resend dashboard (bounces + daily count), and the Progress
-screen for lockouts.
+`scripts/backup.sh [OUT_DIR]` runs `pg_dump` (custom format) through the **direct** Neon endpoint;
+run it the day before each due date and at term end, to an encrypted disk.
+
+```bash
+DATABASE_URL_DIRECT="postgresql+psycopg://…direct-host…/neondb?sslmode=require" \
+  scripts/backup.sh ~/parchment-backups
+# restore:
+pg_restore --clean --no-owner --no-privileges \
+  --dbname "postgresql://…direct-host…/neondb?sslmode=require" parchment-YYYYMMDD-HHMMSS.dump
+```
+
+Once a term, run the drill: restore into a throwaway Neon branch, run `flask replay-key`, delete
+the branch. Neon point-in-time restore (≥ 7 days) is the first line; this dump is the offline copy.
+
+## Due-date evening runbook (OPS-3)
+
+Before the deadline evening, and once during it:
+
+1. **Uptime monitor** — `/healthz` green for the last hour.
+2. **Heroku** — response times, dyno memory (Basic is 512 MB), and the H12 (request timeout) count.
+   A rising H12 count means a slow query or a cold Neon compute.
+3. **Neon** — the compute graph; autosuspend should be **off** on `main` during term so the first
+   request of the evening is not slow.
+4. **Resend** — the dashboard for bounces and the daily send count (a paid plan removes the cap).
+   If sign-in email is failing, issue codes with `flask auth issue-link` or the staff code screen.
+5. **Progress screen** — scan each section for checkpoint lockouts and "not started" flags.
+6. If the app is unavailable for more than 30 minutes within 24 h of a deadline, extend the
+   deadline by 24 h (OPS-6): change the assignment's due date.
+
+Hotfix window (OPS-5): within 48 h of a due date, deploy only a fix for a problem students are
+hitting, only if there is no migration, CI is green, `replay-key` passes on staging, and the
+rollback command (`heroku releases:rollback`) is ready. Otherwise extend the deadline.

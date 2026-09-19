@@ -1,0 +1,81 @@
+name: CI
+
+# One job, run serially: the DB suite seeds shared fixture slugs and would collide with itself if
+# two runs hit the same database at once. Each run gets its own fresh Postgres service, so there is
+# no cross-run interference and nothing to clean up.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: parchment_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: development
+      SECRET_KEY: ci-secret-not-for-production
+      EMAIL_BACKEND: memory
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/parchment_ci
+      DATABASE_URL_DIRECT: postgresql+psycopg://postgres:postgres@localhost:5432/parchment_ci
+      FLASK_APP: parchment.app:create_app
+      PARCHMENT_USE_DIRECT_DB: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check parchment tests scripts
+
+      - name: CSS is built and committed (A29)
+        run: |
+          ./bin/get-tailwind.sh
+          ./bin/tailwindcss -i parchment/static/src/app.css \
+            -o parchment/static/dist/app.css --minify
+          git diff --exit-code -- parchment/static/dist/app.css \
+            || (echo "Built CSS differs from the committed CSS. Rebuild and commit it." && exit 1)
+
+      - name: Migrate (schema, triggers, default privileges) on an empty database
+        run: flask db upgrade
+
+      - name: Tests (unit, integration, golden, guards — serial)
+        run: pytest -q -p no:cacheprovider
+
+  # TODO (provisioned environments): after migrating, run a privilege check as riverbend_app to
+  # prove the least-privilege web role can read every table (D5). It needs the two-role setup that
+  # only the provisioned databases have; the first migration's default-privileges block is a no-op
+  # on CI's single-role Postgres.

@@ -60,6 +60,29 @@ pytest -m "not db"     # explicitly skip database-backed tests
 The ledger engine and its tests deliberately import **no Flask and no SQLAlchemy** — a guard test
 enforces that boundary (T3.1).
 
+## Deploy (Heroku, T13)
+
+Stack `heroku-24`, buildpack `heroku/python`; Python from `.python-version`. Processes come from
+the `Procfile`: `web` runs gunicorn (`gunicorn.conf.py` — 2 workers × 4 threads, 25 s timeout),
+and the `release` phase runs `flask db upgrade` through the **direct** Neon endpoint.
+
+Config vars (T13): `SECRET_KEY`, `DATABASE_URL` (pooled), `DATABASE_URL_DIRECT` (direct),
+`APP_ENV=production`, `APP_BASE_URL`, `COURSE_TZ`, `EMAIL_BACKEND=resend`, `RESEND_API_KEY`,
+`MAIL_FROM`, `MAIL_REPLY_TO`, `WEB_CONCURRENCY`. Do **not** attach a Heroku Postgres add-on (it
+would overwrite `DATABASE_URL`). The built CSS is committed, so the Heroku build has no CSS step.
+
+```bash
+git push heroku main          # release phase migrates, then the web dyno boots
+heroku run "PARCHMENT_USE_DIRECT_DB=1 flask staff add you@example.edu --role instructor"
+```
+
+## Continuous integration (T14.1)
+
+`.github/workflows/ci.yml` runs on push/PR against a `postgres:17` service, **serially** (the DB
+suite shares fixture slugs and would collide with a parallel run): ruff → rebuild the CSS and fail
+on any difference (A29) → apply every migration to an empty database → run the whole test suite
+(unit, integration, golden, guards, and the node JavaScript tests).
+
 ## Due-date evening runbook
 
 _(OPS-3 — to be filled in during phase 8.)_ Check the uptime monitor, Heroku response times / memory

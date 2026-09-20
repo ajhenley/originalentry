@@ -4,12 +4,12 @@ import copy
 import secrets
 
 import pytest
-from parchment.models import Enrollment, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services.assignments import create_assignment
-from parchment.services.grades import grade_section
-from parchment.services.marks_export import marks_csv
+from originalentry.models import Enrollment, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services.assignments import create_assignment
+from originalentry.services.grades import grade_section
+from originalentry.services.marks_export import marks_csv
 from sqlalchemy import select
 
 from tests.packs import testco_alpha

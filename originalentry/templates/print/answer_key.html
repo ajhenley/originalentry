@@ -1,0 +1,145 @@
+{# The answer key for one variant, for the browser to save as PDF (I5.3).
+
+   Staff-only. It is laid out in the order an instructor marking on paper meets the work:
+   document by document, then the adjustments, the checkpoint figures, and the closing balances. #}
+{% extends "base.html" %}
+{% block title %}Answer key · {{ key.company_name }} · {{ key.variant }}{% endblock %}
+
+{% block main %}
+<div class="mb-4 callout callout--attention text-sm print:hidden">
+  This page is the answers. Use your browser's Print (⌘P / Ctrl+P) to save it as a PDF, and keep
+  the file where students cannot reach it.
+</div>
+
+<header class="mb-6">
+  <h1 class="text-xl font-semibold">{{ key.company_name }} · answer key</h1>
+  <p class="text-sm text-muted">
+    Variant {{ key.variant }} · version {{ version.version }} ·
+    {{ version.period_start.strftime('%-d %b %Y') }} – {{ version.period_end.strftime('%-d %b %Y') }}
+  </p>
+</header>
+
+<section class="mb-8">
+  <h2 class="mb-2 font-semibold">Documents</h2>
+  <table class="data-table">
+    <caption class="sr-only">The entry each document takes</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="text-left">Document</th>
+        <th scope="col" class="text-left">Journal</th>
+        <th scope="col" class="text-left">Account</th>
+        <th scope="col" class="text-right">Debit</th>
+        <th scope="col" class="text-right">Credit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for doc in key.documents %}
+      <tr class="align-top">
+        <th scope="row" class="text-left font-normal">
+          {{ doc.display_ref }}
+          {% if doc.date %}<span class="block text-xs text-muted">{{ doc.date }}</span>{% endif %}
+        </th>
+        <td>{{ doc.journal }}</td>
+        <td>
+          {% for line in doc.lines %}
+          <div>{% if line.credit_cents %}<span class="pl-4">{% endif %}{{ line.account }}
+            {%- if line.party %} · {{ line.party }}{% endif %}{% if line.credit_cents %}</span>{% endif %}</div>
+          {% else %}<span class="text-muted">—</span>{% endfor %}
+        </td>
+        <td class="figure text-right">
+          {% for line in doc.lines %}{% if line.debit_cents %}{{ line.debit_cents | money }}<br>{% endif %}{% endfor %}
+        </td>
+        <td class="figure text-right">
+          {% for line in doc.lines %}{% if line.credit_cents %}{{ line.credit_cents | money }}<br>{% endif %}{% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="mb-8">
+  <h2 class="mb-2 font-semibold">Adjustments</h2>
+  {% if key.adjustments %}
+  <table class="data-table">
+    <caption class="sr-only">Adjusting entries</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="text-left">Adjustment</th>
+        <th scope="col" class="text-left">Account</th>
+        <th scope="col" class="text-right">Debit</th>
+        <th scope="col" class="text-right">Credit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for adj in key.adjustments %}
+      <tr class="align-top">
+        <th scope="row" class="text-left font-normal">
+          {{ adj.label }}
+          {% if adj.basis == 'dependent' %}
+          <span class="block text-xs text-muted">Amount follows the student's own figures</span>
+          {% endif %}
+        </th>
+        <td>{% for line in adj.lines %}
+          <div>{% if line.credit_cents %}<span class="pl-4">{% endif %}{{ line.account }}{% if line.credit_cents %}</span>{% endif %}</div>
+          {% endfor %}</td>
+        <td class="figure text-right">
+          {% for line in adj.lines %}{% if line.debit_cents %}{{ line.debit_cents | money }}<br>{% endif %}{% endfor %}
+        </td>
+        <td class="figure text-right">
+          {% for line in adj.lines %}{% if line.credit_cents %}{{ line.credit_cents | money }}<br>{% endif %}{% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="text-sm text-muted">This period has no adjustments.</p>{% endif %}
+</section>
+
+<section class="mb-8">
+  <h2 class="mb-2 font-semibold">Checkpoint figures</h2>
+  {% if key.checkpoints %}
+  <table class="data-table">
+    <caption class="sr-only">The figure each checkpoint is looking for</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="text-left">Checkpoint</th>
+        <th scope="col" class="text-right">Figure</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cp in key.checkpoints %}
+      <tr>
+        <th scope="row" class="text-left font-normal">
+          Checkpoint {{ cp.ordinal }} · {{ cp.prompt }}</th>
+        <td class="figure text-right">{{ cp.figure_cents | money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="text-sm text-muted">This company has no checkpoints.</p>{% endif %}
+</section>
+
+<section class="mb-8">
+  <h2 class="mb-2 font-semibold">Closing balances</h2>
+  {% if key.closing_balances %}
+  <table class="data-table">
+    <caption class="sr-only">Where each account should end the period</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="text-left">Account</th>
+        <th scope="col" class="text-right">Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for account, cents in key.closing_balances %}
+      <tr>
+        <th scope="row" class="text-left font-normal">{{ account }}</th>
+        <td class="figure text-right">{{ cents | money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+{% endblock %}

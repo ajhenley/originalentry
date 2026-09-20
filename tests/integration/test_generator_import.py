@@ -8,9 +8,9 @@ import io
 import secrets
 
 import pytest
-from parchment.generator import build, write_zip
-from parchment.models import Account, AnswerKey, PackAsset, PackVersion
-from parchment.packs.importing import PackImportRefused, import_pack_zip
+from originalentry.generator import build, write_zip
+from originalentry.models import Account, AnswerKey, PackAsset, PackVersion
+from originalentry.packs.importing import PackImportRefused, import_pack_zip
 from sqlalchemy import func, select
 
 from tests.packs import testco_alpha_source

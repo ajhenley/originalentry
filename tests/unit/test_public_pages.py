@@ -8,7 +8,7 @@ what it keeps, who sees it, and what it never does — rather than the things a 
 import re
 
 import pytest
-from parchment.app import create_app
+from originalentry.app import create_app
 
 BANNED = re.compile(r"\b(correct|incorrect|right|wrong)\b", re.IGNORECASE)
 NOTICE = "© 2026 AJ Henley"

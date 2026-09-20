@@ -6,8 +6,8 @@ records are not). Every row stays scoped to the workspace's pack version.
 """
 
 import pytest
-from parchment.forms.statements import RowCommand, StatementCommand
-from parchment.models import (
+from originalentry.forms.statements import RowCommand, StatementCommand
+from originalentry.models import (
     Account,
     Assignment,
     Section,
@@ -16,17 +16,17 @@ from parchment.models import (
     Variant,
     Workspace,
 )
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services import WriteRefused, workspace_write
-from parchment.services.statements import (
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services import WriteRefused, workspace_write
+from originalentry.services.statements import (
     draft_rows,
     load_draft,
     own_figures,
     save_statement,
     statement_counts,
 )
-from parchment.services.submit import submit_workspace
+from originalentry.services.submit import submit_workspace
 from sqlalchemy import func, select
 
 from tests.packs import testco_alpha

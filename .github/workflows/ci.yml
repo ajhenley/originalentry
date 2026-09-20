@@ -23,7 +23,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: parchment_ci
+          POSTGRES_DB: originalentry_ci
         ports:
           - 5432:5432
         options: >-
@@ -36,10 +36,10 @@ jobs:
       APP_ENV: development
       SECRET_KEY: ci-secret-not-for-production
       EMAIL_BACKEND: memory
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/parchment_ci
-      DATABASE_URL_DIRECT: postgresql+psycopg://postgres:postgres@localhost:5432/parchment_ci
-      FLASK_APP: parchment.app:create_app
-      PARCHMENT_USE_DIRECT_DB: "1"
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/originalentry_ci
+      DATABASE_URL_DIRECT: postgresql+psycopg://postgres:postgres@localhost:5432/originalentry_ci
+      FLASK_APP: originalentry.app:create_app
+      ORIGINALENTRY_USE_DIRECT_DB: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -59,14 +59,14 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Lint (ruff)
-        run: ruff check parchment tests scripts
+        run: ruff check originalentry tests scripts
 
       - name: CSS is built and committed (A29)
         run: |
           ./bin/get-tailwind.sh
-          ./bin/tailwindcss -i parchment/static/src/app.css \
-            -o parchment/static/dist/app.css --minify
-          git diff --exit-code -- parchment/static/dist/app.css \
+          ./bin/tailwindcss -i originalentry/static/src/app.css \
+            -o originalentry/static/dist/app.css --minify
+          git diff --exit-code -- originalentry/static/dist/app.css \
             || (echo "Built CSS differs from the committed CSS. Rebuild and commit it." && exit 1)
 
       - name: Migrate (schema, triggers, default privileges) on an empty database

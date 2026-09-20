@@ -8,8 +8,8 @@ good — that is the grading engine's business, after submission.
 """
 
 import pytest
-from parchment import messages
-from parchment.forms.statements import StatementContext, parse_statement
+from originalentry import messages
+from originalentry.forms.statements import StatementContext, parse_statement
 
 
 @pytest.fixture

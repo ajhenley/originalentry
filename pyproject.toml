@@ -1,7 +1,7 @@
 [project]
-name = "parchment"
+name = "originalentry"
 version = "0.1.0"
-description = "Parchment — a browser-based accounting system simulation for Principles of Financial Accounting (Riverbend Ledger build)"
+description = "Original Entry — a browser-based accounting system simulation for Principles of Financial Accounting (Riverbend Ledger build)"
 requires-python = ">=3.13"
 readme = "README.md"
 
@@ -36,7 +36,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["parchment*"]
+include = ["originalentry*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -50,7 +50,7 @@ markers = [
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-src = ["parchment", "tests"]
+src = ["originalentry", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

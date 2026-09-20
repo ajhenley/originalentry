@@ -6,12 +6,12 @@ action for the whole section.
 """
 
 import pytest
-from parchment.models import Assignment, Section, StaffAction, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services import workspace_write
-from parchment.services.dispositions import set_disposition
-from parchment.services.grades import final_marks, latest_run
+from originalentry.models import Assignment, Section, StaffAction, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services import workspace_write
+from originalentry.services.dispositions import set_disposition
+from originalentry.services.grades import final_marks, latest_run
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
@@ -167,8 +167,8 @@ def test_the_review_queue_lists_only_what_the_engine_could_not_decide(client, se
     # Two live entries for one document: the engine credits what it can and asks for a human.
     from datetime import date
 
-    from parchment.forms.entries import EntryCommand, LineCommand
-    from parchment.services.entries import record_entry
+    from originalentry.forms.entries import EntryCommand, LineCommand
+    from originalentry.services.entries import record_entry
 
     for client_key in ("dup-1", "dup-2"):
         command = EntryCommand(
@@ -207,3 +207,98 @@ def test_diagnostics_reports_the_cohort_and_exports_it(client, section, session)
     lines = export.get_data(as_text=True).strip().splitlines()
     assert lines[0].startswith("email,family_name,given_name,variant")
     assert len(lines) == 3  # a header and the two students
+
+
+def test_the_screen_explains_a_total_that_is_not_the_sum_of_its_rows(client, section, session):
+    """A deduction the pack asked for (T8.5). An unexplained total is worse than none."""
+    from dataclasses import replace
+
+    from originalentry.grading.models import Deduction
+    from originalentry.grading.workspace import grade_workspace
+    from originalentry.services.grades import record_run
+
+    assignment, workspaces, instructor = section
+    ws, student = workspaces[0]
+    workspace_write(session, ws.public_id, student, activity_kind="disposition",
+                    mutate=lambda s, w: set_disposition(s, w, "INV-1", "record", None))
+    result = replace(
+        grade_workspace(session, ws),
+        deductions=(Deduction("sale_to_an_expense_account", "Recorded a sale in an expense", 4.0),),
+    )
+    record_run(session, ws, result, created_by=instructor)
+    client.sign_in(instructor)
+
+    body = client.get(_grading_url(assignment, f"/{ws.public_id}")).get_data(as_text=True)
+
+    assert "earned, less" in body
+    assert "Recorded a sale in an expense" in body
+
+
+# ── Grading a section a few at a time (T8.6) ────────────────────────────────────────────
+#
+# The button posts once and grades a batch. `batch.js` keeps posting until there are none left,
+# which it can only do if the answer says how many remain. Without the script the same endpoint
+# still works as an ordinary form post — that is what the first of these checks.
+
+def test_without_the_script_the_button_still_grades_a_batch(client, section, session):
+    assignment, workspaces, instructor = section
+    client.sign_in(instructor)
+
+    response = client.post(_grading_url(assignment, "/run"), follow_redirects=False)
+
+    assert response.status_code in (302, 303)     # an ordinary post, an ordinary redirect
+    assert latest_run(session, workspaces[0][0]) is not None
+
+
+def test_a_batch_request_is_told_how_much_is_left(client, section):
+    assignment, workspaces, instructor = section
+    client.sign_in(instructor)
+
+    response = client.post(_grading_url(assignment, "/run"), headers={"X-Batch": "1"})
+
+    assert response.status_code == 200
+    assert int(response.headers["X-Total"]) == len(workspaces)
+    assert int(response.headers["X-Graded"]) == len(workspaces)
+    assert int(response.headers["X-Remaining"]) == 0
+
+
+def test_the_remaining_count_falls_to_zero_and_stays_there(client, section):
+    """What lets the script stop: a second run of a graded section has nothing left to do."""
+    assignment, _, instructor = section
+    client.sign_in(instructor)
+    client.post(_grading_url(assignment, "/run"), headers={"X-Batch": "1"})
+
+    again = client.post(_grading_url(assignment, "/run"), headers={"X-Batch": "1"})
+
+    assert int(again.headers["X-Remaining"]) == 0
+
+
+def test_the_screen_offers_the_bar_and_the_count(client, section):
+    assignment, _, instructor = section
+    client.sign_in(instructor)
+
+    body = client.get(_grading_url(assignment)).get_data(as_text=True)
+
+    assert "data-batch" in body
+    assert "<progress" in body
+    assert "batch.js" in body
+
+
+def test_the_cursor_walks_the_section_instead_of_regrading_the_front_of_it(client, section,
+                                                                           session):
+    """What the script sends back. With a batch of one, two posts must reach two workspaces."""
+    assignment, workspaces, instructor = section
+    client.sign_in(instructor)
+
+    first = client.post(_grading_url(assignment, "/run"), headers={"X-Batch": "1"},
+                        data={"after": ""})
+    cursor = first.headers["X-After"]
+    second = client.post(_grading_url(assignment, "/run"), headers={"X-Batch": "1"},
+                         data={"after": cursor})
+
+    assert cursor
+    # The second batch starts past the first, so it grades nothing it has already done.
+    assert int(second.headers["X-Graded"]) == 0
+    assert int(second.headers["X-Remaining"]) == 0
+    for workspace, _ in workspaces:
+        assert latest_run(session, workspace) is not None

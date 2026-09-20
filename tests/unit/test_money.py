@@ -1,7 +1,7 @@
 """Money parser and formatter (T7.1). Round-trips and rejections (T17.3 Money guard)."""
 
 import pytest
-from parchment import money
+from originalentry import money
 
 
 @pytest.mark.parametrize(

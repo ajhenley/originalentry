@@ -9,8 +9,8 @@ test while scoring a real workspace zero on triage, journal selection and entry 
 """
 
 import pytest
-from parchment.grading.workspace import grade_workspace
-from parchment.services.grades import final_marks, record_run
+from originalentry.grading.workspace import grade_workspace
+from originalentry.services.grades import final_marks, record_run
 
 from tests.packs import testco_alpha
 from tests.perfect_student import build

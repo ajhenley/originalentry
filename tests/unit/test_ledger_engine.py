@@ -4,8 +4,8 @@ confirm the derived trial balances and the subsidiary proof to the cent — with
 from datetime import date
 
 import pytest
-from parchment import ledger
-from parchment.ledger import (
+from originalentry import ledger
+from originalentry.ledger import (
     ADJUSTING,
     GENERAL,
     REGULAR,

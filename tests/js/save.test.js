@@ -9,7 +9,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { BACKOFF_MS, delayFor, planFor } from "../../parchment/static/js/save.js";
+import { BACKOFF_MS, delayFor, planFor } from "../../originalentry/static/js/save.js";
 
 const answer = (status, headers = {}) => ({ status, headers: new Map(Object.entries(headers)) });
 

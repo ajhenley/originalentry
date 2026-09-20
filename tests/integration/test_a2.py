@@ -9,10 +9,10 @@ This is the DB-backed counterpart of the pure engine test. When the form endpoin
 from datetime import date
 
 import pytest
-from parchment.ledger import snapshot as snap
-from parchment.ledger import trial_balance
-from parchment.ledger.engine import balances, subsidiary_proof
-from parchment.models import (
+from originalentry.ledger import snapshot as snap
+from originalentry.ledger import trial_balance
+from originalentry.ledger.engine import balances, subsidiary_proof
+from originalentry.models import (
     Account,
     Assignment,
     EntryLine,
@@ -25,8 +25,8 @@ from parchment.models import (
     Variant,
     Workspace,
 )
-from parchment.packs import schema, validate
-from parchment.packs.importer import import_content
+from originalentry.packs import schema, validate
+from originalentry.packs.importer import import_content
 from sqlalchemy import select
 
 from tests.packs import testco_alpha

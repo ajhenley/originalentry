@@ -11,16 +11,16 @@ at the time.
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from parchment.models import Assignment, Section, StaffAction, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services import WriteRefused, workspace_write
-from parchment.services.accommodations import (
+from originalentry.models import Assignment, Section, StaffAction, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services import WriteRefused, workspace_write
+from originalentry.services.accommodations import (
     clear_accommodation,
     close_for,
     set_accommodation,
 )
-from parchment.services.dispositions import set_disposition
+from originalentry.services.dispositions import set_disposition
 from sqlalchemy import select
 
 from tests.packs import testco_alpha

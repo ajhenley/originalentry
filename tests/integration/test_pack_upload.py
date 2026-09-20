@@ -10,8 +10,8 @@ import json
 import zipfile
 
 import pytest
-from parchment.models import ContentPack, PackVersion, User
-from parchment.packs.importing import PackImportRefused, import_pack_zip
+from originalentry.models import ContentPack, PackVersion, User
+from originalentry.packs.importing import PackImportRefused, import_pack_zip
 from sqlalchemy import func, select
 
 from tests.packs import testco_alpha
@@ -112,3 +112,36 @@ def test_a_pack_whose_key_does_not_replay_is_refused(session, instructor):
         import_pack_zip(session, _zip(keys={"A": key}), actor=instructor)
 
     assert any(problem.rule == "V9" for problem in refused.value.problems)
+
+
+# ── W1 reaches the author (T5.4) ────────────────────────────────────────────────────────
+
+def _pack_saying_correct(slug: str) -> dict:
+    pack = copy.deepcopy(testco_alpha.PACK)
+    pack["company"]["slug"] = slug
+    pack["documents"][0]["guidance"] = "Choose the correct journal for this document."
+    return pack
+
+
+def test_a_pack_that_says_correct_still_loads(session, instructor):
+    """A warning is not a refusal: "a correcting entry" is ordinary accounting prose."""
+    version = import_pack_zip(session, _zip(_pack_saying_correct("w1-loads")), actor=instructor)
+
+    assert version.id is not None
+
+
+def test_the_upload_screen_shows_the_author_what_it_noticed(client, session, instructor):
+    session.commit()
+    client.sign_in(instructor)
+
+    response = client.post(
+        "/staff/catalogue",
+        data={"pack": (_zip(_pack_saying_correct("w1-screen")), "pack.zip")},
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    body = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert "W1" in body
+    assert "in the catalogue" in body       # it loaded, and says so

@@ -12,9 +12,9 @@ summary empty, and did retained earnings move by their own net income less their
 from dataclasses import replace
 
 import pytest
-from parchment.grading import grade
-from parchment.ledger.models import ADJUSTING, CLOSING
-from parchment.packs import replay, schema
+from originalentry.grading import grade
+from originalentry.ledger.models import ADJUSTING, CLOSING
+from originalentry.packs import replay, schema
 
 from tests.packs import testco_alpha
 from tests.work import perfect_work

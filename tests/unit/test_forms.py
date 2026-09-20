@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from parchment.forms.entries import (
+from originalentry.forms.entries import (
     AccountInfo,
     EntryContext,
     parse_general_entry,

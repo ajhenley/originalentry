@@ -10,7 +10,7 @@ import json
 import zipfile
 
 import pytest
-from parchment.packs.zip_reader import (
+from originalentry.packs.zip_reader import (
     MAX_ENTRIES,
     MAX_UNCOMPRESSED_BYTES,
     PackZipRefused,

@@ -11,19 +11,19 @@ exactly as it did before.
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from parchment.forms.entries import EntryCommand, LineCommand
-from parchment.grading.checkpoints import evaluate
-from parchment.models import Assignment, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services import WriteRefused, workspace_write
-from parchment.services.checkpoint_rules import (
+from originalentry.forms.entries import EntryCommand, LineCommand
+from originalentry.grading.checkpoints import evaluate
+from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services import WriteRefused, workspace_write
+from originalentry.services.checkpoint_rules import (
     checkpoint_deadline,
     gate_refusal,
     set_checkpoint_rule,
 )
-from parchment.services.checkpoints import record_attempt
-from parchment.services.entries import record_entry
+from originalentry.services.checkpoints import record_attempt
+from originalentry.services.entries import record_entry
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
@@ -138,7 +138,7 @@ def test_a_deadline_closes_the_checkpoint(session, workspace):
 def test_a_students_extra_time_moves_their_checkpoint_too(session, workspace):
     """Extended time is extended time; it would be a strange accommodation that stopped here."""
     ws, student, assignment, instructor = workspace
-    from parchment.services.accommodations import set_accommodation
+    from originalentry.services.accommodations import set_accommodation
 
     set_checkpoint_rule(session, assignment=assignment, ordinal=1, deadline_at=YESTERDAY,
                         actor=instructor)

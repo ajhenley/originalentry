@@ -8,9 +8,9 @@ took. It reports facts about the cohort and names no student as having done anyt
 import copy
 
 import pytest
-from parchment.grading.workspace import grade_workspace
-from parchment.services.diagnostics import cohort_csv, cohort_diagnostics
-from parchment.services.grades import record_run
+from originalentry.grading.workspace import grade_workspace
+from originalentry.services.diagnostics import cohort_csv, cohort_diagnostics
+from originalentry.services.grades import record_run
 
 from tests.packs import testco_alpha
 from tests.perfect_student import build
@@ -37,7 +37,7 @@ def section(session):
     workspace, student, pack, key = good
     assignment_id = workspace.assignment_id
 
-    from parchment.models import Assignment, User, Variant, Workspace
+    from originalentry.models import Assignment, User, Variant, Workspace
     from sqlalchemy import select
 
     assignment = session.get(Assignment, assignment_id)
@@ -54,7 +54,7 @@ def section(session):
     session.flush()
 
     # The second student's work, built from a key carrying the designed error.
-    from parchment.packs import schema
+    from originalentry.packs import schema
 
     from tests.perfect_student import _adjust, _close, _journalise, _post_everything, _triage
 
@@ -85,9 +85,9 @@ def test_the_screen_counts_who_made_each_designed_error(session, section):
 
 def test_documents_handled_differently_from_the_key_are_counted(session, section):
     assignment, _, other = section
-    from parchment.models import User
-    from parchment.services import workspace_write
-    from parchment.services.dispositions import set_disposition
+    from originalentry.models import User
+    from originalentry.services import workspace_write
+    from originalentry.services.dispositions import set_disposition
 
     student = session.get(User, other.student_id)
     workspace_write(session, other.public_id, student, activity_kind="disposition",

@@ -9,11 +9,11 @@ import types
 
 import pytest
 from flask import g, render_template
-from parchment.app import create_app
-from parchment.ledger import subsidiary_proof, trial_balance
-from parchment.ledger.engine import TrialBalanceRow
-from parchment.packs import replay, schema
-from parchment.presentation import Company, kind_label
+from originalentry.app import create_app
+from originalentry.ledger import subsidiary_proof, trial_balance
+from originalentry.ledger.engine import TrialBalanceRow
+from originalentry.packs import replay, schema
+from originalentry.presentation import Company, kind_label
 
 from tests.packs import testco_alpha
 
@@ -59,7 +59,7 @@ def test_landing_is_public(app):
     resp = app.test_client().get("/")
     assert resp.status_code == 200
     body = resp.get_data(as_text=True)
-    assert "Parchment" in body
+    assert "Original Entry" in body
     assert "Join with a class code" in body
     assert not BANNED.search(_visible_text(body))
 
@@ -106,7 +106,7 @@ def test_trial_balance_renders_and_balances(app, snapshot):
 
 
 def test_general_ledger_renders(app, snapshot):
-    from parchment.ledger import balances
+    from originalentry.ledger import balances
 
     bals = balances(snapshot, "adjusted")
     rows = [
@@ -160,7 +160,7 @@ def test_document_detail_renders_view_as_text(app):
 
 
 def test_checkpoints_render(app):
-    from parchment.services.checkpoints import CheckpointState
+    from originalentry.services.checkpoints import CheckpointState
 
     checkpoints = [
         {"key": "cp1", "ordinal": 1, "prompt": "Accounts Receivable balance after posting",
@@ -215,7 +215,7 @@ def test_statements_index_lists_the_forms_the_pack_supplies(app):
 
 
 def test_statement_builder_offers_the_pack_vocabulary_and_the_students_own_figures(app, snapshot):
-    from parchment.ledger import balances
+    from originalentry.ledger import balances
 
     statement = {
         "type": "income_statement", "title": "Income Statement",

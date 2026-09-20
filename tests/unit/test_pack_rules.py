@@ -7,8 +7,8 @@ entries would be reported as a designed error.
 
 import copy
 
-from parchment.packs import schema
-from parchment.packs.validate import validate_pack
+from originalentry.packs import schema, validate
+from originalentry.packs.validate import validate_pack
 
 from tests.packs import testco_alpha
 
@@ -125,3 +125,85 @@ def test_v11_a_dependent_adjustment_needs_the_balance_it_follows_from():
     problems = _problems(testco_alpha.PACK, key, rule="V11")
 
     assert problems and "base_account" in problems[0].message
+
+
+# ── W1: the four words, in the pack's own text ──────────────────────────────────────────
+#
+# The app never tells a student they are wrong (A7), and a guard keeps those words out of the
+# templates and the scripts. None of that helps if a company's own documents say it — so the
+# author is warned before the pack is ever in front of anyone.
+#
+# It is a warning, not a refusal. "Correct" has honest uses in accounting prose ("a correcting
+# entry"), and the author is the one who can tell.
+
+def _pack_with(text_at: str, value: str) -> dict:
+    data = copy.deepcopy(testco_alpha.PACK)
+    node = data
+    parts = text_at.split(".")
+    for part in parts[:-1]:
+        if part.isdigit():
+            node = node[int(part)]
+        else:
+            node = node[part]
+    node[parts[-1]] = value
+    return data
+
+
+def test_a_clean_pack_raises_no_warning():
+    pack = schema.load_pack(testco_alpha.PACK)
+
+    assert list(validate.warn_pack(pack)) == []
+
+
+def test_guidance_that_says_correct_is_warned_about():
+    pack = schema.load_pack(_pack_with("documents.0.guidance", "Choose the correct journal."))
+
+    warnings = list(validate.warn_pack(pack))
+
+    assert [w.rule for w in warnings] == ["W1"]
+    assert "documents" in warnings[0].path
+
+
+def test_each_of_the_four_words_is_caught():
+    for word in ("correct", "incorrect", "right", "wrong"):
+        pack = schema.load_pack(_pack_with("documents.0.guidance", f"That is {word}."))
+
+        assert [w.rule for w in validate.warn_pack(pack)] == ["W1"], word
+
+
+def test_a_word_that_merely_contains_one_is_left_alone():
+    """"Copyright" is not "right"."""
+    pack = schema.load_pack(_pack_with("documents.0.guidance", "Copyright of the supplier."))
+
+    assert list(validate.warn_pack(pack)) == []
+
+
+def test_a_checkpoint_prompt_is_read_too():
+    pack = schema.load_pack(_pack_with("checkpoints.0.prompt", "Enter the correct balance"))
+
+    warnings = list(validate.warn_pack(pack))
+
+    assert [w.rule for w in warnings] == ["W1"]
+    assert "checkpoints" in warnings[0].path
+
+
+def test_the_warning_says_which_word_and_where():
+    pack = schema.load_pack(_pack_with("documents.0.guidance", "Choose the correct journal."))
+
+    warning = list(validate.warn_pack(pack))[0]
+
+    assert "correct" in warning.message
+    assert warning.path.endswith("guidance")
+
+
+def test_a_warning_never_refuses_the_pack():
+    """The author decides. A refusal here would make a judgement about their prose."""
+    data = _pack_with("documents.0.guidance", "Choose the correct journal.")
+    pack = schema.load_pack(data)
+
+    assert list(validate.validate_pack(pack)) == []
+    assert list(validate.warn_pack(pack)) != []
+
+
+def test_the_rule_is_no_longer_listed_as_unwritten():
+    assert "W1" not in validate.DEFERRED_RULES

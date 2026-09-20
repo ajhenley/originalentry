@@ -7,11 +7,11 @@ import secrets
 from datetime import date
 
 import pytest
-from parchment.models import Account, EntryLine, JournalEntry, Section, User
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.packs.migrate import migrate_assignment
-from parchment.services.assignments import create_assignment, open_workspace
+from originalentry.models import Account, EntryLine, JournalEntry, Section, User
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.packs.migrate import migrate_assignment
+from originalentry.services.assignments import create_assignment, open_workspace
 from sqlalchemy import select, text
 
 from tests.packs import testco_alpha

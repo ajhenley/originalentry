@@ -14,7 +14,7 @@ import ast
 import pathlib
 import re
 
-APP = pathlib.Path(__file__).resolve().parents[2] / "parchment"
+APP = pathlib.Path(__file__).resolve().parents[2] / "originalentry"
 TEMPLATES = APP / "templates"
 
 # Names that hold an account number, in whatever spelling the code uses for them.

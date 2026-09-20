@@ -1,0 +1,30 @@
+{# The instructor's console (I1–I5): five screens, no settings page. Plain chrome on purpose —
+   the chrome is navy with a teal rule, so it never reads as any one company's books. #}
+{% extends "base.html" %}
+
+{# The console shows a section at a time, so it takes a wider column than a student's books —
+   and the header, the tables and the footer all take it together. #}
+{% set shell_width = "max-w-6xl" %}
+
+{% block title %}{{ self.heading() }} · Original Entry{% endblock %}
+
+{% block chrome %}
+<header class="bg-navy text-paper">
+  <div class="h-1.5 bg-teal"></div>
+  <div data-shell class="mx-auto flex {{ shell_width }} flex-wrap items-center gap-4 px-4 py-3">
+    <p class="mr-auto font-display text-lg">Original Entry <span class="label-meta text-paper/60">console</span></p>
+    <nav aria-label="Console" class="flex flex-wrap gap-1">
+      <a href="{{ url_for('staff.index') }}" class="nav-link"
+         {% if request.path == url_for('staff.index') %}aria-current="page"{% endif %}>Assignments</a>
+      <a href="{{ url_for('staff.catalogue') }}" class="nav-link"
+         {% if request.path == url_for('staff.catalogue') %}aria-current="page"{% endif %}>Catalogue</a>
+      <a href="{{ url_for('auth.sign_out') }}" class="nav-link">Sign out</a>
+    </nav>
+  </div>
+</header>
+{% endblock %}
+
+{% block main %}
+  <h1 class="mb-5 text-3xl">{% block heading %}{% endblock %}</h1>
+  {% block console %}{% endblock %}
+{% endblock %}

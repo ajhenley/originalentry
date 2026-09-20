@@ -7,8 +7,8 @@ import copy
 import io
 
 import pytest
-from parchment.generator import GeneratorError, build, write_zip
-from parchment.packs.zip_reader import read_pack_zip
+from originalentry.generator import GeneratorError, build, write_zip
+from originalentry.packs.zip_reader import read_pack_zip
 
 from tests.packs import testco_alpha, testco_alpha_source
 

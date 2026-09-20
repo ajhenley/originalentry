@@ -6,7 +6,7 @@ import secrets
 from datetime import date
 
 import pytest
-from parchment.models import (
+from originalentry.models import (
     Assignment,
     Enrollment,
     EntryLine,
@@ -15,12 +15,12 @@ from parchment.models import (
     User,
     Workspace,
 )
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services import workspace_write
-from parchment.services.assignments import create_assignment, open_workspace
-from parchment.services.entries import record_entry
-from parchment.services.purge import purge_section
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services import workspace_write
+from originalentry.services.assignments import create_assignment, open_workspace
+from originalentry.services.entries import record_entry
+from originalentry.services.purge import purge_section
 
 from tests.packs import testco_alpha
 
@@ -44,7 +44,7 @@ def test_purge_deletes_work_and_orphaned_students(session):
     ])
     assignment = create_assignment(session, section=section, title="Dec", pack_version=pv)
     ws = open_workspace(session, assignment, orphan)
-    from parchment.forms.entries import EntryCommand, LineCommand
+    from originalentry.forms.entries import EntryCommand, LineCommand
     workspace_write(session, ws.public_id, orphan, activity_kind="save",
                     mutate=lambda s, w: record_entry(s, w, EntryCommand(
                         journal_key="general", kind="regular", document_ref="INV-1",

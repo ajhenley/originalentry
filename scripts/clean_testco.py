@@ -15,15 +15,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from parchment.app import create_app  # noqa: E402
-from parchment.extensions import db  # noqa: E402
+from originalentry.app import create_app  # noqa: E402
+from originalentry.extensions import db  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 
 def clean() -> None:
     app = create_app()
     with app.app_context():
-        if app.extensions["parchment_config"].IS_PRODUCTION:
+        if app.extensions["originalentry_config"].IS_PRODUCTION:
             raise SystemExit("Refusing to run against production.")
         existing = set(
             db.session.execute(

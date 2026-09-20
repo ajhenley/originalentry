@@ -23,7 +23,7 @@ from pathlib import Path
 # Allow running from the repo root without installing the package.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from parchment.generator import GeneratorError, build, write_zip  # noqa: E402
+from originalentry.generator import GeneratorError, build, write_zip  # noqa: E402
 
 
 def _load_source(path: Path) -> dict:
@@ -41,7 +41,7 @@ def _load_source(path: Path) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Generate a Parchment pack zip.")
+    parser = argparse.ArgumentParser(description="Generate an Original Entry pack zip.")
     parser.add_argument("source", type=Path, help="authoring source (.py with SOURCE, or .json)")
     parser.add_argument("out", type=Path, help="output .zip path")
     parser.add_argument("--paper", action="store_true", help="skip images (paper pack)")

@@ -2,11 +2,11 @@
 current row per document (partial unique index, tension 9)."""
 
 import pytest
-from parchment.models import Assignment, Disposition, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services import WriteRefused, workspace_write
-from parchment.services.dispositions import current_dispositions, set_disposition
+from originalentry.models import Assignment, Disposition, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services import WriteRefused, workspace_write
+from originalentry.services.dispositions import current_dispositions, set_disposition
 from sqlalchemy import func, select
 
 from tests.packs import testco_alpha

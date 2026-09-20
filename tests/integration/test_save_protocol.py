@@ -12,16 +12,16 @@ the same ``client_key`` twice is one entry, not two.
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from parchment.models import Assignment, JournalEntry, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_content
+from originalentry.models import Assignment, JournalEntry, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
 from sqlalchemy import func, select
 
 from tests.packs import testco_alpha
 
 pytestmark = pytest.mark.db
 
-SAVE_HEADER = {"X-Parchment-Save": "1"}
+SAVE_HEADER = {"X-OriginalEntry-Save": "1"}
 
 
 @pytest.fixture

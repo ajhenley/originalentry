@@ -9,9 +9,9 @@ response with no email sent, joining by code creates the account, and revoke sig
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from parchment.auth import email as email_module
-from parchment.auth import tokens
-from parchment.models import Enrollment, LoginToken, Section, User
+from originalentry.auth import email as email_module
+from originalentry.auth import tokens
+from originalentry.models import Enrollment, LoginToken, Section, User
 from sqlalchemy import func, select
 
 pytestmark = pytest.mark.db
@@ -19,7 +19,7 @@ pytestmark = pytest.mark.db
 
 @pytest.fixture
 def mail(app):
-    cfg = app.extensions["parchment_config"]
+    cfg = app.extensions["originalentry_config"]
     before = cfg.EMAIL_BACKEND
     cfg.EMAIL_BACKEND = "memory"
     email_module.SENT.clear()

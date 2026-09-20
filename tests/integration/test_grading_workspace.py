@@ -6,14 +6,14 @@ nowhere a student route can reach (D6 rule 6).
 """
 
 import pytest
-from parchment.forms.statements import RowCommand, StatementCommand
-from parchment.grading.workspace import grade_workspace, load_work
-from parchment.models import Assignment, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services import workspace_write
-from parchment.services.dispositions import set_disposition
-from parchment.services.statements import save_statement
+from originalentry.forms.statements import RowCommand, StatementCommand
+from originalentry.grading.workspace import grade_workspace, load_work
+from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services import workspace_write
+from originalentry.services.dispositions import set_disposition
+from originalentry.services.statements import save_statement
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
@@ -87,8 +87,8 @@ def test_an_entry_carries_the_document_it_records(session):
     """Without this, every component that works document by document quietly scores zero."""
     from datetime import date
 
-    from parchment.forms.entries import EntryCommand, LineCommand
-    from parchment.services.entries import record_entry
+    from originalentry.forms.entries import EntryCommand, LineCommand
+    from originalentry.services.entries import record_entry
 
     ws, student = _seed(session)
     command = EntryCommand(

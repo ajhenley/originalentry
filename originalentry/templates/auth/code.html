@@ -1,0 +1,25 @@
+{% extends "layouts/auth.html" %}
+{% block title %}Enter your code · Original Entry{% endblock %}
+
+{% block auth %}
+<h1 class="text-lg font-semibold">Enter your sign-in code</h1>
+<form method="post" action="{{ url_for('auth.code') }}" class="mt-4 space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div>
+    <label for="email" class="field-label">Email address</label>
+    <input id="email" name="email" type="email" autocomplete="email" required value="{{ email }}"
+           class="field mt-1">
+  </div>
+  <div>
+    <label for="code" class="field-label">Six-digit code</label>
+    <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" required
+           pattern="[0-9]*" maxlength="6"
+           class="field field--figure mt-1 w-40 text-lg tracking-widest">
+  </div>
+  <button type="submit" class="btn btn--primary">Sign in</button>
+</form>
+<p class="mt-4 text-sm text-muted">
+  Codes expire in 15 minutes and allow five attempts.
+  <a class="underline" href="{{ url_for('auth.sign_in_form') }}">Email me a new one.</a>
+</p>
+{% endblock %}

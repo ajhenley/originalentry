@@ -7,18 +7,18 @@ import copy
 import secrets
 
 import pytest
-from parchment.models import (
+from originalentry.models import (
     Enrollment,
     PackVersion,
     Section,
     User,
     Workspace,
 )
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services import multicompany
-from parchment.services.assignments import create_assignment
-from parchment.services.multicompany import ChoiceRefused, choose_company, set_availability
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services import multicompany
+from originalentry.services.assignments import create_assignment
+from originalentry.services.multicompany import ChoiceRefused, choose_company, set_availability
 from sqlalchemy import func, select
 
 from tests.packs import testco_alpha
@@ -100,7 +100,7 @@ def test_withdrawing_after_choice_leaves_the_workspace_usable(session):
     still_there = session.get(Workspace, ws.id)
     assert still_there.archived_at is None
     # It still loads through the engine — books already open keep working.
-    from parchment.ledger.snapshot import load_snapshot
+    from originalentry.ledger.snapshot import load_snapshot
     snapshot = load_snapshot(session, still_there)
     assert snapshot.accounts  # the chart is intact
 
@@ -120,7 +120,7 @@ def test_two_students_get_isolated_companies(session):
 
 
 def test_staff_creates_a_choice_assignment(client, session):
-    from parchment.models import Assignment, AssignmentChoice
+    from originalentry.models import Assignment, AssignmentChoice
 
     pv_a = _pack(session, f"alpha-{secrets.token_hex(3)}")
     pv_b = _pack(session, f"beta-{secrets.token_hex(3)}")
@@ -167,3 +167,146 @@ def test_http_choose_flow(client, session):
                                 Workspace.assignment_id == assignment.id)
     ).one()
     assert ws.pack_version_id == pv_a.id
+
+
+# ── M2.4: the choice is recorded, and locks at the first entry ──────────────────────────
+#
+# Not at the moment of choosing. A student who clicks the wrong company and has recorded nothing
+# should be able to put it right themselves — the same mistake as pressing Submit too early, and
+# it should not need an instructor either.
+
+def _record_something(session, workspace, student):
+    from datetime import date
+
+    from originalentry.forms.entries import EntryCommand, LineCommand
+    from originalentry.services import workspace_write
+    from originalentry.services.entries import record_entry
+
+    command = EntryCommand(
+        journal_key="general", kind="regular", document_ref="INV-1",
+        entry_date=date(2026, 12, 2), description=None,
+        lines=[LineCommand("112", "C-ONE", 120000, 0), LineCommand("401", None, 0, 120000)],
+        client_key="m24",
+    )
+    workspace_write(session, workspace.public_id, student, activity_kind="save",
+                    mutate=lambda s, w: record_entry(s, w, command))
+
+
+def test_choosing_records_when_they_chose(session):
+    _, student, assignment, pv_a, _ = _setup(session)
+
+    workspace = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+
+    assert workspace.company_chosen_at is not None
+
+
+def test_a_student_who_has_recorded_nothing_can_change_their_mind(session):
+    _, student, assignment, pv_a, pv_b = _setup(session)
+    first = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+
+    second = choose_company(session, assignment, student, pack_version_id=pv_b.id)
+
+    assert second.pack_version_id == pv_b.id
+    assert second.variant_id is not None          # a variant for the company they are now in
+    assert second.id == first.id                  # the same empty books, pointed elsewhere
+
+
+def test_changing_their_mind_is_recorded_again(session):
+    _, student, assignment, pv_a, pv_b = _setup(session)
+    workspace = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+    first_chose = workspace.company_chosen_at
+
+    choose_company(session, assignment, student, pack_version_id=pv_b.id)
+
+    assert workspace.company_chosen_at >= first_chose
+
+
+def test_choosing_the_same_company_twice_changes_nothing(session):
+    _, student, assignment, pv_a, _ = _setup(session)
+    first = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+
+    again = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+
+    assert again.id == first.id
+    assert again.pack_version_id == pv_a.id
+
+
+def test_once_they_have_recorded_something_the_choice_is_theirs_to_keep(session):
+    _, student, assignment, pv_a, pv_b = _setup(session)
+    workspace = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+    _record_something(session, workspace, student)
+
+    with pytest.raises(ChoiceRefused):
+        choose_company(session, assignment, student, pack_version_id=pv_b.id)
+
+    assert workspace.pack_version_id == pv_a.id
+
+
+def test_the_work_they_did_is_never_touched_by_a_refused_change(session):
+    """The cardinal sin would be losing the entries while switching them to another company."""
+    from originalentry.models import JournalEntry
+
+    _, student, assignment, pv_a, pv_b = _setup(session)
+    workspace = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+    _record_something(session, workspace, student)
+
+    with pytest.raises(ChoiceRefused):
+        choose_company(session, assignment, student, pack_version_id=pv_b.id)
+
+    kept = session.execute(
+        select(func.count()).select_from(JournalEntry)
+        .where(JournalEntry.workspace_id == workspace.id)
+    ).scalar_one()
+    assert kept == 1
+
+
+def test_triage_alone_counts_as_having_started(session):
+    """Deciding a document needs no entry is work, even though it writes no entry."""
+    from originalentry.services import workspace_write
+    from originalentry.services.dispositions import set_disposition
+
+    _, student, assignment, pv_a, pv_b = _setup(session)
+    workspace = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+    workspace_write(session, workspace.public_id, student, activity_kind="disposition",
+                    mutate=lambda s, w: set_disposition(s, w, "INV-1", "no_entry", "A quotation"))
+
+    with pytest.raises(ChoiceRefused):
+        choose_company(session, assignment, student, pack_version_id=pv_b.id)
+
+
+def test_the_choice_screen_is_still_reachable_before_they_start(client, session):
+    """The service allows a change of mind; the screen has to let them ask for one."""
+    _, student, assignment, pv_a, _ = _setup(session)
+    choose_company(session, assignment, student, pack_version_id=pv_a.id)
+    session.commit()
+    client.sign_in(student)
+
+    response = client.get(f"/a/{assignment.public_id}/choose")
+
+    assert response.status_code == 200
+    assert "Choose" in response.get_data(as_text=True)
+
+
+def test_once_they_start_the_choice_screen_takes_them_to_their_books(client, session):
+    _, student, assignment, pv_a, _ = _setup(session)
+    workspace = choose_company(session, assignment, student, pack_version_id=pv_a.id)
+    _record_something(session, workspace, student)
+    session.commit()
+    client.sign_in(student)
+
+    response = client.get(f"/a/{assignment.public_id}/choose")
+
+    assert response.status_code in (302, 303)
+    assert workspace.public_id in response.headers["Location"]
+
+
+def test_the_screen_shows_which_one_they_picked(client, session):
+    _, student, assignment, pv_a, _ = _setup(session)
+    choose_company(session, assignment, student, pack_version_id=pv_a.id)
+    session.commit()
+    client.sign_in(student)
+
+    body = client.get(f"/a/{assignment.public_id}/choose").get_data(as_text=True)
+
+    assert "The one you picked" in body
+    assert "still change it" in body

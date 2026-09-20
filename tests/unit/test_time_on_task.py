@@ -7,7 +7,7 @@ nothing; everything else is summed.
 
 from datetime import UTC, datetime, timedelta
 
-from parchment.grading.time_on_task import BREAK_AFTER, minutes_from
+from originalentry.grading.time_on_task import BREAK_AFTER, minutes_from
 
 START = datetime(2026, 12, 1, 9, 0, tzinfo=UTC)
 

@@ -1,4 +1,4 @@
-# Parchment — status 3
+# Original Entry — status 3
 
 _2026-09-18 · 26 commits · ~270 Python tests + JavaScript tests · ruff clean · running live
 against Neon Postgres._

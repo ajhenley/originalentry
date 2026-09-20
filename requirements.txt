@@ -1,4 +1,4 @@
-# Parchment runtime dependencies (T16).
+# Original Entry runtime dependencies (T16).
 # For production this file is compiled WITH HASHES (e.g. `pip-compile --generate-hashes`)
 # and updates are batched between terms. These are the un-hashed source pins.
 Flask>=3.1,<4

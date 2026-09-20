@@ -5,14 +5,14 @@ comes back; the stored attempt holds the student's own figure, never the key's a
 """
 
 import pytest
-from parchment.grading.checkpoints import evaluate
-from parchment.models import Assignment, CheckpointAttempt, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services import WriteRefused, workspace_write
-from parchment.services.checkpoints import checkpoint_state, record_attempt
-from parchment.services.entries import record_entry
-from parchment.services.submit import submit_workspace
+from originalentry.grading.checkpoints import evaluate
+from originalentry.models import Assignment, CheckpointAttempt, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services import WriteRefused, workspace_write
+from originalentry.services.checkpoints import checkpoint_state, record_attempt
+from originalentry.services.entries import record_entry
+from originalentry.services.submit import submit_workspace
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
@@ -90,7 +90,7 @@ def test_submit_makes_workspace_read_only(session):
     assert ws.submitted_late_hours == 0  # no due date on the dev assignment
 
     # The write path now refuses further writes.
-    from parchment.forms.entries import EntryCommand, LineCommand
+    from originalentry.forms.entries import EntryCommand, LineCommand
     cmd = EntryCommand(journal_key="general", kind="adjusting", document_ref=None,
                        entry_date=ws.submitted_at.date(), description=None,
                        lines=[LineCommand("611", None, 100, 0), LineCommand("155", None, 0, 100)],

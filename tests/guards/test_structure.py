@@ -9,9 +9,9 @@
 import pathlib
 import re
 
-from parchment.app import create_app
+from originalentry.app import create_app
 
-TEMPLATES = pathlib.Path(__file__).resolve().parents[2] / "parchment" / "templates"
+TEMPLATES = pathlib.Path(__file__).resolve().parents[2] / "originalentry" / "templates"
 
 _INLINE_STYLE = re.compile(r"""\bstyle\s*=\s*['"]""")
 _INLINE_HANDLER = re.compile(r"""\son[a-z]+\s*=\s*['"]""", re.IGNORECASE)

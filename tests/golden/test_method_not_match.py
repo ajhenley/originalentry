@@ -11,8 +11,8 @@ between marking method and marking the match.
 import copy
 
 import pytest
-from parchment.grading import grade
-from parchment.packs import replay, schema
+from originalentry.grading import grade
+from originalentry.packs import replay, schema
 
 from tests.packs import testco_alpha
 from tests.work import perfect_work, statement_rows_from_own_balances

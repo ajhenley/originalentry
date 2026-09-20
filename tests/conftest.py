@@ -9,8 +9,8 @@ against the pure engine and once against a workspace read back out of the databa
 import pytest
 from flask import g, has_app_context
 from flask.testing import FlaskClient
-from parchment.app import create_app
-from parchment.extensions import db
+from originalentry.app import create_app
+from originalentry.extensions import db
 from sqlalchemy.orm import Session
 
 pytestmark = pytest.mark.db
@@ -21,7 +21,7 @@ def app():
     app = create_app()
     # Safety net: the tests must never send a real email, whatever EMAIL_BACKEND says in .env.
     # The auth tests still override this to "memory" to read what would have been sent.
-    app.extensions["parchment_config"].EMAIL_BACKEND = "memory"
+    app.extensions["originalentry_config"].EMAIL_BACKEND = "memory"
     return app
 
 

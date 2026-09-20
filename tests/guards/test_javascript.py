@@ -13,7 +13,7 @@ import subprocess
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-JS = ROOT / "parchment" / "static" / "js"
+JS = ROOT / "originalentry" / "static" / "js"
 BANNED = re.compile(r"\b(correct|incorrect|right|wrong)\b", re.IGNORECASE)
 
 

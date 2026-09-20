@@ -5,10 +5,10 @@ through ``workspace_write``, with the ledger derived back through ``snapshot.py`
 from datetime import date
 
 import pytest
-from parchment.forms.entries import EntryCommand, LineCommand
-from parchment.ledger import balances, subsidiary_proof, trial_balance
-from parchment.ledger.snapshot import load_snapshot
-from parchment.models import (
+from originalentry.forms.entries import EntryCommand, LineCommand
+from originalentry.ledger import balances, subsidiary_proof, trial_balance
+from originalentry.ledger.snapshot import load_snapshot
+from originalentry.models import (
     ActivityEvent,
     Assignment,
     JournalEntry,
@@ -17,11 +17,11 @@ from parchment.models import (
     Variant,
     Workspace,
 )
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services import WriteRefused, workspace_write
-from parchment.services.entries import record_entry, void_entry
-from parchment.services.posting import (
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services import WriteRefused, workspace_write
+from originalentry.services.entries import record_entry, void_entry
+from originalentry.services.posting import (
     post_entry_subsidiary,
     post_journal_general,
     reverse_run,

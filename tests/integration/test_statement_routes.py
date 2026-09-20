@@ -6,10 +6,10 @@ so a request writes inside the test transaction and nothing persists.
 """
 
 import pytest
-from parchment.models import Assignment, Section, StatementLine, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services.statements import load_draft
+from originalentry.models import Assignment, Section, StatementLine, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services.statements import load_draft
 from sqlalchemy import func, select
 
 from tests.packs import testco_alpha

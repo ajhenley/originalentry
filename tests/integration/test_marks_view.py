@@ -9,11 +9,11 @@ import re
 from datetime import UTC, datetime
 
 import pytest
-from parchment.grading.workspace import grade_workspace
-from parchment.models import Assignment, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services.grades import record_run, set_comment, set_override
+from originalentry.grading.workspace import grade_workspace
+from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services.grades import record_run, set_comment, set_override
 from sqlalchemy import select
 
 from tests.packs import testco_alpha

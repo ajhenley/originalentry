@@ -14,17 +14,17 @@ at.
 
 from __future__ import annotations
 
-from parchment.forms.entries import EntryCommand, LineCommand
-from parchment.forms.statements import RowCommand, StatementCommand
-from parchment.ledger.snapshot import load_snapshot
-from parchment.models import Assignment, Section, User, Variant, Workspace
-from parchment.packs import replay, schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services import workspace_write
-from parchment.services.dispositions import set_disposition
-from parchment.services.entries import record_entry
-from parchment.services.posting import post_journal_general, post_journal_subsidiary_all
-from parchment.services.statements import own_figures, save_statement
+from originalentry.forms.entries import EntryCommand, LineCommand
+from originalentry.forms.statements import RowCommand, StatementCommand
+from originalentry.ledger.snapshot import load_snapshot
+from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.packs import replay, schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services import workspace_write
+from originalentry.services.dispositions import set_disposition
+from originalentry.services.entries import record_entry
+from originalentry.services.posting import post_journal_general, post_journal_subsidiary_all
+from originalentry.services.statements import own_figures, save_statement
 from sqlalchemy import select
 
 
@@ -153,7 +153,7 @@ def _adjust(session, workspace, student, pack, key):
 
 def _close(session, workspace, student, pack, key):
     """The four closing entries, worked out from the student's own adjusted balances."""
-    from parchment.ledger import balances
+    from originalentry.ledger import balances
 
     general = replay.general_journal_key(pack)
     snapshot = load_snapshot(session, workspace)
@@ -177,8 +177,8 @@ def _close(session, workspace, student, pack, key):
 
 
 def _post_everything(session, workspace, student, pack):
-    from parchment.models import JournalEntry
-    from parchment.services.errors import WriteRefused
+    from originalentry.models import JournalEntry
+    from originalentry.services.errors import WriteRefused
 
     journal_keys = list(
         session.scalars(

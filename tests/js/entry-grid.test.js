@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { formatCents, parseCents, totals } from "../../parchment/static/js/entry-grid.js";
+import { formatCents, parseCents, totals } from "../../originalentry/static/js/entry-grid.js";
 
 test("parseCents accepts the shapes money.py accepts", () => {
   assert.equal(parseCents("1234.5"), 123450);

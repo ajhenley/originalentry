@@ -1,4 +1,4 @@
-# Parchment
+# Original Entry
 
 A browser-based accounting system simulation for **Principles of Financial Accounting** — the
 Flask build of *Riverbend Ledger*.
@@ -22,7 +22,7 @@ Python 3.13 · Flask 3.1 (app factory, `auth`/`student`/`staff` blueprints) · J
 
 ## Build order (PRD §7)
 
-The engine is built and tested **before any screen**. The pure `parchment/ledger/` engine reproduces
+The engine is built and tested **before any screen**. The pure `originalentry/ledger/` engine reproduces
 the answer key's balances to the cent (**A2**) with no database and no Flask. That is the first thing
 that must be true.
 
@@ -40,12 +40,12 @@ that must be true.
 
 ## What exists so far
 
-- `parchment/money.py` — integer-cent parsing and formatting. Money is **integer cents everywhere**;
+- `originalentry/money.py` — integer-cent parsing and formatting. Money is **integer cents everywhere**;
   never a float (D6 rule 1).
-- `parchment/messages.py` — every student-facing string. No "correct/incorrect/right/wrong" (A7).
-- `parchment/ledger/` — the **pure** engine (stdlib + `money` only): dataclass snapshot types,
+- `originalentry/messages.py` — every student-facing string. No "correct/incorrect/right/wrong" (A7).
+- `originalentry/ledger/` — the **pure** engine (stdlib + `money` only): dataclass snapshot types,
   posting derivation, balances, trial balances, and the subsidiary proof.
-- `parchment/packs/schema.py` — pydantic schema for `pack.json` and answer keys, shared by the app
+- `originalentry/packs/schema.py` — pydantic schema for `pack.json` and answer keys, shared by the app
   and the offline generator so the two cannot disagree about the format.
 
 ## Developing
@@ -67,13 +67,14 @@ the `Procfile`: `web` runs gunicorn (`gunicorn.conf.py` — 2 workers × 4 threa
 and the `release` phase runs `flask db upgrade` through the **direct** Neon endpoint.
 
 Config vars (T13): `SECRET_KEY`, `DATABASE_URL` (pooled), `DATABASE_URL_DIRECT` (direct),
-`APP_ENV=production`, `APP_BASE_URL`, `COURSE_TZ`, `EMAIL_BACKEND=resend`, `RESEND_API_KEY`,
+`APP_ENV=production`, `APP_BASE_URL` (`https://originalentry.com`), `COURSE_TZ`,
+`EMAIL_BACKEND=resend`, `RESEND_API_KEY`,
 `MAIL_FROM`, `MAIL_REPLY_TO`, `WEB_CONCURRENCY`. Do **not** attach a Heroku Postgres add-on (it
 would overwrite `DATABASE_URL`). The built CSS is committed, so the Heroku build has no CSS step.
 
 ```bash
 git push heroku main          # release phase migrates, then the web dyno boots
-heroku run "PARCHMENT_USE_DIRECT_DB=1 flask staff add you@example.edu --role instructor"
+heroku run "ORIGINALENTRY_USE_DIRECT_DB=1 flask staff add you@example.edu --role instructor"
 ```
 
 ## Continuous integration (T14.1)
@@ -90,10 +91,10 @@ run it the day before each due date and at term end, to an encrypted disk.
 
 ```bash
 DATABASE_URL_DIRECT="postgresql+psycopg://…direct-host…/neondb?sslmode=require" \
-  scripts/backup.sh ~/parchment-backups
+  scripts/backup.sh ~/originalentry-backups
 # restore:
 pg_restore --clean --no-owner --no-privileges \
-  --dbname "postgresql://…direct-host…/neondb?sslmode=require" parchment-YYYYMMDD-HHMMSS.dump
+  --dbname "postgresql://…direct-host…/neondb?sslmode=require" originalentry-YYYYMMDD-HHMMSS.dump
 ```
 
 Once a term, run the drill: restore into a throwaway Neon branch, run `flask replay-key`, delete

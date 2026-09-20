@@ -1,4 +1,4 @@
-# Parchment — build status
+# Original Entry — build status
 
 _Last updated: 2026-09-18 · 18 commits · 239 Python tests + 9 JavaScript tests passing · ruff clean · running live against Neon._
 
@@ -39,21 +39,21 @@ what remain. Details below.
 ## How to run and test
 
 ```bash
-cd parchment
+cd originalentry
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"          # or: pip install Flask Flask-SQLAlchemy Flask-Migrate \
                                  #        Flask-Login Flask-WTF SQLAlchemy "psycopg[binary]" \
                                  #        pydantic requests pytest ruff
 pytest                           # 239 tests; DB tests hit Neon (creds in .env, gitignored)
-ruff check parchment tests
+ruff check originalentry tests
 
 # migrations run through the direct Neon endpoint:
-export FLASK_APP=parchment.app:create_app PARCHMENT_USE_DIRECT_DB=1
+export FLASK_APP=originalentry.app:create_app ORIGINALENTRY_USE_DIRECT_DB=1
 flask db upgrade
 
 # rebuild the committed Tailwind CSS:
 ./bin/get-tailwind.sh
-./bin/tailwindcss -i parchment/static/src/app.css -o parchment/static/dist/app.css --minify
+./bin/tailwindcss -i originalentry/static/src/app.css -o originalentry/static/dist/app.css --minify
 ```
 
 ---
@@ -68,7 +68,7 @@ flask db upgrade
 - [x] `ledger/snapshot.py` — the one DB→engine loader (bounded queries)
 - [x] `packs/schema.py` — pydantic schema for `pack.json` + answer keys (T5.2/T5.3)
 - [x] `packs/validate.py` — rules **V1–V11, V13, V15**, and **V12** at import (an image per
-      variant, a real PNG under 2 MB, alt text present); only W1 is left;
+      variant, a real PNG under 2 MB, alt text present);
       each problem carries its JSON path, and an upload reports every problem at once
 - [x] `packs/zip_reader.py` — opens the generator's zip with the **V16** safety rules: no path
       that escapes the archive, no more than 2,000 entries or 200 MB unpacked, and a checksum
@@ -100,7 +100,7 @@ flask db upgrade
       CDN. Where a colour of theirs could not carry text at 4.5:1 it was darkened, because the
       same document asks for WCAG 2.1 AA
 - [x] Templates: base shell, workspace layout (company chrome, nonce'd accent), auth layout, macros
-- [x] `decorators.workspace_view` (T3.3): sign-in, load-excluding-archived, 404-not-403,
+- [x] `decorators.workspace_view` (T3.3): sign-in, load (archived books open to staff only), 404-not-403,
       company-slug mismatch page
 - [x] Read screens: home, overview (with triage progress), trial balance (3 stages), general
       ledger, subsidiary proof
@@ -239,15 +239,17 @@ flask db upgrade
 
 ### Phase 0 — generator and packs
 - [ ] Generator script (workbook → pack zip + one PNG per document per variant)
-- [ ] Validation rule **W1** (warn on pack text using the four banned words)
+- [x] Validation rule **W1**: warns on pack text that tells a student they are right or
+      wrong. A warning, never a refusal — "a correcting entry" is ordinary accounting
+      prose, and the author is the one who can tell it from an instruction
 - [ ] `testco-beta` fixture and the real `riverbend-supply` pack (only `testco-alpha` exists)
 
 ### Phase 2 — journals (partial)
 - [ ] **Special-journal column entry form** (columns → lines). Recording currently uses the
       general-journal grid; the engine and posting already handle special journals
-- [ ] JavaScript still to write: `entry-grid.js` (live cents totals, add/remove lines),
-      `picker.js` (ARIA combobox for accounts/documents, M3.6), `batch.js`. `save.js` and
-      `zoom.js` are done, and everything still works **without** JavaScript
+- [x] The JavaScript: `save.js`, `zoom.js`, `entry-grid.js`, `picker.js`, `batch.js`. Each
+      one's decisions are pure functions under `node --test`, and everything still works
+      **without** JavaScript — no script is ever the only way to do something
 
 ### Phase 3 — documents (partial)
 - [ ] Guided mode gating and the M3.6 cross-company picker message
@@ -259,14 +261,18 @@ flask db upgrade
 - [ ] Reordering rows with Move up / Move down buttons (rows are currently ordered by where they
       sit in the form; a saved row can be retyped but not moved)
 - [ ] Worksheet (`worksheet_cell`) — optional (cut list #1)
-- [ ] Checkpoint **stage-gating** (needs `assignment_checkpoint`; e.g. "pass cp2 before adjusting")
-- [ ] Per-student accommodations (`assignment_override`)
+- [x] Checkpoint **stage-gating** (`assignment_checkpoint`): "pass checkpoint 2 before
+      recording adjusting entries", enforced in `record_entry` itself, not only on the screen
+- [x] Per-student accommodations (`assignment_override`), including the checkpoint deadline —
+      extended time that stopped at the checkpoint would be a strange accommodation
 
-### Phase 5 — grading (engine and storage done, instructor screens not)
-- [ ] Batching (T8.6), time-on-task (T8.7), the review queue and releasing marks — all need the
-      staff console
-- [ ] `error_signatures[].deduct_points` is carried in the schema but ignored by the engine;
-      signatures are diagnostic only so far (T8.5)
+### Phase 5 — grading (done but for signature deductions)
+- [x] Batching (T8.6, ten workspaces a request), time-on-task (T8.7), the review queue and
+      releasing marks
+- [x] `error_signatures[].deduct_points` (T8.5). A signature is still diagnosis and changes no
+      mark unless the pack asks. When it does: once per signature, never below zero, and only
+      for an error the engine is **sure** of — the balance-delta fallback says "possibly",
+      and this app does not take marks off a maybe. It sends that one to a grader instead
 - [x] Golden tests **A10** (every signature the key declares is recognised and named — the test
       walks the key, so a pack that adds one is covered without anybody writing a case) and
       **A11** (the engine grades forty workspaces in 4 ms against a thirty-second limit)
@@ -274,35 +280,50 @@ flask db upgrade
       application code, and a regex for the same in a template. Both are mutation-checked, because
       a guard that cannot fail is not a guard
 
-### Phase 6 — staff console (Assignments, Progress, Grading and Diagnostics done)
+### Phase 6 — staff console (done)
+- [x] Assignments, Progress, Grading, Diagnostics, the catalogue, exports (generic and Canvas
+      marks CSV), the print record and the answer-key print
+- [x] Checkpoint deadlines and stage gating (I1.2, S6.3) and per-student accommodations (I1.11),
+      screens included — one deadline function serves the write path, grading and the screens
+- [x] **Roster CSV import (I1.5)**: enrols everyone the registrar's file names and opens their
+      books. Importing an address does not make it anyone's account — sign-in is still a link
+      sent there — so an imported row is an enrolment waiting for whoever reads the mail
+- [x] Assigning a variant by hand where the policy says manual (I1.3). Choosing that policy
+      used to fail at enrolment (`variant_id` was NOT NULL) and, once past that, told the
+      student their work was read-only "because the assignment has been submitted".
+      Now the column is nullable, the refusal says what is actually true, the instructor
+      hands one out from Progress, and a student still waiting is not graded at all
 - [ ] I4.4 (where students abandoned) and I4.6 (comparing a cohort across two companies) — both
       **Should** in the PRD
-- [ ] Checkpoint deadlines, per-student accommodations and roster CSV import (I1.5, I1.11) — the
-      tables exist for accommodations, the screens do not
-- [ ] Assigning a variant by hand where the policy says manual (I1.3)
-- [ ] Exports (CSV presets), print record, staff-issued sign-in codes
-- [ ] Grading a section larger than one batch needs the button pressed again; `batch.js` will
-      automate it (T8.6)
+- [x] Grading a section larger than one batch (T8.6). `grade_section` now takes a cursor —
+      without one every batch re-graded the same front of the list, so a section larger than
+      a batch could never be finished. `batch.js` walks it with a bar and a count, and the
+      button alone still grades a batch for anyone without JavaScript
 
-### Phase 7 — multi-company (schema ready, UI not)
-- [ ] Catalogue + pack upload UI, `section_pack_availability`, student company choice, switch
-      confirmation, workspace archive, pack migration
-- [ ] Guards **A19, A22, A23** (A20 isolation partly covered)
+### Phase 7 — multi-company (built)
+- [x] Catalogue and pack upload UI, `section_pack_availability`, student company choice, switch
+      confirmation, workspace archive and restart, pack migration
+- [x] Archived books stay open to staff and closed to the student, which is what makes archiving
+      safe to offer (I1.12)
+- [ ] Guards **A19, A22, A23** are exercised in `test_multicompany.py` and
+      `test_generator_import.py` but are not yet standalone guards like A21
 
-### Phase 8 — hardening (not started)
-- [ ] Screen-reader pass, Playwright a11y + no-loss tests (A17, A18)
-- [ ] Failure banners wired to `save.js`, print stylesheets / PDF record, backup script, restore
-      drill, due-date runbook
+### Phase 8 — hardening (started)
+- [x] Print stylesheets and the PDF record
+- [ ] Screen-reader pass, Playwright a11y + no-loss tests (A17, A18) — `save.js` is unit-tested
+      through node:test, but nothing has driven it in a browser
+- [ ] Backup script, restore drill, due-date runbook
 
-### Auth, ops, delivery (not started)
-- [ ] Real **magic-link + six-digit-code** sign-in, Resend module, rate limits, staff-issued codes,
-      `session_epoch` revoke CLI (E1–E6). Current sign-in is dev-only
-- [ ] CLI commands: `staff add`, `packs validate/import/migrate`, `grade`, `export marks`,
-      `seed staging`, `purge`, `auth issue-link/revoke`, `replay-key`
-- [ ] Heroku: `Procfile`, `gunicorn.conf.py`, release phase, staging/prod pipeline
-- [ ] CI (`.github/workflows`): ruff, CSS rebuild check, migrate + privilege check, tests, guards,
-      golden tests
-- [ ] `requirements.txt` compiled with hashes
+### Auth, ops, delivery
+- [x] Magic-link + six-digit-code sign-in, join by code, Resend over one HTTPS POST, sign-in rate
+      limits, `session_epoch` revoke (E1–E6)
+- [x] CLI: `staff add`, `packs validate/import/migrate`, `grade`, `export marks`, `seed staging`,
+      `seed demo` (builds Riverbend Supply Co. from `packs/riverbend-demo/source.json` through the
+      real generator, so a wiped dev database is one command from being clickable again),
+      `purge`, `auth issue-link/revoke`, `replay-key`
+- [x] `Procfile`, `gunicorn.conf.py`, `.github/workflows/ci.yml`
+- [ ] Staging/prod pipeline on Heroku, and a release drill against it
+- [ ] `requirements.txt` compiled with hashes (the pins are there un-hashed)
 
 ---
 

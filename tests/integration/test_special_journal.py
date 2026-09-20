@@ -7,14 +7,14 @@ import copy
 import secrets
 
 import pytest
-from parchment.ledger import balances, subsidiary_proof
-from parchment.ledger.snapshot import load_snapshot
-from parchment.models import EntryLine, JournalEntry, Section, User
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services import workspace_write
-from parchment.services.assignments import create_assignment, open_workspace
-from parchment.services.posting import post_journal_general, post_journal_subsidiary_all
+from originalentry.ledger import balances, subsidiary_proof
+from originalentry.ledger.snapshot import load_snapshot
+from originalentry.models import EntryLine, JournalEntry, Section, User
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services import workspace_write
+from originalentry.services.assignments import create_assignment, open_workspace
+from originalentry.services.posting import post_journal_general, post_journal_subsidiary_all
 from sqlalchemy import select
 
 from tests.packs import testco_alpha

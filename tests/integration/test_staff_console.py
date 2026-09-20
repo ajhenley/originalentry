@@ -7,7 +7,7 @@ reach it, and a row tells the instructor where each student is and what they wer
 from datetime import UTC, datetime
 
 import pytest
-from parchment.models import (
+from originalentry.models import (
     Assignment,
     PackVersion,
     Section,
@@ -15,11 +15,11 @@ from parchment.models import (
     Variant,
     Workspace,
 )
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services import workspace_write
-from parchment.services.activity import record_refused_save
-from parchment.services.dispositions import set_disposition
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services import workspace_write
+from originalentry.services.activity import record_refused_save
+from originalentry.services.dispositions import set_disposition
 from sqlalchemy import select
 
 from tests.packs import testco_alpha

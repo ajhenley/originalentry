@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { filterOptions, normalize } from "../../parchment/static/js/picker.js";
+import { filterOptions, normalize } from "../../originalentry/static/js/picker.js";
 
 const ACCOUNTS = [
   { value: "112", label: "112 · Accounts Receivable" },

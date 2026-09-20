@@ -7,14 +7,14 @@ import secrets
 from datetime import date
 
 import pytest
-from parchment.models import Section, User
-from parchment.packs import schema
-from parchment.packs.importer import import_content
-from parchment.services import workspace_write
-from parchment.services.assignments import create_assignment, open_workspace
-from parchment.services.entries import record_entry
-from parchment.services.posting import post_journal_general
-from parchment.services.record import workspace_record
+from originalentry.models import Section, User
+from originalentry.packs import schema
+from originalentry.packs.importer import import_content
+from originalentry.services import workspace_write
+from originalentry.services.assignments import create_assignment, open_workspace
+from originalentry.services.entries import record_entry
+from originalentry.services.posting import post_journal_general
+from originalentry.services.record import workspace_record
 
 from tests.packs import testco_alpha
 
@@ -38,7 +38,7 @@ def _seed(session):
     assignment = create_assignment(session, section=section, title="Dec", pack_version=pv)
     ws = open_workspace(session, assignment, student)
 
-    from parchment.forms.entries import EntryCommand, LineCommand
+    from originalentry.forms.entries import EntryCommand, LineCommand
     cmd = EntryCommand(journal_key="general", kind="regular", document_ref="INV-1",
                        entry_date=date(2026, 12, 2), description="Sale",
                        lines=[LineCommand("112", "C-ONE", 120000, 0),
@@ -52,7 +52,7 @@ def _seed(session):
 
 
 def test_record_assembles_the_whole_thing(session):
-    from parchment.models import PackVersion
+    from originalentry.models import PackVersion
 
     _, ws, pv = _seed(session)
     pv_row = session.get(PackVersion, pv.id)
@@ -67,7 +67,7 @@ def test_record_assembles_the_whole_thing(session):
 
 
 def test_print_page_renders(client, session):
-    from parchment.models import ContentPack, PackVersion
+    from originalentry.models import ContentPack, PackVersion
 
     student, ws, _ = _seed(session)
     client.sign_in(student)

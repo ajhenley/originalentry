@@ -1,4 +1,4 @@
-# Parchment — everything done and not done
+# Original Entry — everything done and not done
 
 _2026-09-18 · 18 commits · 239 Python tests + 9 JavaScript tests passing · ruff clean · 7 migrations applied to Neon._
 
@@ -14,15 +14,15 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 
 | Phase | Scope | State | What is missing |
 | --- | --- | --- | --- |
-| 0 | Content pipeline: pack format, validation, zip import | 🟡 | The **generator** (workbook → zip) is not written; rule W1 |
+| 0 | Content pipeline: pack format, validation, zip import | ✅ | Format, V1–V16, W1, zip import, and the generator |
 | 1 | Data model, ledger engine, deployed skeleton | 🟡 | Engine and schema done; **nothing is deployed** |
-| 2 | Journals and posting | 🟡 | Special-journal **column form**, live totals and the account picker |
+| 2 | Journals and posting | ✅ | Column form, live totals and the picker are all in |
 | 3 | Documents and triage, both modes | ✅ | — |
 | 4 | Trial balances, adjustments, statements, closing | 🟡 | Worksheet (cut list #1), row reordering |
 | 5 | Grading engine and storage | ✅ | — |
-| 6 | Instructor console | 🟡 | Roster import, answer-key print |
-| 7 | Multi-company | 🟡 | Schema and catalogue done; per-section availability and the student switcher are not |
-| 8 | Accessibility pass, failure handling, deploy | ⬜ | None of it |
+| 6 | Instructor console | ✅ | Assignments, Progress, Grading, Diagnostics, catalogue, exports, prints, roster |
+| 7 | Multi-company | ✅ | Catalogue, availability, choice, switcher, archive-and-restart, migration |
+| 8 | Accessibility pass, failure handling, deploy | 🟡 | Print record and batching in; **screen-reader pass, Playwright and deploy are not** |
 
 ---
 
@@ -43,12 +43,12 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | S2.6 | Dispositions can change until submission | ✅ | Supersession keeps the history |
 | S2.7 | Documents cannot be deleted or hidden | ✅ | No such route |
 | S2.8 | Alt text and a text alternative | ✅ | Shown to everyone, not as a fallback |
-| S3.1 | Five journals | 🟡 | The engine, posting and the pack support all five; **recording uses the general-journal grid** |
-| S3.2 | Special journals show their own columns | ⬜ | The column entry form is not built |
+| S3.1 | Five journals | ✅ | Special journals record through their own column form |
+| S3.2 | Special journals show their own columns | ✅ | `special_entry_form.html` |
 | S3.3 | The student chooses the journal | ✅ | |
-| S3.4 | General Journal: any number of lines, live totals | 🟡 | Lines yes; **live totals need `entry-grid.js`** |
+| S3.4 | General Journal: any number of lines, live totals | ✅ | `entry-grid.js` on the entry form; the totals are the browser's, the ledger is the server's |
 | S3.5 | Saving blocked out of balance, difference shown | ✅ | Validator + deferred DB trigger |
-| S3.6 | Account picker searches number and name | 🟡 | Native `<select>`; the ARIA combobox is not built |
+| S3.6 | Account picker searches number and name | ✅ | `picker.js`, with a native `<select>` underneath it |
 | S3.7 | Control-account lines need a party | ✅ | |
 | S3.8 | Edit or void before posting; voids stay visible | ✅ | Revision snapshot before every edit |
 | S3.9 | Keyboard-only entry | 🟡 | Forms are keyboard-usable; the shortcut map needs JavaScript |
@@ -71,7 +71,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | S6.2 | A locked checkpoint shows nothing else | ✅ | |
 | S6.3 | Stages gated behind a checkpoint | ✅ | The instructor's option, per assignment; the student is told what a checkpoint stands in front of before they meet the gate |
 | S6.4 | Submission checklist | ✅ | Documents, entries, statements started |
-| S6.5 | Read-only after submission; instructor can reopen | 🟡 | Read-only yes; **no reopen screen** |
+| S6.5 | Read-only after submission; instructor can reopen | ✅ | `submit.reopen_workspace`; past a deadline it asks for the date they work to rather than reopening in name only |
 | S6.6 | Marks and comment after release | ✅ | `/marks` |
 | S6.7 | Late policy | ✅ | Closed or accept-late with a cut-off |
 
@@ -83,23 +83,23 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | --- | --- | --- | --- |
 | I1.1 | Create an assignment: company, paper or screen | ✅ | `/staff/assignments/new` |
 | I1.2 | Due date and checkpoint deadlines | ✅ | Both, set from the assignments list; extended time moves a student's checkpoint too |
-| I1.3 | Variant policy: in turn, random, manual | 🟡 | In turn and random work; manual leaves no way to assign by hand |
+| I1.3 | Variant policy: in turn, random, manual | ✅ | `services/variants.py` + a hand-out control on Progress; `workspace.variant_id` is nullable, so "manual" no longer fails at enrolment |
 | I1.4 | Join code | ✅ | Generated, shown, rotatable |
-| I1.5 | Roster CSV import | ⬜ | |
+| I1.5 | Import a roster from CSV | ✅ | `services/roster.py`; safe to run twice, bad rows reported by line, staff never turned into students |
 | I1.6 | Clone with new dates | ✅ | One field, one button |
 | I1.7 | Upload a pack, validated first | ✅ | Zip, every problem reported at once |
-| I1.8 | Enable / disable / archive per section | ⬜ | Needs `section_pack_availability` |
+| I1.8 | Enable / disable / archive per section | ✅ | `/staff/sections/<id>/availability` |
 | I1.9 | Choose companies for a student-choice assignment | ⬜ | |
 | I1.10 | Catalogue view | ✅ | Versions, period, scope, workspaces per version |
 | I1.11 | Per-student accommodations | ✅ | Their own deadline, set and withdrawn from Progress, with the reason recorded |
-| I1.12 | Clear or archive a workspace | ⬜ | |
+| I1.12 | Clear or archive a workspace | ✅ | `assignments.archive_and_restart`; the old books stay open to staff, closed to the student |
 | I1.13 | Late policy per assignment | ✅ | |
 | I2.1 | One row per student: stage, documents, journals, activity | ✅ | Six bulk queries |
 | I2.2 | Flag who has not started near the due date | ✅ | |
 | I2.3 | Flag checkpoint lockouts with the figures | ✅ | |
 | I2.4 | Open a workspace read-only | ✅ | Banner names the student |
 | I2.5 | Last attempted save, including refused ones | ✅ | `activity.record_refused_save` |
-| I2.6 | Issue a one-time sign-in code | ⬜ | Waits on real auth |
+| I2.6 | Issue a one-time sign-in code | 🟡 | `tokens` supports it and the CLI issues one; **no console screen** |
 | I3.1 | Score automatically, method-not-match | ✅ | Ten components |
 | I3.2 | Show what the rule credited | ✅ | Evidence per item |
 | I3.3 | Flag what the engine cannot decide | ✅ | Review queue is a filter |
@@ -115,8 +115,8 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | I4.5 | Cohort CSV export | ✅ | Stable header |
 | I4.6 | Compare a cohort across two companies | ⬜ | PRD *Should* |
 | I5.1 | Marks CSV for an LMS | ✅ | Generic and Canvas presets, downloadable from Grading |
-| I5.2 | One student's work as PDF | ⬜ | Print route not built |
-| I5.3 | Answer key as PDF | ⬜ | |
+| I5.2 | One student's work as PDF | ✅ | `print/workspace.html`; linked from Grading and from the workspace nav |
+| I5.3 | Answer key as PDF | ✅ | `staff/key_record.py` + `print/answer_key.html`, one link per keyed variant in the catalogue |
 
 ---
 
@@ -127,18 +127,18 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | M1.1 | Many packs at once | ✅ | |
 | M1.2 | Each pack carries its own everything | ✅ | |
 | M1.3 | Packs uploaded, nothing authored in the app | ✅ | |
-| M1.4 | Enable / disable / archive per section | ⬜ | |
+| M1.4 | Enable / disable / archive per section | ✅ | Same screen as I1.8 |
 | M1.5 | Versions pinned by the workspace | ✅ | Composite FKs |
 | M1.6 | Scope tags | ✅ | Shown in the catalogue |
 | M2.1 | One company per workspace | ✅ | |
 | M2.2 | Several assignments at once | ✅ | |
-| M2.3 | Fixed or student-chosen company | 🟡 | Fixed works; choice is modelled, no screen |
-| M2.4 | Choice locked after the first entry | ⬜ | |
-| M2.5 | Prerequisite assignment | 🟡 | Column exists, nothing enforces it |
+| M2.3 | Fixed or student-chosen company | ✅ | Both, with the choice screen and the lock at first entry |
+| M2.4 | Choice locked after the first entry | ✅ | `multicompany.has_started`; a mis-click with nothing recorded is the student's own to put right |
+| M2.5 | Prerequisite assignment | ✅ | `assignments.prerequisite_met` gates opening, never writing; home names what they are waiting for |
 | M3.1 | Company in the chrome everywhere | ✅ | |
 | M3.2 | Accent colour and mark | ✅ | Nonce'd style block |
 | M3.3 | Company in the URL | ✅ | |
-| M3.4 | Switching is explicit | ⬜ | Mismatch page exists; **no switcher** |
+| M3.4 | Switching is explicit | ✅ | Switcher in the workspace chrome, plus the mismatch page |
 | M3.5 | Entry forms name the company | ✅ | |
 | M3.6 | A reference from another company is named | ⬜ | Needs the document picker |
 | M3.7 | Home lists assignments with company and progress | 🟡 | Company and status; no progress or deadline |
@@ -163,7 +163,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | A12 | An override survives a regrade | ✅ | |
 | A13 | Section, assignment, code, enrolled student | 🟡 | Tested end to end; timing unobserved |
 | A14 | Cloning takes under a minute | 🟡 | One field; timing unobserved |
-| A15 | A regenerated pack uploads unedited | 🟡 | Zips upload; the generator does not exist |
+| A15 | A regenerated pack uploads unedited | 🟡 | The generator exists and `seed demo` round-trips through it; no authored pack has been regenerated |
 | A16 | Marks CSV imports into an LMS | 🟡 | Both presets download; no real gradebook has taken one yet |
 | A17 | Every workflow by keyboard alone | 🟡 | Server-rendered forms are; unverified with a screen reader |
 | A18 | Killing the server loses no saved work | 🟡 | The protocol is tested both sides; the browser itself needs Playwright |
@@ -173,11 +173,11 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | A22 | Disabling a company leaves work usable | ⬜ | Needs availability |
 | A23 | Two charts with account 101 coexist | 🟡 | Scoping in place; no dedicated test |
 | A24 | A student can tell which company, in 2 s | 🟡 | Chrome, colour, URL; unobserved |
-| A25 | Sign-in survives the real world | ⬜ | Auth not built |
+| A25 | Sign-in survives the real world | 🟡 | Auth is built; no pilot has run |
 | A26 | No lost work | 🟡 | Contract and decisions tested; browser behaviour needs Playwright |
 | A27 | Recovery proven | ⬜ | No backup script or drill |
 | A28 | Late policy holds | ✅ | |
-| A29 | Built CSS matches a fresh build | 🟡 | Committed; no CI check |
+| A29 | Built CSS matches a fresh build | ✅ | CI rebuilds and fails on a diff |
 | A30 | The largest pack uploads in time | ⬜ | |
 
 ---
@@ -187,7 +187,8 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | Piece | State | Notes |
 | --- | --- | --- |
 | Ledger engine (pure) | ✅ | Posting derivation, balances, trial balances, subsidiary proof |
-| Grading engine (pure) | ✅ | Ten components, signatures, evidence, review flags |
+| Grading engine (pure) | ✅ | Ten components, signatures, pack-asked deductions, evidence, review flags |
+| Batched grading (T8.6) | ✅ | Cursor-based `grade_section`, `batch.js` bar and count, plain POST still works |
 | Grade storage | ✅ | Immutable runs, overrides, comments |
 | Write path (lock, gates, one commit) | ✅ | |
 | Composite scoping keys, balance trigger | ✅ | Proven against real Postgres |
@@ -199,11 +200,12 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | Contrast | ✅ | Every text pairing holds 4.5:1; teal carries text only in its deeper shade (5.16:1) |
 | `zoom.js` | ✅ | The only JavaScript so far |
 | `save.js` | ✅ | The no-loss protocol, with its decisions under `node --test` |
-| `entry-grid.js`, `picker.js`, `batch.js` | ⬜ | S3.4, S3.6 and batched grading wait on these |
-| Auth: magic link, codes, rate limits, Resend | ⬜ | **Dev-only sign-in**, refused in production |
-| CLI commands (`staff add`, `packs`, `grade`, `purge`…) | ⬜ | |
-| Heroku config: Procfile, gunicorn, release phase | ⬜ | |
-| CI workflow | ⬜ | |
+| `entry-grid.js`, `picker.js` | ✅ | Live totals and the ARIA combobox, decisions under `node --test` |
+| `batch.js` | ✅ | Walks a section batch by batch with a bar and a count (T8.6) |
+| Auth: magic link, codes, rate limits, Resend | ✅ | `auth/` — sign-in, verify, code, join, sign-out, `session_epoch` revoke |
+| CLI commands (`staff add`, `packs`, `grade`, `purge`…) | ✅ | Plus `seed demo` and `replay-key` |
+| Heroku config: Procfile, gunicorn, release phase | 🟡 | Files exist; **nothing is deployed** |
+| CI workflow | ✅ | `.github/workflows/ci.yml`: ruff, CSS rebuild check, tests, guards |
 | Backups, restore drill, runbook | ⬜ | |
 | Accessibility pass with a screen reader | ⬜ | Semantic tables and labels are in place |
 
@@ -225,7 +227,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | V14 | Newer version; archive not seen before | ✅ | `importing` |
 | V15 | Rubric components known, points positive | ✅ | `validate` |
 | V16 | Zip safety: paths, entries, unpacked size | ✅ | `zip_reader` |
-| W1 | Warn on pack text using the four banned words | ⬜ | — |
+| W1 | Warn on pack text using the four banned words | ✅ | `validate.warn_pack`; a warning, never a refusal — the author decides |
 
 ---
 

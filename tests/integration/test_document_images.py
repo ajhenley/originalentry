@@ -12,8 +12,16 @@ import zipfile
 import zlib
 
 import pytest
-from parchment.models import Assignment, PackAsset, PackVersion, Section, User, Variant, Workspace
-from parchment.packs.importing import PackImportRefused, import_pack_zip
+from originalentry.models import (
+    Assignment,
+    PackAsset,
+    PackVersion,
+    Section,
+    User,
+    Variant,
+    Workspace,
+)
+from originalentry.packs.importing import PackImportRefused, import_pack_zip
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
@@ -131,7 +139,7 @@ def test_a_file_that_is_not_a_png_is_refused(session, instructor):
 
 
 def test_an_image_larger_than_the_limit_is_refused(session, instructor):
-    from parchment.packs.importing import MAX_IMAGE_BYTES
+    from originalentry.packs.importing import MAX_IMAGE_BYTES
 
     images = {"documents/A/INV-1.png": _png() + b"\x00" * (MAX_IMAGE_BYTES + 1),
               "documents/A/INV-2.png": _png()}

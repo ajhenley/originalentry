@@ -9,7 +9,7 @@ content under it.
 import re
 
 import pytest
-from parchment.app import create_app
+from originalentry.app import create_app
 
 SHELL = re.compile(r'<(?:main|div|footer|header)[^>]*\bdata-shell\b[^>]*class="([^"]+)"')
 CLASS_FIRST = re.compile(r'<(?:main|div|footer|header)[^>]*class="([^"]+)"[^>]*\bdata-shell\b')
@@ -48,7 +48,7 @@ def test_no_frame_hard_codes_its_own_width():
     """
     import pathlib
 
-    templates = pathlib.Path(__file__).resolve().parents[2] / "parchment" / "templates"
+    templates = pathlib.Path(__file__).resolve().parents[2] / "originalentry" / "templates"
     offenders = []
     for path in sorted(templates.rglob("*.html")):
         for i, line in enumerate(path.read_text().splitlines(), start=1):

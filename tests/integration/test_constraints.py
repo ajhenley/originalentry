@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 
 import pytest
-from parchment.models import (
+from originalentry.models import (
     Account,
     Assignment,
     ContentPack,

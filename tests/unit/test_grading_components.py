@@ -9,9 +9,9 @@ costs marks **once** and that every other component carries on unaffected.
 from dataclasses import replace
 
 import pytest
-from parchment.grading import grade
-from parchment.ledger.models import GENERAL, Posting
-from parchment.packs import replay, schema
+from originalentry.grading import grade
+from originalentry.ledger.models import GENERAL, Posting
+from originalentry.packs import replay, schema
 
 from tests.packs import testco_alpha
 from tests.work import perfect_work

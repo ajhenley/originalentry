@@ -10,7 +10,7 @@ The mistake costs marks where it was made. Nowhere else.
 import copy
 
 import pytest
-from parchment.grading.workspace import grade_workspace
+from originalentry.grading.workspace import grade_workspace
 
 from tests.packs import testco_alpha
 from tests.perfect_student import build

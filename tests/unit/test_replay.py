@@ -3,8 +3,8 @@ expected balance is caught (no database)."""
 
 import copy
 
-from parchment.ledger import engine
-from parchment.packs import replay, schema, validate
+from originalentry.ledger import engine
+from originalentry.packs import replay, schema, validate
 
 from tests.packs import testco_alpha
 

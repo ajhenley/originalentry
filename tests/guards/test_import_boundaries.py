@@ -5,9 +5,9 @@ exempt (it is added with the ORM in phase 1)."""
 import ast
 import pathlib
 
-LEDGER = pathlib.Path(__file__).resolve().parents[2] / "parchment" / "ledger"
+LEDGER = pathlib.Path(__file__).resolve().parents[2] / "originalentry" / "ledger"
 FORBIDDEN_TOP = {"flask", "sqlalchemy", "psycopg"}
-FORBIDDEN_INTERNAL = {"parchment.models", "parchment.grading"}
+FORBIDDEN_INTERNAL = {"originalentry.models", "originalentry.grading"}
 EXEMPT = {"snapshot.py"}
 
 
@@ -32,5 +32,5 @@ def test_ledger_stays_pure():
             if top in FORBIDDEN_TOP or mod in FORBIDDEN_INTERNAL:
                 offenders.append(f"{path.name} imports {mod}")
     assert not offenders, (
-        "ledger/ must import only stdlib + parchment.money: " + "; ".join(offenders)
+        "ledger/ must import only stdlib + originalentry.money: " + "; ".join(offenders)
     )

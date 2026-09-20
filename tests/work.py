@@ -6,8 +6,8 @@ and the income statement laid out from their own adjusted balances. Each test st
 and introduces exactly one mistake, so what a mistake costs is visible on its own.
 """
 
-from parchment.grading.models import StatementRow, StudentWork
-from parchment.packs import replay
+from originalentry.grading.models import StatementRow, StudentWork
+from originalentry.packs import replay
 
 # TestCo Alpha's income statement, built from the adjusted balances the replay produces.
 MODEL_INCOME_STATEMENT = (
@@ -37,7 +37,7 @@ def statement_rows_from_own_balances(snapshot, pack, statement_type="income_stat
     This is what "handled properly on their own figures" looks like on a statement: every line
     carries the balance their ledger actually holds, whatever happened earlier.
     """
-    from parchment.ledger import balances
+    from originalentry.ledger import balances
 
     definition = next(s for s in pack.statements if s.type == statement_type)
     own = balances(snapshot, "adjusted")

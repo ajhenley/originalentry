@@ -14,7 +14,7 @@ set -euo pipefail
 OUT_DIR="${1:-./backups}"
 mkdir -p "$OUT_DIR"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-FILE="$OUT_DIR/parchment-$STAMP.dump"
+FILE="$OUT_DIR/originalentry-$STAMP.dump"
 
 # pg_dump wants a libpq URL: drop the SQLAlchemy +psycopg driver suffix. sslmode in the query is
 # understood by libpq and left in place.

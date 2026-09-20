@@ -6,9 +6,9 @@ student's **own** balances, never the key's.
 """
 
 import pytest
-from parchment.grading import grade
-from parchment.grading.models import StatementRow
-from parchment.packs import schema
+from originalentry.grading import grade
+from originalentry.grading.models import StatementRow
+from originalentry.packs import schema
 
 from tests.packs import testco_alpha
 from tests.work import MODEL_INCOME_STATEMENT, perfect_work

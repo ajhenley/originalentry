@@ -8,10 +8,10 @@ student enrolled and working. Cloning last term's assignment with new dates is o
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from parchment.models import Assignment, Enrollment, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services.assignments import (
+from originalentry.models import Assignment, Enrollment, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services.assignments import (
     JoinRefused,
     clone_assignment,
     create_assignment,

@@ -7,18 +7,18 @@ tell anyone.
 """
 
 import pytest
-from parchment.grading.checkpoints import evaluate
-from parchment.models import Assignment, Section, User, Variant, Workspace
-from parchment.packs import schema
-from parchment.packs.importer import import_answer_keys, import_content
-from parchment.services import workspace_write
-from parchment.services.activity import record_refused_save
-from parchment.services.checkpoints import record_attempt
-from parchment.services.dispositions import set_disposition
-from parchment.services.entries import record_entry
-from parchment.services.posting import post_journal_general
-from parchment.services.progress import assignment_progress
-from parchment.services.submit import submit_workspace
+from originalentry.grading.checkpoints import evaluate
+from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.packs import schema
+from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services import workspace_write
+from originalentry.services.activity import record_refused_save
+from originalentry.services.checkpoints import record_attempt
+from originalentry.services.dispositions import set_disposition
+from originalentry.services.entries import record_entry
+from originalentry.services.posting import post_journal_general
+from originalentry.services.progress import assignment_progress
+from originalentry.services.submit import submit_workspace
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
@@ -52,7 +52,7 @@ def _seed(session, students=("one@example.edu",), join_code="prog-join"):
 
 
 def _record_sale(session, ws, student, document_ref, client_key):
-    from parchment.forms.entries import EntryCommand, LineCommand
+    from originalentry.forms.entries import EntryCommand, LineCommand
 
     command = EntryCommand(
         journal_key="general", kind="regular", document_ref=document_ref,

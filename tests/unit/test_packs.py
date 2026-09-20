@@ -3,7 +3,7 @@
 import copy
 
 import pytest
-from parchment.packs import schema, validate
+from originalentry.packs import schema, validate
 from pydantic import ValidationError
 
 
@@ -148,3 +148,19 @@ def test_v3_bad_reference_in_key():
     key["expected_entries"][0]["lines"][0]["account"] = "999"
     problems = validate.validate_pack(pack, {"A": schema.load_answer_key(key)})
     assert "V3" in _rules(problems)
+
+
+def test_a_pack_cannot_ask_to_award_marks_for_a_mistake():
+    """`deduct_points` is a deduction (T8.5). A negative one would be a reward for the error."""
+    with pytest.raises(ValidationError):
+        schema.ErrorSignature.model_validate(
+            {"key": "k", "label": "L", "detect": {"type": "entry_line"}, "deduct_points": -5}
+        )
+
+
+def test_a_signature_that_asks_for_nothing_is_the_ordinary_case():
+    signature = schema.ErrorSignature.model_validate(
+        {"key": "k", "label": "L", "detect": {"type": "entry_line"}}
+    )
+
+    assert signature.deduct_points is None

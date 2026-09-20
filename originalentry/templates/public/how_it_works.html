@@ -1,0 +1,333 @@
+{# How it works — the public explanation, for someone who has never seen this software.
+
+   It is held to the same rule as every page a student reads (A7): it never uses the four words
+   the app refuses to use. A product whose whole discipline is declining to tell someone their
+   work is bad ought to be able to explain itself without them. #}
+{% extends "base.html" %}
+{% block title %}How Original Entry works{% endblock %}
+
+{% block appbars %}<div class="h-1.5 w-full bg-navy" aria-hidden="true"></div>{% endblock %}
+
+{% block main %}
+{% include "public/_header.html" with context %}
+
+{# ── What it is ───────────────────────────────────────────────────────────────────────── #}
+<section class="py-12">
+  <p class="label-section">How it works</p>
+  <h1 class="mt-3 max-w-3xl text-4xl leading-[1.15] sm:text-5xl">
+    One company. One December. Every step of the cycle, kept by hand.
+  </h1>
+  <p class="mt-5 max-w-prose text-lg text-muted">
+    Original Entry is a browser workspace for an introductory financial accounting course. A student
+    is given a small company's papers for a single month — invoices, cheque stubs, bank advices —
+    and keeps its books: sorting the documents, journalising, posting to the ledgers, taking a
+    trial balance, adjusting, building the statements and closing the year.
+  </p>
+  <p class="mt-4 max-w-prose text-lg text-muted">
+    Nothing is multiple choice. There is no answer box to fill. The work is the bookkeeping
+    itself, and it is kept in the form a bookkeeper would keep it.
+  </p>
+</section>
+
+{# The characteristic moment of the whole craft: a piece of paper becomes two balanced lines. #}
+<figure class="border-y border-silver py-10">
+  <div class="grid items-center gap-6 md:grid-cols-[1fr_auto_1fr]">
+    <div class="panel p-5 shadow-sm">
+      <p class="label-meta">Invoice 1 · 2 December</p>
+      <p class="mt-2 font-display text-lg text-navy">Firstborn Supply</p>
+      <table class="mt-3 w-full figure text-sm">
+        <caption class="sr-only">What the invoice says</caption>
+        <tbody>
+          <tr>
+            <td class="py-1 pr-3">10 × Kayak rack</td>
+            <td class="py-1 text-right">120.00</td>
+            <td class="py-1 pl-3 text-right">1,200.00</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="label-meta mt-3">Terms: net 30</p>
+    </div>
+
+    <p class="label-section text-center md:px-2">becomes</p>
+
+    <div class="panel p-5 shadow-sm">
+      <p class="label-meta">Sales journal</p>
+      <table class="mt-2 w-full figure text-sm">
+        <caption class="sr-only">The entry the student records</caption>
+        <thead>
+          <tr class="label-meta">
+            <th scope="col" class="py-1 text-left font-medium">Account</th>
+            <th scope="col" class="py-1 text-right font-medium">Debit</th>
+            <th scope="col" class="py-1 pl-3 text-right font-medium">Credit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="py-1 pr-3">112 Accounts Receivable</td>
+            <td class="py-1 text-right">1,200.00</td>
+            <td class="py-1 pl-3 text-right"></td>
+          </tr>
+          <tr>
+            <td class="py-1 pr-3 pl-4">401 Sales Revenue</td>
+            <td class="py-1 text-right"></td>
+            <td class="py-1 pl-3 text-right">1,200.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <figcaption class="mt-5 max-w-prose text-sm text-muted">
+    The student decides that this document needs an entry, which journal it belongs in, which
+    accounts it touches and on which side. The software checks that the entry balances and that
+    the journal can hold it. It does not hint at the answer.
+  </figcaption>
+</figure>
+
+{# ── The cycle ────────────────────────────────────────────────────────────────────────── #}
+<section class="py-12">
+  <h2 class="text-3xl">What a student works through</h2>
+  <p class="mt-3 max-w-prose text-muted">
+    The accounting cycle is a sequence, so this is numbered: each step rests on the one before it.
+  </p>
+
+  <ol class="mt-8 grid gap-x-10 gap-y-6 sm:grid-cols-2">
+    {% for step in [
+      ('Sort the documents',
+       'Some papers need an entry. A quotation does not. Deciding which is which is the first
+        judgement of the month, and it is marked.'),
+      ('Journalise',
+       'Five journals — sales, purchases, cash receipts, cash payments and general. Choosing the
+        one built for a transaction is part of the work.'),
+      ('Post to the ledgers',
+       'The general ledger and the customer and supplier ledgers. Balances are derived from the
+        entries, never typed in a second time.'),
+      ('Take a trial balance',
+       'A numeric self-check stands here. The student enters the figure they reached; the
+        software says whether it agrees with the books it derived.'),
+      ('Adjust',
+       'Depreciation, accruals, prepayments — recorded as entries, in the same journals, against
+        the same ledgers.'),
+      ('Build the statements',
+       'An income statement, a statement of owner equity, a balance sheet. The student chooses
+        the sections, the subtotals and where each account sits.'),
+      ('Close the books',
+       'Temporary accounts to income summary, income summary to capital, and a post-closing
+        trial balance to finish the month.')] %}
+    <li class="border-l-2 border-silver pl-4">
+      <p class="label-meta">Step {{ loop.index }}</p>
+      <h3 class="mt-1 text-xl">{{ step[0] }}</h3>
+      <p class="mt-1 max-w-prose text-sm text-muted">{{ step[1] }}</p>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+{# ── The argument. One slip, marked two ways. ─────────────────────────────────────────── #}
+<section class="border-t border-silver py-12">
+  <p class="label-section">Why it matters</p>
+  <h2 class="mt-3 max-w-3xl text-3xl">One slip in step two should cost two marks, not sixty-six.</h2>
+  <p class="mt-4 max-w-prose text-lg text-muted">
+    This is where most coursework software fails an accounting student, and the reason
+    Original Entry exists. Every later step depends on an earlier figure. If a student journalises a
+    sale as 1,300.00 when the invoice says 1,200.00, then their receivables, their trial
+    balance, their statements and their closing entries all carry that figure forward. Marked
+    against a single answer key, one slip in the second step costs them the other five as well.
+  </p>
+  <p class="mt-4 max-w-prose text-lg text-muted">
+    Original Entry marks each step on the figures the student themselves reached. Posting is marked
+    on whether they posted what they journalised. The trial balance is marked on whether it
+    agrees with their own ledgers. The statements are marked on whether they are built from
+    their own adjusted figures. The slip is charged once, where it happened.
+  </p>
+
+  <div class="mt-10 grid gap-6 md:grid-cols-2">
+    <div class="panel overflow-hidden">
+      <p class="label-meta border-b border-silver bg-cloud px-5 py-3">
+        Marked against one answer key
+      </p>
+      <table class="data-table">
+        <caption class="sr-only">The same student, marked against a single set of answers</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="text-left">Step</th>
+            <th scope="col" class="text-right">Earned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in [
+            ('Sorting the documents', '10 / 10'),
+            ('Journalising', '24 / 26'),
+            ('Posting', '0 / 14'),
+            ('Trial balance', '0 / 10'),
+            ('Adjusting', '0 / 12'),
+            ('Statements', '0 / 18'),
+            ('Closing', '0 / 10')] %}
+          <tr>
+            <th scope="row" class="text-left font-normal">{{ row[0] }}</th>
+            <td class="figure text-right">{{ row[1] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row" class="text-left">Total</th>
+            <td class="figure text-right">34 / 100</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="panel overflow-hidden">
+      <p class="label-meta border-b border-silver bg-cloud px-5 py-3">
+        Marked on the student's own figures
+      </p>
+      <table class="data-table">
+        <caption class="sr-only">The same student, marked on the figures they reached</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="text-left">Step</th>
+            <th scope="col" class="text-right">Earned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in [
+            ('Sorting the documents', '10 / 10'),
+            ('Journalising', '24 / 26'),
+            ('Posting', '14 / 14'),
+            ('Trial balance', '10 / 10'),
+            ('Adjusting', '12 / 12'),
+            ('Statements', '18 / 18'),
+            ('Closing', '10 / 10')] %}
+          <tr>
+            <th scope="row" class="text-left font-normal">{{ row[0] }}</th>
+            <td class="figure text-right">{{ row[1] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row" class="text-left">Total</th>
+            <td class="figure text-right">98 / 100</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+  <p class="mt-4 max-w-prose text-sm text-muted">
+    The same student, the same books, the same single slip in the second step. A mark of 34
+    says the month was a failure. A mark of 98 says what actually happened: they understand the
+    cycle and mis-keyed a figure.
+  </p>
+</section>
+
+{# ── The discipline about wording ─────────────────────────────────────────────────────── #}
+<section class="border-t border-silver py-12">
+  <h2 class="text-3xl">It never passes judgement while you work</h2>
+  <p class="mt-4 max-w-prose text-lg text-muted">
+    While a student is keeping the books, the software will refuse a save for a mechanical
+    reason, and it will say exactly which one. It never tells them how the work is going, never
+    marks a figure in red, and never reacts to a designed mistake with a warning. That would
+    turn the exercise into guess-until-it-lets-you-through.
+  </p>
+
+  <div class="mt-8 grid gap-4 sm:grid-cols-2">
+    <div class="callout">
+      <p class="callout__label">What it says</p>
+      <p class="figure mt-1 text-sm">
+        This entry does not balance. Debits 1,300.00, credits 1,200.00.
+      </p>
+    </div>
+    <div class="callout callout--attention">
+      <p class="callout__label">What it also says</p>
+      <p class="mt-1 text-sm">
+        The sales journal has no column for that account. Use the general journal, or a different
+        account.
+      </p>
+    </div>
+  </div>
+
+  <p class="mt-6 max-w-prose text-muted">
+    Both are facts about the books, not verdicts about the student. The marking happens once,
+    afterwards, and what it found is shown to the instructor as evidence rather than as a score
+    alone. Four judgemental words are kept out of the entire interface by an automated check that
+    reads the templates and the scripts — and, since this page is part of that interface, out of
+    this page too.
+  </p>
+</section>
+
+{# ── For instructors ──────────────────────────────────────────────────────────────────── #}
+<section class="border-t border-silver py-12">
+  <p class="label-section">For instructors</p>
+  <h2 class="mt-3 text-3xl">Where each student is, and what they misunderstood</h2>
+
+  <dl class="mt-8 grid gap-x-10 gap-y-6 sm:grid-cols-2">
+    {% for item in [
+      ('Every student gets their own figures',
+       'A company ships with variants. Two students sitting together are keeping the books of
+        the same company with different numbers, so the work has to be their own.'),
+      ('The misunderstanding is named',
+       'A company is authored to provoke particular mistakes — treating a sale as an expense,
+        say. When the marking engine recognises one, it names it for the instructor as a
+        diagnosis. It never reaches the student, and it accuses nobody.'),
+      ('Judgement stays with the person',
+       'Anything the engine cannot decide is flagged for a human. An instructor can change any
+        mark, and the reason they give is recorded with it and survives every re-mark.'),
+      ('Mistakes are recoverable',
+       'A student who hands in by accident can be given the work back. A student who records a
+        month into another company&rsquo;s books can be given a fresh set, with the old ones
+        kept and still readable.'),
+      ('It exports where marks belong',
+       'A marks CSV in a shape a gradebook will take, and a printable record of a whole month of
+        one student&rsquo;s work, for a re-mark or an academic integrity case.'),
+      ('Deadlines can be per student',
+       'Extended time is given to a person, not typed into a spreadsheet, and it extends the
+        self-checks along with the deadline.')] %}
+    <div>
+      <dt class="font-display text-xl text-navy">{{ item[0] }}</dt>
+      <dd class="mt-1 max-w-prose text-sm text-muted">{{ item[1] }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+</section>
+
+{# ── What it deliberately does not do ─────────────────────────────────────────────────── #}
+<section class="border-t border-silver py-12">
+  <h2 class="text-3xl">What it deliberately does not do</h2>
+  <ul class="mt-6 max-w-prose list-disc space-y-2 pl-6 text-muted">
+    <li>No advertising, no analytics, no tracking, and nothing about anyone is sold.</li>
+    <li>
+      No third-party assets. The typefaces are served from this application, so opening a ledger
+      does not announce a student to anybody else.
+    </li>
+    <li>
+      No dashboard of vanity metrics, and no messaging inside the app — a second inbox nobody
+      checks is worse than none.
+    </li>
+    <li>
+      Nothing requires JavaScript. Every page works without it; scripts only add conveniences,
+      such as keeping an entry safe while the network is away.
+    </li>
+    <li>
+      No penalty arithmetic. Late work is recorded as late, to the hour, and what that is worth
+      stays a matter for the instructor's own policy.
+    </li>
+  </ul>
+</section>
+
+{# ── Where to go next ─────────────────────────────────────────────────────────────────── #}
+<section class="border-t border-silver py-12">
+  <h2 class="text-3xl">Getting started</h2>
+  <p class="mt-3 max-w-prose text-muted">
+    Students join a section with a code from their instructor. Instructors sign in to set one up.
+    Signing in is a link sent to your school email address — there is no password to forget.
+  </p>
+  <div class="mt-6 flex flex-wrap gap-3">
+    {% if current_user.is_authenticated %}
+    <a class="btn btn--primary" href="{{ url_for('student.home') }}">Go to your workspaces</a>
+    {% else %}
+    <a class="btn btn--primary" href="{{ url_for('auth.join_form') }}">Join with a class code</a>
+    <a class="btn btn--outline" href="{{ url_for('auth.sign_in_form') }}">Sign in</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

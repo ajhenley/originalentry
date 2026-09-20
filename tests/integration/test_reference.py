@@ -15,8 +15,8 @@ import json
 import zipfile
 
 import pytest
-from parchment.models import Assignment, Section, User, Variant, Workspace
-from parchment.packs.importing import import_pack_zip
+from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.packs.importing import import_pack_zip
 from sqlalchemy import select
 
 from tests.packs import testco_alpha

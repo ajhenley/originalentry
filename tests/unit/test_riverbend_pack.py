@@ -49,7 +49,9 @@ def test_it_builds_a_pack_the_app_would_accept(generated):
 def test_it_carries_the_whole_month(generated):
     pack = schema.load_pack(generated.pack)
 
-    assert len(pack.documents) == 28
+    # 28 transactions, plus the three that arrive and need nothing doing with them.
+    assert len(pack.documents) == 31
+    assert len(generated.keys["B"]["expected_entries"]) == 28
     assert len(pack.accounts) == 42
     assert {j.key for j in pack.journals} == {
         "sales", "purchases", "cash_receipts", "cash_payments", "general"}
@@ -84,6 +86,27 @@ def test_the_versions_really_do_differ(generated):
     cash = {v: generated.keys[v]["checkpoints"]["cp2"] for v in ("A", "B", "C")}
 
     assert len(set(cash.values())) == 3
+
+
+def test_triage_is_a_real_judgement(generated):
+    """With every document needing an entry there is nothing to judge, and triage is the first
+    thing marked. The three that need none come from the paper set's own no-entry documents."""
+    triage = generated.keys["B"]["triage"]
+
+    assert sum(1 for needed in triage.values() if needed) == 28
+    assert sum(1 for needed in triage.values() if not needed) == 3
+
+
+def test_the_cost_of_every_item_is_reachable(generated):
+    """A sales invoice shows what the customer pays. Cost of goods sold needs the cost, which is
+    nowhere on the document, so the pack has to carry it or half the sales cannot be recorded."""
+    pack = schema.load_pack(generated.pack)
+    inventory = next(s for s in pack.reference if s.key == "inventory")
+    table = next(b for b in inventory.blocks if b["type"] == "table")
+
+    listed = {row[0] for row in table["rows"]}
+    assert listed == {"S-01", "S-02", "S-03", "S-04", "S-05", "S-06", "S-07", "S-08", "S-09"}
+    assert "Our cost" in table["headers"]
 
 
 def test_every_designed_error_is_named(generated):

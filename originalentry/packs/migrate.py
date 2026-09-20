@@ -115,6 +115,12 @@ def migrate_assignment(
     report = MigrationReport(from_version=old_pv.version, to_version=to_pv.version,
                              workspaces=len(workspaces))
     if not ws_ids:
+        # Nothing to remap, but the assignment still has to move: it is what open_workspace reads,
+        # so leaving it behind would hand the next student to join the version everyone else has
+        # just left. Migrating before anyone has joined is the ordinary case, not an edge one.
+        if not dry_run:
+            _point_assignment_at(session, assignment, to_pv, actor, 0)
+            report.applied = True
         return report
 
     lines = list(
@@ -181,11 +187,23 @@ def migrate_assignment(
 
     if to_pv.first_used_at is None:
         to_pv.first_used_at = old_pv.first_used_at
+    _point_assignment_at(session, assignment, to_pv, actor, len(workspaces))
+    report.applied = True
+    return report
+
+
+def _point_assignment_at(session: Session, assignment, to_pv, actor, workspaces: int) -> None:
+    """Move the assignment onto the new version and record that it happened.
+
+    Without this the work moves and the assignment does not, which reads as success and leaves
+    two quiet faults: the next student to join opens the old version, and a later migration
+    looks for workspaces on a version none of them are on any more and finds nothing to do.
+    """
+    from_version = session.get(PackVersion, assignment.fixed_pack_version_id).version
+    assignment.fixed_pack_version_id = to_pv.id
     session.flush()
     staff_actions.record(
         session, actor, "migrate_pack", "assignment", assignment.id,
-        detail={"from_version": old_pv.version, "to_version": to_pv.version,
-                "workspaces": len(workspaces)},
+        detail={"from_version": from_version, "to_version": to_pv.version,
+                "workspaces": workspaces},
     )
-    report.applied = True
-    return report

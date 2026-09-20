@@ -117,6 +117,81 @@ def journals() -> list[dict]:
     ]
 
 
+def reference(model) -> list[dict]:
+    """What the instruction booklet puts in front of the student and the documents cannot.
+
+    Chiefly the cost of each item. A sales invoice shows what the customer pays; the cost of
+    goods sold comes from the company's own records, and without it half the sales entries
+    cannot be made at all. Costs do not vary by version, so this is pack-level: only S-01's
+    selling price changes, and that is printed on the invoice.
+    """
+    rows = [[sku, spec[0], f"{spec[1]:,.2f}", "Yes" if spec[4] else "\u2014"]
+            for sku, spec in model.SKUS.items()]
+    return [{
+        "key": "inventory",
+        "title": "Inventory and costs",
+        "blocks": [
+            {"type": "p", "text":
+             "Riverbend keeps a perpetual inventory. Every sale records the revenue and, in the "
+             "same entry, the cost of the goods that left. The selling price is on the invoice; "
+             "the cost is here."},
+            {"type": "table", "caption": "Cost and stock records",
+             "headers": ["Item", "Description", "Our cost", "Stock card kept?"],
+             "rows": rows},
+            {"type": "p", "text":
+             "A stock card is kept for the items marked above. Freight paid on goods bought FOB "
+             "shipping point is part of what the inventory cost, not a separate expense."},
+        ],
+    }, {
+        "key": "payroll",
+        "title": "Payroll",
+        "blocks": [
+            {"type": "ul", "items": [
+                f"FICA is withheld at {float(model.PR['fica_rate']) * 100:.2f} per cent of gross "
+                "pay, and the company owes the same amount again as its own expense.",
+                "Amounts withheld from employees are liabilities until they are remitted; the "
+                "company's own share is Payroll Tax Expense. Keeping those apart is the single "
+                "most common payroll error.",
+                "No federal or state unemployment tax is due in December: every employee passed "
+                "the wage base earlier in the year.",
+            ]},
+        ],
+    }]
+
+
+# Documents that arrive and need nothing done with them. Triage is the first thing marked, and
+# without these every document in the set would need an entry, which would make it no exercise
+# at all. Taken from the paper set's own "documents requiring no entry".
+NO_ENTRY_DOCUMENTS = [
+    {
+        "ref": "N01", "display_ref": "Purchase order RV-2210", "date": "2026-12-15",
+        "fields": [["From", "Ridgeview Cycles"], ["Purchase order", "RV-2210"],
+                   ["Required delivery", "18 January"], ["Terms", "2/10, n/30"],
+                   ["Description", "Order for 6 mountain bikes, not to ship before 15 January"],
+                   ["Amount", "3,840.00"]],
+        "lines": [["6", "Cascade 29er mountain bike", "640.00", "3,840.00"]],
+    },
+    {
+        "ref": "N02", "display_ref": "Request for quotation RFQ-0041", "date": "2026-12-15",
+        "fields": [["From", "Halden & Coe Outfitters"], ["Reference", "RFQ-0041"],
+                   ["Description",
+                    "An enquiry about wholesale terms for 25 and 50 units. No order is placed "
+                    "and no goods are requested."],
+                   ["Amount", "None stated"]],
+        "lines": [],
+    },
+    {
+        "ref": "N03", "display_ref": "Price list from Ridgeline Tires", "date": "2026-12-15",
+        "fields": [["From", "Ridgeline Tires"], ["Effective", "1 January"],
+                   ["Description",
+                    "Notice of wholesale prices changing from 1 January. No goods have been "
+                    "ordered or shipped against this notice."],
+                   ["Amount", "None stated"]],
+        "lines": [["", "Commuter tire, pair", "32.00", "34.00 from 1 Jan"]],
+    },
+]
+
+
 def _ref(txn) -> str:
     """A stable, file-safe reference. The document's own number keeps them in order."""
     return f"D{txn['no']:02d}"
@@ -246,6 +321,13 @@ def documents(model) -> list[dict]:
             ) if seq <= 2 else None,
             "variants": {},
         })
+    for extra in NO_ENTRY_DOCUMENTS:
+        docs.append({
+            "ref": extra["ref"], "display_ref": extra["display_ref"],
+            "type": "source_document", "date": extra["date"],
+            "received_seq": len(docs) + 1, "guided": False, "guidance": None,
+            "variants": {},
+        })
     return docs
 
 
@@ -372,10 +454,17 @@ def build_source(practice_set: Path) -> dict:
     for code in sorted(model.VARIANTS):
         txns = model.build(code)
         # strict: one document per transaction, always. A mismatch is an authoring bug.
-        for doc, txn in zip(docs, txns, strict=True):
+        for doc, txn in zip(docs[:len(txns)], txns, strict=True):
             doc["variants"][code] = {"text_alternative": _text_alternative(txn, model, cheques)}
+        for doc, extra in zip(docs[len(txns):], NO_ENTRY_DOCUMENTS, strict=True):
+            doc["variants"][code] = {"text_alternative":
+                                     {"fields": [["Date", "Dec 15"],
+                                                 ["Document", extra["display_ref"]],
+                                                 *extra["fields"]],
+                                      "lines": extra["lines"]}}
         answers[code] = {
-            "triage": {_ref(t): True for t in txns},
+            "triage": ({_ref(t): True for t in txns}
+                       | {e["ref"]: False for e in NO_ENTRY_DOCUMENTS}),
             "designated_journal_documents": {_ref(t): JOURNAL_OF[t["cycle"]] for t in txns},
             "expected_entries": expected_entries(model, code),
             "adjustments": [],
@@ -402,6 +491,7 @@ def build_source(practice_set: Path) -> dict:
         "opening_balances": opening,
         "journals": journals(),
         "documents": docs,
+        "reference": reference(model),
         # The paper set's own checkpoint answers table: the two control accounts and cash.
         "checkpoints": [
             {"key": "cp1", "ordinal": 1, "stage": "posted",

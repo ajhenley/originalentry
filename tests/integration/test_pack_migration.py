@@ -7,7 +7,7 @@ import secrets
 from datetime import date
 
 import pytest
-from originalentry.models import Account, EntryLine, JournalEntry, Section, User
+from originalentry.models import Account, ContentPack, EntryLine, JournalEntry, Section, User
 from originalentry.packs import schema
 from originalentry.packs.importer import import_content
 from originalentry.packs.migrate import migrate_assignment
@@ -90,3 +90,62 @@ def test_migrate_refused_when_used_content_is_gone(session):
     report = migrate_assignment(session, assignment, 2, dry_run=True)
     assert not report.feasible
     assert "401" in report.missing_accounts
+
+
+# ── The assignment has to move too ──────────────────────────────────────────────────────
+#
+# Found by migrating Riverbend twice. The first migration moved every workspace and every entry
+# line to version 2 and left the assignment pointing at version 1, so the second migration looked
+# for workspaces on version 1, found none, and silently did nothing.
+#
+# The worse consequence is quieter: a student who joins after a migration is given a workspace on
+# the assignment's version, which is the old one. They would be working different documents from
+# the rest of their class.
+
+def test_migrating_moves_the_assignment_itself(session):
+    assignment, _, pv1 = _setup(session, f"asg-{secrets.token_hex(3)}")
+    pv2 = _import(session, session.get(ContentPack, pv1.content_pack_id).slug, 2)
+
+    migrate_assignment(session, assignment, 2, dry_run=False)
+
+    assert assignment.fixed_pack_version_id == pv2.id
+
+
+def test_a_student_joining_after_a_migration_gets_the_new_version(session):
+    """The reason the pointer matters: open_workspace reads it."""
+    assignment, _, pv1 = _setup(session, f"join-{secrets.token_hex(3)}")
+    pv2 = _import(session, session.get(ContentPack, pv1.content_pack_id).slug, 2)
+    migrate_assignment(session, assignment, 2, dry_run=False)
+
+    latecomer = User(email=f"late-{secrets.token_hex(3)}@example.edu", role="student")
+    session.add(latecomer)
+    session.flush()
+    workspace = open_workspace(session, assignment, latecomer)
+
+    assert workspace.pack_version_id == pv2.id
+
+
+def test_an_assignment_with_no_workspaces_still_migrates(session):
+    """It used to return early before touching the assignment, so migrating before anyone had
+    joined appeared to succeed and changed nothing."""
+    pv1 = _import(session, slug := f"empty-{secrets.token_hex(3)}", 1)
+    pv2 = _import(session, slug, 2)
+    section = Section(name="Sec", join_code=f"E{secrets.token_hex(3).upper()}")
+    session.add(section)
+    session.flush()
+    assignment = create_assignment(session, section=section, title="Dec", pack_version=pv1)
+
+    report = migrate_assignment(session, assignment, 2, dry_run=False)
+
+    assert report.workspaces == 0
+    assert report.applied is True
+    assert assignment.fixed_pack_version_id == pv2.id
+
+
+def test_a_dry_run_moves_nothing(session):
+    assignment, _, pv1 = _setup(session, f"dry-{secrets.token_hex(3)}")
+    _import(session, session.get(ContentPack, pv1.content_pack_id).slug, 2)
+
+    migrate_assignment(session, assignment, 2, dry_run=True)
+
+    assert assignment.fixed_pack_version_id == pv1.id

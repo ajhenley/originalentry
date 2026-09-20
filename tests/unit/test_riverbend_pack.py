@@ -168,3 +168,14 @@ def test_a_document_never_carries_the_authors_note(generated):
             blob = " ".join(v for _, v in text.fields) + " ".join(
                 " ".join(line) for line in text.lines)
             assert "TRAP" not in blob.upper(), document.display_ref
+
+
+def test_no_two_documents_look_the_same_in_the_list(generated):
+    """Three counter sales all said "Cash register tape". In a list of thirty-one, a label that
+    repeats is no label: there is no way to tell which one you have already handled."""
+    pack = schema.load_pack(generated.pack)
+
+    labels = [d.display_ref for d in pack.documents]
+
+    assert len(labels) == len(set(labels)), sorted(
+        label for label in labels if labels.count(label) > 1)

@@ -2189,7 +2189,7 @@
   },
   {
    "ref": "D12",
-   "display_ref": "Cash register tape",
+   "display_ref": "Cash register tape, Dec 8",
    "type": "source_document",
    "date": "2026-12-08",
    "received_seq": 12,
@@ -2206,6 +2206,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
        ],
        [
         "Description",
@@ -2238,6 +2246,14 @@
         "Cash register tape"
        ],
        [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
+       ],
+       [
         "Description",
         "Cash sale"
        ],
@@ -2266,6 +2282,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
        ],
        [
         "Description",
@@ -2543,7 +2567,7 @@
   },
   {
    "ref": "D15",
-   "display_ref": "Cash register tape",
+   "display_ref": "Cash register tape, Dec 9",
    "type": "source_document",
    "date": "2026-12-09",
    "received_seq": 15,
@@ -2560,6 +2584,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
        ],
        [
         "Description",
@@ -2592,6 +2624,14 @@
         "Cash register tape"
        ],
        [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
+       ],
+       [
         "Description",
         "Cash sale"
        ],
@@ -2620,6 +2660,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
        ],
        [
         "Description",
@@ -3185,7 +3233,7 @@
   },
   {
    "ref": "D21",
-   "display_ref": "Cash register tape",
+   "display_ref": "Cash register tape, Dec 12",
    "type": "source_document",
    "date": "2026-12-12",
    "received_seq": 21,
@@ -3202,6 +3250,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
        ],
        [
         "Description",
@@ -3234,6 +3290,14 @@
         "Cash register tape"
        ],
        [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
+       ],
+       [
         "Description",
         "Cash sale"
        ],
@@ -3262,6 +3326,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Register",
+        "1"
+       ],
+       [
+        "Clerk",
+        "04"
        ],
        [
         "Description",

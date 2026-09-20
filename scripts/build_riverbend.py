@@ -22,6 +22,7 @@ import importlib.util
 import io
 import json
 import sys
+from collections import Counter
 from decimal import Decimal
 from decimal import Decimal as D
 from pathlib import Path
@@ -256,6 +257,9 @@ def _text_alternative(txn, model, cheques: dict) -> dict:
         name = model.VENDORS.get(code, ("Kestrel Office Supply",))[0]
         fields.append(["Supplier", name])
 
+    if txn["doc"] == "Cash register tape":
+        fields += [["Register", "1"], ["Clerk", "04"]]
+
     stub = cheques.get(txn["no"])
     if stub:
         _number, payee, memo, _amount = stub
@@ -302,13 +306,21 @@ def _text_alternative(txn, model, cheques: dict) -> dict:
 
 
 def documents(model) -> list[dict]:
-    """One document per transaction, in the order they arrive on the desk."""
+    """One document per transaction, in the order they arrive on the desk.
+
+    A label that repeats is no label at all: the three counter sales all say "Cash register
+    tape", and in a list of thirty-one they cannot be told apart. The paper tape identifies
+    itself by its date, so that is what is added, and it is added to anything that repeats
+    rather than to the tapes by name.
+    """
     base = model.build("B")            # descriptions and metadata do not vary by version
+    repeated = {doc for doc, count in Counter(t["doc"] for t in base).items() if count > 1}
     docs = []
     for seq, txn in enumerate(base, start=1):
         docs.append({
             "ref": _ref(txn),
-            "display_ref": txn["doc"],
+            "display_ref": (f'{txn["doc"]}, {txn["date"]}' if txn["doc"] in repeated
+                            else txn["doc"]),
             "type": "source_document",
             "date": _iso_date(txn["date"]),
             "received_seq": seq,

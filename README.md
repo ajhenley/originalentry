@@ -17,7 +17,7 @@ requirements and [`../Riverbend-Ledger-PRD.md`](../Riverbend-Ledger-PRD.md) for 
 ## Stack
 
 Python 3.13 · Flask 3.1 (app factory, `auth`/`student`/`staff` blueprints) · Jinja + Tailwind v4
-(standalone CLI, built CSS committed) · SQLAlchemy 2.0 + Flask-Migrate · Neon Postgres 17 (psycopg 3)
+(standalone CLI, built CSS committed) · SQLAlchemy 2.0 + Flask-Migrate · Neon Postgres 18 (psycopg 3)
 · Flask-Login magic-link + six-digit-code auth · Resend for sign-in email only · Heroku hosting.
 
 ## Build order (PRD §7)
@@ -96,6 +96,9 @@ DATABASE_URL_DIRECT="postgresql+psycopg://…direct-host…/neondb?sslmode=requi
 pg_restore --clean --no-owner --no-privileges \
   --dbname "postgresql://…direct-host…/neondb?sslmode=require" originalentry-YYYYMMDD-HHMMSS.dump
 ```
+
+The client tools must be at least as new as the server: Neon upgrades Postgres without asking,
+and `pg_dump` refuses a newer server. `backup.sh` checks this and names the package to install.
 
 Once a term, run the drill: restore into a throwaway Neon branch, run `flask replay-key`, delete
 the branch. Neon point-in-time restore (≥ 7 days) is the first line; this dump is the offline copy.

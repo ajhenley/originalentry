@@ -175,7 +175,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | A24 | A student can tell which company, in 2 s | 🟡 | Chrome, colour, URL; unobserved |
 | A25 | Sign-in survives the real world | 🟡 | Auth is built; no pilot has run |
 | A26 | No lost work | 🟡 | Contract and decisions tested; browser behaviour needs Playwright |
-| A27 | Recovery proven | ⬜ | No backup script or drill |
+| A27 | Recovery proven | ✅ | Dump → restore into a throwaway PG 18 cluster → row counts matched, 20 Sep 2026 |
 | A28 | Late policy holds | ✅ | |
 | A29 | Built CSS matches a fresh build | ✅ | CI rebuilds and fails on a diff |
 | A30 | The largest pack uploads in time | ⬜ | |
@@ -206,7 +206,7 @@ the requirement IDs in [`../Riverbend-Ledger-PRD-Flask.md`](../Riverbend-Ledger-
 | CLI commands (`staff add`, `packs`, `grade`, `purge`…) | ✅ | Plus `seed demo` and `replay-key` |
 | Heroku config: Procfile, gunicorn, release phase | 🟡 | Files exist; **nothing is deployed** |
 | CI workflow | ✅ | `.github/workflows/ci.yml`: ruff, CSS rebuild check, tests, guards |
-| Backups, restore drill, runbook | ⬜ | |
+| Backups, restore drill, runbook | 🟡 | `scripts/backup.sh` works and the restore drill has been run; the due-date runbook is still unwritten |
 | Accessibility pass with a screen reader | ⬜ | Semantic tables and labels are in place |
 
 ---

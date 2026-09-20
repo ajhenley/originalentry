@@ -7,13 +7,17 @@
 {% block main %}
 {% include "public/_header.html" with context %}
 
-<section class="grid items-center gap-10 py-12 md:grid-cols-2">
-  <div>
+{# Two columns only once there is genuinely room for display type beside the ledger: at md the
+   column is ~370px and a 60px heading cannot fit, so it used to overflow across the panel.
+   min-w-0 is what stops a grid child spilling into its neighbour at any width. #}
+<section class="grid items-center gap-10 py-12 xl:grid-cols-2">
+  <div class="min-w-0">
     <p class="label-section">Principles of Financial Accounting</p>
-    <h1 class="mt-3 text-5xl leading-[1.1] sm:text-6xl">
+    <h1 class="mt-3 text-4xl leading-[1.1] sm:text-5xl xl:text-6xl">
       Keep the books.
-      <span class="whitespace-nowrap">Learn where they
-        <span class="border-b-4 border-teal pb-1">balance but mislead</span>.</span>
+      Learn where they
+      {# The phrase may wrap; box-decoration-clone keeps the rule under every line of it. #}
+      <span class="border-b-4 border-teal box-decoration-clone pb-1">balance but mislead</span>.
     </h1>
     <p class="mt-5 max-w-prose text-lg text-muted">
       Original Entry is a browser workspace for a real company's December: sort the source documents,

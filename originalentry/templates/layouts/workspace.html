@@ -36,6 +36,8 @@
       </ul>
     </details>
     {% endif %}
+    {% with tone = 'dark' %}{% include "_account_menu.html" with context %}{% endwith %}
+
     <nav aria-label="Workspace" class="flex flex-wrap gap-1 text-sm">
       {% set ws = workspace.public_id %}
       {% set slug = company.slug %}

@@ -1,0 +1,43 @@
+{# The account menu: where your books are, and the way out.
+
+   A `<details>` disclosure, like the company switcher it sits beside: the browser opens and
+   closes it, the keyboard reaches it, and it needs no JavaScript at all.
+
+   Sign out sits at the bottom, under a rule, so the item that ends the session is never the
+   first thing a hurried click lands on. On a shared or lab computer it is the whole point of
+   the menu, which is why it appears on every page rather than only on the home screen.
+
+   `tone` is "dark" where the menu sits on navy chrome, so the summary can be read against it. #}
+{% if current_user.is_authenticated %}
+{% set dark = tone == 'dark' %}
+<details class="relative text-sm">
+  <summary class="nav-link cursor-pointer list-none{% if dark %} border border-paper/25{% else %} underline{% endif %}">
+    {{ account_label }}
+  </summary>
+  <ul class="panel absolute right-0 z-20 mt-1 min-w-56 overflow-hidden text-ink shadow-lg">
+    {% if my_workspaces %}
+    <li class="label-meta border-b border-silver bg-cloud px-3 py-2">Your workspaces</li>
+    {% for w in my_workspaces %}
+    <li>
+      <a class="block px-3 py-2 hover:bg-cloud"
+         href="{{ url_for('student.overview', workspace=w.public_id, company_slug=w.slug) }}">
+        {{ w.name }}</a>
+    </li>
+    {% endfor %}
+    {% elif current_user.role in ('instructor', 'grader') %}
+    <li>
+      <a class="block px-3 py-2 hover:bg-cloud" href="{{ url_for('staff.index') }}">Console</a>
+    </li>
+    {% else %}
+    <li class="px-3 py-2 text-muted">No books open yet.</li>
+    <li>
+      <a class="block px-3 py-2 hover:bg-cloud" href="{{ url_for('auth.join_form') }}">
+        Join with a class code</a>
+    </li>
+    {% endif %}
+    <li class="border-t border-silver">
+      <a class="block px-3 py-2 hover:bg-cloud" href="{{ url_for('auth.sign_out') }}">Sign out</a>
+    </li>
+  </ul>
+</details>
+{% endif %}

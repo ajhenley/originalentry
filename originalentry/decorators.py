@@ -78,20 +78,27 @@ def workspace_view(view):
     return wrapped
 
 
-def _switch_targets(workspace) -> list[dict]:
-    """The owning student's other live workspaces, for the switch menu (M3.4)."""
-    rows = db.session.execute(
+def workspaces_of(student_id: int, *, excluding: int | None = None) -> list[dict]:
+    """A student's live workspaces, named by their company.
+
+    Used twice: the switch menu inside the books (M3.4), which excludes the set you are already
+    looking at, and the account menu in the chrome, which lists them all.
+    """
+    query = (
         db.select(Workspace, ContentPack)
         .join(PackVersion, Workspace.pack_version_id == PackVersion.id)
         .join(ContentPack, PackVersion.content_pack_id == ContentPack.id)
-        .where(
-            Workspace.student_id == workspace.student_id,
-            Workspace.archived_at.is_(None),
-            Workspace.id != workspace.id,
-        )
+        .where(Workspace.student_id == student_id, Workspace.archived_at.is_(None))
         .order_by(ContentPack.company_name)
-    ).all()
+    )
+    if excluding is not None:
+        query = query.where(Workspace.id != excluding)
     return [
         {"public_id": ws.public_id, "name": cp.company_name, "slug": cp.slug}
-        for ws, cp in rows
+        for ws, cp in db.session.execute(query).all()
     ]
+
+
+def _switch_targets(workspace) -> list[dict]:
+    """The owning student's *other* live workspaces, for the switch menu (M3.4)."""
+    return workspaces_of(workspace.student_id, excluding=workspace.id)

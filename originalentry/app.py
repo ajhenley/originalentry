@@ -85,6 +85,24 @@ def _register_jinja(app: Flask) -> None:
     app.jinja_env.filters["dollars"] = money.format_dollars
     app.jinja_env.filters["kind_label"] = kind_label
 
+    def _account_workspaces():
+        from flask_login import current_user
+
+        from .decorators import STAFF_ROLES, workspaces_of
+
+        if not current_user.is_authenticated or current_user.role in STAFF_ROLES:
+            return []
+        return workspaces_of(current_user.id)
+
+    def _account_label() -> str:
+        """What the menu is called before you open it: their own name, or the plain noun."""
+        from flask_login import current_user
+
+        if not current_user.is_authenticated:
+            return ""
+        given = (current_user.given_name or "").strip()
+        return given or current_user.email.split("@")[0]
+
     @app.context_processor
     def _inject_workspace_context():
         # The workspace decorator sets these on g; expose them to base/layout templates.
@@ -96,6 +114,10 @@ def _register_jinja(app: Flask) -> None:
             "read_only": getattr(g, "read_only", False),
             "read_only_message": getattr(g, "read_only_message", None),
             "save_messages": messages.save_banner_strings(),
+            # The account menu appears in every chrome, so its data lives here rather than in
+            # each view. It queries only for a signed-in student (D6 rule 3).
+            "my_workspaces": _account_workspaces(),
+            "account_label": _account_label(),
             "grading_messages": messages.grading_batch_strings(),
             "switch_targets": getattr(g, "switch_targets", []),
             # The date the public documents carry, in one place so they cannot disagree.

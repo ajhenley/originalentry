@@ -17,7 +17,7 @@
        href="{{ url_for('public.how_it_works') }}"
        {% if here == 'public.how_it_works' %}aria-current="page"{% endif %}>How it works</a>
     {% if current_user.is_authenticated %}
-    <a class="underline" href="{{ url_for('student.home') }}">Your workspaces</a>
+    {% include "_account_menu.html" with context %}
     {% else %}
     <a class="underline" href="{{ url_for('auth.sign_in_form') }}">Sign in</a>
     {% endif %}

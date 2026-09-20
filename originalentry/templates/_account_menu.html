@@ -11,12 +11,18 @@
 {% if current_user.is_authenticated %}
 {% set dark = tone == 'dark' %}
 <details class="relative text-sm">
-  <summary class="nav-link cursor-pointer list-none{% if dark %} border border-paper/25{% else %} underline{% endif %}">
-    {{ account_label }}
+  {# The caret is the only affordance that this opens, since list-none removes the native one. #}
+  <summary class="nav-link flex cursor-pointer list-none items-center gap-1
+                  {% if dark %}border border-paper/25{% else %}underline{% endif %}">
+    {{ account_label }}<span aria-hidden="true" class="text-xs">&#9662;</span>
   </summary>
   <ul class="panel absolute right-0 z-20 mt-1 min-w-56 overflow-hidden text-ink shadow-lg">
+    <li class="border-b border-silver bg-cloud px-3 py-2">
+      <span class="label-meta block">Signed in as</span>
+      <span class="block truncate">{{ current_user.email }}</span>
+    </li>
     {% if my_workspaces %}
-    <li class="label-meta border-b border-silver bg-cloud px-3 py-2">Your workspaces</li>
+    <li class="label-meta border-b border-silver px-3 pt-2 pb-1">Your workspaces</li>
     {% for w in my_workspaces %}
     <li>
       <a class="block px-3 py-2 hover:bg-cloud"

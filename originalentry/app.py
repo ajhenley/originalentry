@@ -95,13 +95,19 @@ def _register_jinja(app: Flask) -> None:
         return workspaces_of(current_user.id)
 
     def _account_label() -> str:
-        """What the menu is called before you open it: their own name, or the plain noun."""
+        """What the menu is called before it is opened.
+
+        It names what is inside, because a trigger showing only somebody's name does not read as
+        a menu of their books. Staff have no workspaces, so theirs says something else that is
+        true; who is signed in moves inside the menu, where it informs instead of disguising.
+        """
         from flask_login import current_user
+
+        from .decorators import STAFF_ROLES
 
         if not current_user.is_authenticated:
             return ""
-        given = (current_user.given_name or "").strip()
-        return given or current_user.email.split("@")[0]
+        return "Account" if current_user.role in STAFF_ROLES else "Your workspaces"
 
     @app.context_processor
     def _inject_workspace_context():

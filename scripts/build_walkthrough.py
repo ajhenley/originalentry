@@ -1,6 +1,8 @@
 """A printable walkthrough for working one company in Original Entry.
 
-    python scripts/build_walkthrough.py [packs/riverbend/source.json] [out.pdf]
+    python scripts/build_walkthrough.py                     # the student handout
+    python scripts/build_walkthrough.py --instructor A      # the instructor copy for version A
+    python scripts/build_walkthrough.py --instructor all    # one per version
 
 The paper practice set already has an instruction booklet, and it covers the accounting: terms,
 freight, the discount periods. What it cannot cover is the software, because the software did not
@@ -10,9 +12,13 @@ Everything company-specific is read from the pack source, so the walkthrough can
 the company a student actually opens: the journals are named from the pack's journals, the
 document count is counted, the checkpoints are quoted from their own prompts.
 
-**It gives away no answers.** The worked example uses a transaction that is deliberately not in
-the set, so every mechanical step can be shown in full without leaking one of the twenty-eight
-the student has to judge for themselves.
+**The student handout gives away no answers.** Its worked example uses a transaction that is
+deliberately not in the set, so every mechanical step can be shown in full without leaking one of
+the twenty-eight the student has to judge for themselves.
+
+``--instructor`` adds the entry for every document, the checkpoint figures and the designed
+errors. That copy is an answer key: it is written to its own filename, says so on its cover and
+in the footer of every page, and must not be handed out.
 
 WeasyPrint is a laptop-only dependency, like Pillow for the pack generator (T16). It is not in
 requirements.txt and Heroku never sees it.
@@ -75,6 +81,25 @@ td.fig, th.fig { font-family: oe-mono; text-align: right; padding-right: 0; }
 .you { font-weight: 600; }
 section { break-inside: auto; }
 .newpage { break-before: page; }
+
+/* The instructor copy is an answer key, so every page says so. */
+.staff .entry { break-inside: avoid; margin: 0 0 9pt; }
+.staff .entry h3 { margin: 0 0 2pt; font-size: 11pt; }
+.staff .entry .meta { margin: 0 0 2pt; }
+.staff table.lines { margin: 2pt 0 0; font-size: 9pt; }
+.staff table.lines td { border-bottom: none; padding: 1pt 6pt 1pt 0; }
+.staff .indent { padding-left: 14pt; }
+.warn { border: 2px solid #c0462a; border-radius: 6pt; padding: 9pt 11pt; margin: 10pt 0;
+        background: #fdf4f2; }
+.warn b { color: #c0462a; }
+"""
+
+STAFF_PAGE_CSS = """
+@page { @bottom-center { content: "Instructor copy - contains the answers - page "
+                                  counter(page) " of " counter(pages);
+                         font-family: oe-mono; font-size: 7.5pt; color: #c0462a; } }
+@page :first { @bottom-center { content: "Instructor copy - contains the answers";
+                                font-family: oe-mono; font-size: 7.5pt; color: #c0462a; } }
 """
 
 
@@ -82,7 +107,7 @@ def esc(text: str) -> str:
     return (text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
 
 
-def build_html(src: dict) -> str:
+def build_html(src: dict, version: str | None = None, key: dict | None = None) -> str:
     company = src["company"]["name"]
     period = src["period"]
     documents = src["documents"]
@@ -103,10 +128,18 @@ def build_html(src: dict) -> str:
     steps = "".join(
         f"<li><h3>{esc(title)}</h3><p>{body}</p></li>" for title, body in STEPS
     )
+    staff = version is not None
+    extra_css = STAFF_PAGE_CSS if staff else ""
+    warning = (
+        '<div class="warn"><b>Instructor copy.</b> This carries the entry for every document, '
+        f'the checkpoint figures and the designed errors for version {version}. Do not hand it '
+        'to students; the handout without the answers is <i>walkthrough.pdf</i>.</div>'
+    ) if staff else ""
+    subtitle = f" &middot; version {version}" if staff else ""
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Walkthrough — {esc(company)}</title>
-<style>{CSS.replace('FONTS', FONTS.as_uri())}</style></head>
+<style>{CSS.replace('FONTS', FONTS.as_uri())}{extra_css}</style></head>
 <body>
 
 <div class="cover">
@@ -114,8 +147,9 @@ def build_html(src: dict) -> str:
   <h1>{esc(company)}</h1>
   <p class="lede">Keeping the books for {period['start']} to {period['end']}, on screen.</p>
   <p class="meta">{len(documents)} documents · {len(journals)} journals · {accounts} accounts ·
-     versions {versions}</p>
+     versions {versions}{subtitle}</p>
 </div>
+{warning}
 
 <p class="lede">Your instruction booklet covers the accounting. This covers the software: what
 each screen is for, which steps are yours, and the two things the app works out for itself.</p>
@@ -207,7 +241,7 @@ that, ask your instructor, who can see where you are and what the app last refus
 {versions}, and they differ by design. A classmate's numbers will not match yours even where the
 method is identical.</div>
 </section>
-
+{instructor_sections(src, version, key) if staff else ""}
 </body></html>"""
 
 
@@ -238,17 +272,111 @@ STEPS = [
 ]
 
 
+def money(cents: int) -> str:
+    return f"{cents / 100:,.2f}"
+
+
+def instructor_sections(src: dict, version: str, key: dict) -> str:
+    """Every entry, the checkpoint figures, and the errors the set is built to provoke.
+
+    Read from the pack rather than the paper solution set, so what an instructor reads here is
+    what the app will mark against. If the two ever disagreed, this is the copy that would show
+    it, which is a reason to generate it from the same source as the marking.
+    """
+    # The generated key, not the raw source: the checkpoint figures are worked out by replaying
+    # the entries through the ledger engine, so only the built key has them.
+    answer = key
+    account_name = {a["number"]: a["name"] for a in src["accounts"]}
+    party_name = {p["code"]: p["name"] for p in src["parties"]}
+    journal_name = {j["key"]: j["name"] for j in src["journals"]}
+    doc = {d["ref"]: d for d in src["documents"]}
+    entries = {e["document"]: e for e in answer["expected_entries"]}
+
+    blocks = []
+    for ref in sorted(entries):
+        entry = entries[ref]
+        d = doc[ref]
+        rows = []
+        for line in entry["lines"]:
+            number = line["account"]
+            label = f'{number} {account_name.get(number, "")}'.strip()
+            if line.get("party"):
+                label += f' &mdash; {esc(party_name.get(line["party"], line["party"]))}'
+            credit = bool(line.get("credit"))
+            rows.append(
+                f'<tr><td class="{"indent" if credit else ""}">{esc(label)}</td>'
+                f'<td class="fig">{money(line["debit"]) if line.get("debit") else ""}</td>'
+                f'<td class="fig">{money(line["credit"]) if credit else ""}</td></tr>'
+            )
+        blocks.append(
+            f'<div class="entry"><h3>{esc(d["display_ref"])}</h3>'
+            f'<p class="meta">{d["date"]} &middot; {esc(journal_name[entry["journal"]])}</p>'
+            f'<table class="lines">{"".join(rows)}</table></div>'
+        )
+
+    checkpoint_rows = "".join(
+        f'<tr><td>{c["ordinal"]}</td><td>{esc(c["prompt"])}</td>'
+        f'<td class="fig">{money(abs(answer.get("checkpoints", {}).get(c["key"], 0)))}</td></tr>'
+        for c in sorted(src["checkpoints"], key=lambda c: c["ordinal"])
+        if c["key"] in answer.get("checkpoints", {})
+    )
+    error_rows = "".join(
+        f'<tr><td>{esc(doc[s["detect"]["document"]]["display_ref"])}</td>'
+        f'<td>{esc(s["label"])}</td></tr>'
+        for s in answer.get("error_signatures", [])
+    )
+
+    return f"""
+<section class="newpage staff">
+<h2>Every entry, document by document</h2>
+<p>Version {version}. These are the entries the app marks against, generated from the same pack
+it imported, so the two cannot disagree.</p>
+{"".join(blocks)}
+</section>
+
+<section class="newpage staff">
+<h2>Checkpoint figures</h2>
+<table><tr><th style="width:3em">#</th><th>Asks for</th><th class="fig">Version {version}</th></tr>
+{checkpoint_rows}</table>
+
+<h2>The designed errors</h2>
+<p>Each is provoked by one document and recognised on that document. They are diagnosis for you
+and never reach the student.</p>
+<table><tr><th>Document</th><th>What the student did</th></tr>{error_rows}</table>
+</section>
+"""
+
+
 def main() -> None:
-    source = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SOURCE
-    out = Path(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_OUT
+    args = sys.argv[1:]
+    versions: list[str | None] = [None]
+    if "--instructor" in args:
+        at = args.index("--instructor")
+        asked = args[at + 1] if len(args) > at + 1 else "all"
+        del args[at:at + 2]
+        src_peek = json.loads((Path(args[0]) if args else DEFAULT_SOURCE).read_text())
+        every = [v["code"] for v in src_peek["variants"]]
+        versions = every if asked == "all" else [asked]
+
+    source = Path(args[0]) if args else DEFAULT_SOURCE
     src = json.loads(source.read_text())
 
     from weasyprint import HTML  # laptop-only (T16); never imported by the app
 
-    html = build_html(src)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    HTML(string=html, base_url=str(ROOT)).write_pdf(out)
-    print(f"Wrote {out} ({out.stat().st_size // 1024} KB)")
+    keys = {}
+    if any(v is not None for v in versions):
+        sys.path.insert(0, str(ROOT))
+        from originalentry.generator import build as build_pack
+
+        keys = build_pack(src).keys
+
+    for version in versions:
+        out = (DEFAULT_OUT if version is None
+               else DEFAULT_OUT.with_name(f"walkthrough-instructor-{version}.pdf"))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        HTML(string=build_html(src, version, keys.get(version)),
+             base_url=str(ROOT)).write_pdf(out)
+        print(f"Wrote {out.name} ({out.stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":

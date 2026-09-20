@@ -394,6 +394,17 @@ def _reference_sections():
     return sections
 
 
+@bp.get("/w/<workspace>/<company_slug>/how-to")
+@workspace_view
+def how_to():
+    """What the student is expected to do, in order (S1.5).
+
+    Written because "Record an entry" on a document reads as though the app recorded it. It marks
+    the decision; the student writes the entry. The same ambiguity runs through posting, so the
+    page says plainly which steps are theirs and which two things the app derives."""
+    return render_template("student/how_to.html")
+
+
 @bp.get("/w/<workspace>/<company_slug>/reference")
 @workspace_view
 def reference_index():

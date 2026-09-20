@@ -1,0 +1,131 @@
+{# What a student is expected to do, in order (S1.5).
+
+   Written because "Record an entry" on a document reads as though the app has just recorded it.
+   The through-line of this page is that nothing here happens on its own: the ledgers and the
+   trial balance are the only things the app works out, and it works them out from what the
+   student posted.
+
+   Held to A7 like every other screen: it explains the method and never says whether any figure
+   is any good. #}
+{% extends "layouts/workspace.html" %}
+{% block heading %}How to work{% endblock %}
+
+{% block workspace %}
+<header class="max-w-prose">
+  <p class="text-lg text-muted">
+    You are keeping this company's books for {{ company.period_label }}. You do the bookkeeping;
+    the app checks the mechanical things, keeps what you record, and works out the ledgers and
+    the trial balance from it. It never fills anything in for you.
+  </p>
+</header>
+
+<ol class="mt-8 space-y-6">
+  {% set ws = workspace.public_id %}
+  {% set slug = company.slug %}
+  {% for step in [
+    {
+      'title': 'Documents: decide what each one needs',
+      'href': url_for('student.documents', workspace=ws, company_slug=slug),
+      'link': 'Open Documents',
+      'body': 'Read each document and decide whether it is a transaction to record. Choosing
+               <b>Record an entry</b> marks that decision. It does not write the entry, and
+               nothing is entered in a journal until you do it in the next step. Where a document
+               needs nothing — a quotation, a purchase order — choose <b>No entry required</b>
+               and say why in a line. That reason is part of the work and it is marked.',
+    },
+    {
+      'title': 'Journals: choose one and write the lines',
+      'href': url_for('student.journals', workspace=ws, company_slug=slug),
+      'link': 'Open Journals',
+      'body': 'Pick the journal built for that kind of transaction, then enter the accounts and
+               the amounts. The app refuses an entry that does not balance, and refuses one the
+               journal has no column for. It says which of those it is, and nothing further: the
+               accounts you chose are your judgement, not its.',
+    },
+    {
+      'title': 'Post: move the entries to the ledgers',
+      'href': url_for('student.journals', workspace=ws, company_slug=slug),
+      'link': 'Open Journals',
+      'body': 'Use <b>Post to the general ledger</b>, and <b>Post to subsidiary</b> where a line
+               names a customer or a supplier. Nothing posts itself. Until you post, an entry
+               sits in its journal and reaches no ledger and no trial balance.',
+    },
+    {
+      'title': 'Ledgers: read them, do not write them',
+      'href': url_for('student.general_ledger', workspace=ws, company_slug=slug),
+      'link': 'Open Ledgers',
+      'body': 'Every ledger balance here is derived from the entries you posted, so there is
+               nothing to type. If a balance is not what you expected, the entry or the posting
+               behind it is where to look.',
+    },
+    {
+      'title': 'Trial balance: see whether the books agree',
+      'href': url_for('student.trial_balance', workspace=ws, company_slug=slug),
+      'link': 'Open Trial balance',
+      'body': 'Also derived. If the columns do not agree, something is unposted or an entry
+               carries a figure it should not. The app shows you the totals; finding the cause
+               is the exercise.',
+    },
+    {
+      'title': 'Checkpoints: test a figure you reached',
+      'href': url_for('student.checkpoints', workspace=ws, company_slug=slug),
+      'link': 'Open Checkpoints',
+      'body': 'A checkpoint asks for one figure from your own books. Type what you have and
+               choose <b>Check</b>; it says whether your figure agrees with the books you built,
+               and nothing about how you got there. Attempts are limited, so work it out before
+               you try.',
+    },
+    {
+      'title': 'Submit: hand the books in',
+      'href': url_for('student.submit', workspace=ws, company_slug=slug),
+      'link': 'Open Submit',
+      'body': 'Submitting makes everything read-only. If you hand in early by accident, your
+               instructor can give the books back to you.',
+    }] %}
+  <li class="border-l-2 border-silver pl-4">
+    <p class="label-meta">Step {{ loop.index }}</p>
+    <h2 class="mt-1 text-xl">{{ step.title }}</h2>
+    <p class="mt-1 max-w-prose text-muted">{{ step.body | safe }}</p>
+    <a class="mt-2 inline-block text-sm underline" href="{{ step.href }}">{{ step.link }}</a>
+  </li>
+  {% endfor %}
+</ol>
+
+<section class="mt-10 max-w-prose border-t border-silver pt-6">
+  <h2 class="text-xl">What the app does and does not do</h2>
+  <dl class="mt-3 space-y-3 text-muted">
+    <div>
+      <dt class="font-medium text-ink">It refuses, it does not hint</dt>
+      <dd>A refusal is always mechanical: an entry that does not balance, a journal without a
+        column for that account, a deadline that has passed. It never comments on the accounts
+        you chose or the figures you entered.</dd>
+    </div>
+    <div>
+      <dt class="font-medium text-ink">It keeps what you type</dt>
+      <dd>Entries are saved as you record them, and kept in this browser as well, so a dropped
+        connection does not cost you an entry.</dd>
+    </div>
+    <div>
+      <dt class="font-medium text-ink">It works out only what follows</dt>
+      <dd>The ledgers, the trial balance and the totals are derived from your own entries and
+        postings. Everything else on these screens is yours.</dd>
+    </div>
+    <div>
+      <dt class="font-medium text-ink">Your figures are your own</dt>
+      <dd>Companies come in versions with different figures, so a classmate's numbers will not
+        match yours even where the method is identical.</dd>
+    </div>
+  </dl>
+</section>
+
+<section class="mt-8 max-w-prose">
+  <h2 class="text-xl">When you are stuck</h2>
+  <p class="mt-2 text-muted">
+    Read the document again before changing an entry; most of what looks like an app problem is
+    a detail on the paper. The <a class="underline"
+      href="{{ url_for('student.reference_index', workspace=ws, company_slug=slug) }}">Reference</a>
+    holds this company's chart of accounts. After that, ask your instructor: they can see where
+    you are and what the app last refused.
+  </p>
+</section>
+{% endblock %}

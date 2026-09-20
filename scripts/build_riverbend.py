@@ -23,6 +23,7 @@ import io
 import json
 import sys
 from decimal import Decimal
+from decimal import Decimal as D
 from pathlib import Path
 
 DEFAULT_SET = Path(__file__).resolve().parents[2] / "Riverbend-Paper-Practice-Set"
@@ -121,9 +122,51 @@ def _ref(txn) -> str:
     return f"D{txn['no']:02d}"
 
 
-def _text_alternative(txn, model) -> dict:
-    """What the paper document says, as text. This is what a student reads in paper mode, and it
-    must carry every figure they need without telling them the entry."""
+def _cheques(source_dir: Path) -> dict:
+    """The cheque stubs from the paper document generator: number, payee, memo, face amount.
+
+    Read out of gendocs.py with ast rather than imported, because importing it would run the
+    whole document build. Parsing keeps one source of truth without the side effects.
+    """
+    import ast
+
+    tree = ast.parse((source_dir / "gendocs.py").read_text())
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "CHK":
+            return ast.literal_eval(node.value)
+    return {}
+
+
+def _face_amount(txn) -> int | None:
+    """What the document itself is for, in cents.
+
+    Cash where cash moves, otherwise the receivable or the payable. Summing the debits would
+    double-count a sale, which also posts cost of goods sold.
+    """
+    lines = txn["lines"]
+    for account, debit, credit in lines:
+        if account == 101:
+            return cents(debit or credit)
+    for account, debit, _credit in lines:
+        if account == 105 and debit:
+            return cents(debit)
+    for account, _debit, credit in lines:
+        if account == 201 and credit:
+            return cents(credit)
+    return cents(sum(d for _a, d, _c in lines))
+
+
+def _money(value: int) -> str:
+    return f"{value / 100:,.2f}"
+
+
+def _text_alternative(txn, model, cheques: dict) -> dict:
+    """What the paper document says, as text.
+
+    This is the whole document in paper mode, so it has to carry everything a student needs to
+    journalise it and nothing that tells them how. The first version of this carried only the
+    item lines, which left a rent cheque showing a date and a number and no amount at all.
+    """
     fields = [["Date", txn["date"]], ["Document", txn["doc"]]]
     meta = txn.get("meta") or {}
     for label, key in (("Vendor invoice", "vinv"), ("Purchase order", "po"),
@@ -137,6 +180,42 @@ def _text_alternative(txn, model) -> dict:
         code = txn["ap"][0]
         name = model.VENDORS.get(code, ("Kestrel Office Supply",))[0]
         fields.append(["Supplier", name])
+
+    stub = cheques.get(txn["no"])
+    if stub:
+        _number, payee, memo, _amount = stub
+        fields.append(["Payee", payee])
+        fields.append(["For", memo])
+
+    # What the document is about, in the words on the paper.
+    fields.append(["Description", txn["desc"]])
+
+    # The breakdowns a stub carries because the face amount alone cannot be journalised.
+    pay = model.PR
+    gross = pay["sales_sal"] + pay["office_sal"]
+    fica = float(model.money(D(str(gross)) * pay["fica_rate"]))
+    if txn["no"] == 24:
+        fields += [["Gross pay", _money(cents(gross))],
+                   ["Sales salaries", _money(cents(pay["sales_sal"]))],
+                   ["Office salaries", _money(cents(pay["office_sal"]))],
+                   ["FICA withheld", _money(cents(fica))],
+                   ["Federal income tax withheld", _money(cents(pay["fed_wh"]))],
+                   ["State income tax withheld", _money(cents(pay["st_wh"]))]]
+    if txn["no"] == 25:
+        fields.append(["Employer FICA", _money(cents(fica))])
+    if txn["no"] == 26:
+        fields += [["FICA payable", _money(cents(1430))],
+                   ["Federal income tax payable", _money(cents(2180))],
+                   ["State income tax payable", _money(cents(640))]]
+    if txn["no"] == 18:
+        fields += [["Invoice", "N-8841, 7,860.00"], ["Discount taken", "1%, 78.60"]]
+    if txn["no"] == 27:
+        fields += [["Delivery", _money(cents(190))], ["Office supplies", _money(cents(275))],
+                   ["Advertising", _money(cents(155))]]
+
+    amount = _face_amount(txn)
+    if amount is not None:
+        fields.append(["Amount", _money(amount)])
 
     lines = []
     for item in txn.get("items") or []:
@@ -288,12 +367,13 @@ def build_source(practice_set: Path) -> dict:
         }
 
     docs = documents(model)
+    cheques = _cheques(practice_set / "03-Source")
     answers = {}
     for code in sorted(model.VARIANTS):
         txns = model.build(code)
         # strict: one document per transaction, always. A mismatch is an authoring bug.
         for doc, txn in zip(docs, txns, strict=True):
-            doc["variants"][code] = {"text_alternative": _text_alternative(txn, model)}
+            doc["variants"][code] = {"text_alternative": _text_alternative(txn, model, cheques)}
         answers[code] = {
             "triage": {_ref(t): True for t in txns},
             "designated_journal_documents": {_ref(t): JOURNAL_OF[t["cycle"]] for t in txns},

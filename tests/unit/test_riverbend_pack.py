@@ -101,3 +101,47 @@ def test_the_subsidiary_ledgers_are_wired(generated):
     controls = {a.number: a.subsidiary_kind for a in pack.accounts if a.subsidiary_kind}
 
     assert controls == {"105": "customer", "201": "supplier"}
+
+
+# ── A document has to be enough to work from ────────────────────────────────────────────
+#
+# The first cut of the converter carried only the item lines, so a rent cheque reached the
+# student as a date and a cheque number with no payee and no amount. It cannot be journalised,
+# and nothing in the pack rules would have caught it: it is a perfectly valid pack.
+
+@pytest.mark.parametrize("version", ["A", "B", "C"])
+def test_every_document_says_what_it_is_for_and_how_much(generated, version):
+    pack = schema.load_pack(generated.pack)
+
+    for document in pack.documents:
+        text = document.variants[version].text_alternative
+        labels = {label for label, _ in text.fields}
+        assert "Amount" in labels, f"{document.display_ref} carries no amount"
+        assert "Description" in labels, f"{document.display_ref} says nothing about itself"
+
+
+@pytest.mark.parametrize("version", ["A", "B", "C"])
+def test_the_payroll_cheque_carries_its_breakdown(generated, version):
+    """Its face value is net pay, which on its own cannot be journalised: the entry needs the
+    gross, and each withholding separately."""
+    pack = schema.load_pack(generated.pack)
+    payroll = next(d for d in pack.documents if "payroll" in d.display_ref.lower())
+
+    labels = {label for label, _ in payroll.variants[version].text_alternative.fields}
+
+    for needed in ("Gross pay", "FICA withheld", "Federal income tax withheld",
+                   "State income tax withheld"):
+        assert needed in labels, needed
+
+
+def test_a_document_never_carries_the_authors_note(generated):
+    """The model's notes say things like "TRAP: freight-in capitalises into Inventory". They are
+    for the instructor and must never reach the paper."""
+    pack = schema.load_pack(generated.pack)
+
+    for document in pack.documents:
+        for version in ("A", "B", "C"):
+            text = document.variants[version].text_alternative
+            blob = " ".join(v for _, v in text.fields) + " ".join(
+                " ".join(line) for line in text.lines)
+            assert "TRAP" not in blob.upper(), document.display_ref

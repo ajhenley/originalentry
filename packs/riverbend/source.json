@@ -840,6 +840,22 @@
        [
         "Document",
         "Check 2201"
+       ],
+       [
+        "Payee",
+        "Meridian Property Trust"
+       ],
+       [
+        "For",
+        "December rent"
+       ],
+       [
+        "Description",
+        "Paid December rent"
+       ],
+       [
+        "Amount",
+        "3,000.00"
        ]
       ],
       "lines": []
@@ -855,6 +871,22 @@
        [
         "Document",
         "Check 2201"
+       ],
+       [
+        "Payee",
+        "Meridian Property Trust"
+       ],
+       [
+        "For",
+        "December rent"
+       ],
+       [
+        "Description",
+        "Paid December rent"
+       ],
+       [
+        "Amount",
+        "3,000.00"
        ]
       ],
       "lines": []
@@ -870,6 +902,22 @@
        [
         "Document",
         "Check 2201"
+       ],
+       [
+        "Payee",
+        "Meridian Property Trust"
+       ],
+       [
+        "For",
+        "December rent"
+       ],
+       [
+        "Description",
+        "Paid December rent"
+       ],
+       [
+        "Amount",
+        "3,000.00"
        ]
       ],
       "lines": []
@@ -900,6 +948,14 @@
        [
         "Customer",
         "Cascade Cyclery"
+       ],
+       [
+        "Description",
+        "Sale on account - Cascade Cyclery"
+       ],
+       [
+        "Amount",
+        "4,080.00"
        ]
       ],
       "lines": [
@@ -926,6 +982,14 @@
        [
         "Customer",
         "Cascade Cyclery"
+       ],
+       [
+        "Description",
+        "Sale on account - Cascade Cyclery"
+       ],
+       [
+        "Amount",
+        "4,200.00"
        ]
       ],
       "lines": [
@@ -952,6 +1016,14 @@
        [
         "Customer",
         "Cascade Cyclery"
+       ],
+       [
+        "Description",
+        "Sale on account - Cascade Cyclery"
+       ],
+       [
+        "Amount",
+        "4,320.00"
        ]
       ],
       "lines": [
@@ -1005,6 +1077,14 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Description",
+        "Purchased 30 framesets, terms 1/15 n/30"
+       ],
+       [
+        "Amount",
+        "7,860.00"
        ]
       ],
       "lines": [
@@ -1047,6 +1127,14 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Description",
+        "Purchased 30 framesets, terms 1/15 n/30"
+       ],
+       [
+        "Amount",
+        "7,860.00"
        ]
       ],
       "lines": [
@@ -1089,6 +1177,14 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Description",
+        "Purchased 30 framesets, terms 1/15 n/30"
+       ],
+       [
+        "Amount",
+        "7,860.00"
        ]
       ],
       "lines": [
@@ -1126,6 +1222,14 @@
        [
         "Customer",
         "Depot Bikes"
+       ],
+       [
+        "Description",
+        "Depot Bikes pays Nov 24 invoice in full"
+       ],
+       [
+        "Amount",
+        "6,180.00"
        ]
       ],
       "lines": []
@@ -1145,6 +1249,14 @@
        [
         "Customer",
         "Depot Bikes"
+       ],
+       [
+        "Description",
+        "Depot Bikes pays Nov 24 invoice in full"
+       ],
+       [
+        "Amount",
+        "6,180.00"
        ]
       ],
       "lines": []
@@ -1164,6 +1276,14 @@
        [
         "Customer",
         "Depot Bikes"
+       ],
+       [
+        "Description",
+        "Depot Bikes pays Nov 24 invoice in full"
+       ],
+       [
+        "Amount",
+        "6,180.00"
        ]
       ],
       "lines": []
@@ -1194,6 +1314,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Sale on account - Trailhead Sports"
+       ],
+       [
+        "Amount",
+        "5,120.00"
        ]
       ],
       "lines": [
@@ -1220,6 +1348,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Sale on account - Trailhead Sports"
+       ],
+       [
+        "Amount",
+        "5,120.00"
        ]
       ],
       "lines": [
@@ -1246,6 +1382,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Sale on account - Trailhead Sports"
+       ],
+       [
+        "Amount",
+        "5,120.00"
        ]
       ],
       "lines": [
@@ -1279,6 +1423,22 @@
        [
         "Document",
         "Check 2202"
+       ],
+       [
+        "Payee",
+        "Riverbend Municipal Utilities"
+       ],
+       [
+        "For",
+        "Utilities — November service"
+       ],
+       [
+        "Description",
+        "Paid utilities"
+       ],
+       [
+        "Amount",
+        "420.00"
        ]
       ],
       "lines": []
@@ -1294,6 +1454,22 @@
        [
         "Document",
         "Check 2202"
+       ],
+       [
+        "Payee",
+        "Riverbend Municipal Utilities"
+       ],
+       [
+        "For",
+        "Utilities — November service"
+       ],
+       [
+        "Description",
+        "Paid utilities"
+       ],
+       [
+        "Amount",
+        "420.00"
        ]
       ],
       "lines": []
@@ -1309,6 +1485,22 @@
        [
         "Document",
         "Check 2202"
+       ],
+       [
+        "Payee",
+        "Riverbend Municipal Utilities"
+       ],
+       [
+        "For",
+        "Utilities — November service"
+       ],
+       [
+        "Description",
+        "Paid utilities"
+       ],
+       [
+        "Amount",
+        "420.00"
        ]
       ],
       "lines": []
@@ -1359,6 +1551,14 @@
        [
         "Supplier",
         "Cassette & Chain Co."
+       ],
+       [
+        "Description",
+        "60 cassettes + 40 chains, FOB shipping point, freight $140 prepaid and added"
+       ],
+       [
+        "Amount",
+        "2,980.00"
        ]
       ],
       "lines": [
@@ -1417,6 +1617,14 @@
        [
         "Supplier",
         "Cassette & Chain Co."
+       ],
+       [
+        "Description",
+        "60 cassettes + 40 chains, FOB shipping point, freight $140 prepaid and added"
+       ],
+       [
+        "Amount",
+        "2,980.00"
        ]
       ],
       "lines": [
@@ -1475,6 +1683,14 @@
        [
         "Supplier",
         "Cassette & Chain Co."
+       ],
+       [
+        "Description",
+        "60 cassettes + 40 chains, FOB shipping point, freight $140 prepaid and added"
+       ],
+       [
+        "Amount",
+        "2,980.00"
        ]
       ],
       "lines": [
@@ -1524,6 +1740,14 @@
        [
         "Customer",
         "Kingman Cycle Works"
+       ],
+       [
+        "Description",
+        "Kingman Cycle Works pays Nov 28 invoice"
+       ],
+       [
+        "Amount",
+        "7,250.00"
        ]
       ],
       "lines": []
@@ -1543,6 +1767,14 @@
        [
         "Customer",
         "Kingman Cycle Works"
+       ],
+       [
+        "Description",
+        "Kingman Cycle Works pays Nov 28 invoice"
+       ],
+       [
+        "Amount",
+        "7,250.00"
        ]
       ],
       "lines": []
@@ -1562,6 +1794,14 @@
        [
         "Customer",
         "Kingman Cycle Works"
+       ],
+       [
+        "Description",
+        "Kingman Cycle Works pays Nov 28 invoice"
+       ],
+       [
+        "Amount",
+        "7,250.00"
        ]
       ],
       "lines": []
@@ -1592,6 +1832,14 @@
        [
         "Customer",
         "Pedal & Post"
+       ],
+       [
+        "Description",
+        "Sale on account - Pedal & Post"
+       ],
+       [
+        "Amount",
+        "3,620.00"
        ]
       ],
       "lines": [
@@ -1624,6 +1872,14 @@
        [
         "Customer",
         "Pedal & Post"
+       ],
+       [
+        "Description",
+        "Sale on account - Pedal & Post"
+       ],
+       [
+        "Amount",
+        "3,680.00"
        ]
       ],
       "lines": [
@@ -1656,6 +1912,14 @@
        [
         "Customer",
         "Pedal & Post"
+       ],
+       [
+        "Description",
+        "Sale on account - Pedal & Post"
+       ],
+       [
+        "Amount",
+        "3,740.00"
        ]
       ],
       "lines": [
@@ -1699,6 +1963,22 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Payee",
+        "Norsk Frame Works"
+       ],
+       [
+        "For",
+        "On account — November balance"
+       ],
+       [
+        "Description",
+        "Paid Norsk Frame Works November balance"
+       ],
+       [
+        "Amount",
+        "12,400.00"
        ]
       ],
       "lines": []
@@ -1718,6 +1998,22 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Payee",
+        "Norsk Frame Works"
+       ],
+       [
+        "For",
+        "On account — November balance"
+       ],
+       [
+        "Description",
+        "Paid Norsk Frame Works November balance"
+       ],
+       [
+        "Amount",
+        "12,400.00"
        ]
       ],
       "lines": []
@@ -1737,6 +2033,22 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Payee",
+        "Norsk Frame Works"
+       ],
+       [
+        "For",
+        "On account — November balance"
+       ],
+       [
+        "Description",
+        "Paid Norsk Frame Works November balance"
+       ],
+       [
+        "Amount",
+        "12,400.00"
        ]
       ],
       "lines": []
@@ -1767,6 +2079,14 @@
        [
         "Customer",
         "Summit Wheelworks"
+       ],
+       [
+        "Description",
+        "Sale on account - Summit Wheelworks"
+       ],
+       [
+        "Amount",
+        "3,255.00"
        ]
       ],
       "lines": [
@@ -1799,6 +2119,14 @@
        [
         "Customer",
         "Summit Wheelworks"
+       ],
+       [
+        "Description",
+        "Sale on account - Summit Wheelworks"
+       ],
+       [
+        "Amount",
+        "3,255.00"
        ]
       ],
       "lines": [
@@ -1831,6 +2159,14 @@
        [
         "Customer",
         "Summit Wheelworks"
+       ],
+       [
+        "Description",
+        "Sale on account - Summit Wheelworks"
+       ],
+       [
+        "Amount",
+        "3,255.00"
        ]
       ],
       "lines": [
@@ -1870,6 +2206,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "312.00"
        ]
       ],
       "lines": [
@@ -1892,6 +2236,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "312.00"
        ]
       ],
       "lines": [
@@ -1914,6 +2266,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "312.00"
        ]
       ],
       "lines": [
@@ -1967,6 +2327,14 @@
        [
         "Supplier",
         "Halcyon Components"
+       ],
+       [
+        "Description",
+        "18 brake sets, terms n/30"
+       ],
+       [
+        "Amount",
+        "1,584.00"
        ]
       ],
       "lines": [
@@ -2009,6 +2377,14 @@
        [
         "Supplier",
         "Halcyon Components"
+       ],
+       [
+        "Description",
+        "18 brake sets, terms n/30"
+       ],
+       [
+        "Amount",
+        "1,584.00"
        ]
       ],
       "lines": [
@@ -2051,6 +2427,14 @@
        [
         "Supplier",
         "Halcyon Components"
+       ],
+       [
+        "Description",
+        "18 brake sets, terms n/30"
+       ],
+       [
+        "Amount",
+        "1,584.00"
        ]
       ],
       "lines": [
@@ -2088,6 +2472,14 @@
        [
         "Customer",
         "Cascade Cyclery"
+       ],
+       [
+        "Description",
+        "Cascade Cyclery pays inv 4871 within discount period"
+       ],
+       [
+        "Amount",
+        "3,998.40"
        ]
       ],
       "lines": []
@@ -2107,6 +2499,14 @@
        [
         "Customer",
         "Cascade Cyclery"
+       ],
+       [
+        "Description",
+        "Cascade Cyclery pays inv 4871 within discount period"
+       ],
+       [
+        "Amount",
+        "4,116.00"
        ]
       ],
       "lines": []
@@ -2126,6 +2526,14 @@
        [
         "Customer",
         "Cascade Cyclery"
+       ],
+       [
+        "Description",
+        "Cascade Cyclery pays inv 4871 within discount period"
+       ],
+       [
+        "Amount",
+        "4,233.60"
        ]
       ],
       "lines": []
@@ -2152,6 +2560,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "372.00"
        ]
       ],
       "lines": [
@@ -2174,6 +2590,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "372.00"
        ]
       ],
       "lines": [
@@ -2196,6 +2620,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "372.00"
        ]
       ],
       "lines": [
@@ -2233,6 +2665,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Trailhead Sports returns 1 mountain bike"
+       ],
+       [
+        "Amount",
+        "1,035.00"
        ]
       ],
       "lines": []
@@ -2252,6 +2692,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Trailhead Sports returns 1 mountain bike"
+       ],
+       [
+        "Amount",
+        "1,035.00"
        ]
       ],
       "lines": []
@@ -2271,6 +2719,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Trailhead Sports returns 1 mountain bike"
+       ],
+       [
+        "Amount",
+        "1,035.00"
        ]
       ],
       "lines": []
@@ -2297,6 +2753,22 @@
        [
         "Document",
         "Check 2204"
+       ],
+       [
+        "Payee",
+        "Ashcombe Media Group"
+       ],
+       [
+        "For",
+        "Advertising — December schedule"
+       ],
+       [
+        "Description",
+        "Paid advertising"
+       ],
+       [
+        "Amount",
+        "1,850.00"
        ]
       ],
       "lines": []
@@ -2312,6 +2784,22 @@
        [
         "Document",
         "Check 2204"
+       ],
+       [
+        "Payee",
+        "Ashcombe Media Group"
+       ],
+       [
+        "For",
+        "Advertising — December schedule"
+       ],
+       [
+        "Description",
+        "Paid advertising"
+       ],
+       [
+        "Amount",
+        "1,850.00"
        ]
       ],
       "lines": []
@@ -2327,6 +2815,22 @@
        [
         "Document",
         "Check 2204"
+       ],
+       [
+        "Payee",
+        "Ashcombe Media Group"
+       ],
+       [
+        "For",
+        "Advertising — December schedule"
+       ],
+       [
+        "Description",
+        "Paid advertising"
+       ],
+       [
+        "Amount",
+        "1,850.00"
        ]
       ],
       "lines": []
@@ -2357,6 +2861,30 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Payee",
+        "Norsk Frame Works"
+       ],
+       [
+        "For",
+        "Invoice N-8841 less 1% discount"
+       ],
+       [
+        "Description",
+        "Paid Norsk inv N-8841 within 1/15 discount"
+       ],
+       [
+        "Invoice",
+        "N-8841, 7,860.00"
+       ],
+       [
+        "Discount taken",
+        "1%, 78.60"
+       ],
+       [
+        "Amount",
+        "7,781.40"
        ]
       ],
       "lines": []
@@ -2376,6 +2904,30 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Payee",
+        "Norsk Frame Works"
+       ],
+       [
+        "For",
+        "Invoice N-8841 less 1% discount"
+       ],
+       [
+        "Description",
+        "Paid Norsk inv N-8841 within 1/15 discount"
+       ],
+       [
+        "Invoice",
+        "N-8841, 7,860.00"
+       ],
+       [
+        "Discount taken",
+        "1%, 78.60"
+       ],
+       [
+        "Amount",
+        "7,781.40"
        ]
       ],
       "lines": []
@@ -2395,6 +2947,30 @@
        [
         "Supplier",
         "Norsk Frame Works"
+       ],
+       [
+        "Payee",
+        "Norsk Frame Works"
+       ],
+       [
+        "For",
+        "Invoice N-8841 less 1% discount"
+       ],
+       [
+        "Description",
+        "Paid Norsk inv N-8841 within 1/15 discount"
+       ],
+       [
+        "Invoice",
+        "N-8841, 7,860.00"
+       ],
+       [
+        "Discount taken",
+        "1%, 78.60"
+       ],
+       [
+        "Amount",
+        "7,781.40"
        ]
       ],
       "lines": []
@@ -2425,6 +3001,14 @@
        [
         "Customer",
         "Depot Bikes"
+       ],
+       [
+        "Description",
+        "Sale on account - Depot Bikes"
+       ],
+       [
+        "Amount",
+        "3,060.00"
        ]
       ],
       "lines": [
@@ -2451,6 +3035,14 @@
        [
         "Customer",
         "Depot Bikes"
+       ],
+       [
+        "Description",
+        "Sale on account - Depot Bikes"
+       ],
+       [
+        "Amount",
+        "3,150.00"
        ]
       ],
       "lines": [
@@ -2477,6 +3069,14 @@
        [
         "Customer",
         "Depot Bikes"
+       ],
+       [
+        "Description",
+        "Sale on account - Depot Bikes"
+       ],
+       [
+        "Amount",
+        "3,240.00"
        ]
       ],
       "lines": [
@@ -2514,6 +3114,14 @@
        [
         "Customer",
         "Summit Wheelworks"
+       ],
+       [
+        "Description",
+        "Summit Wheelworks pays Nov 30 invoice"
+       ],
+       [
+        "Amount",
+        "6,900.00"
        ]
       ],
       "lines": []
@@ -2533,6 +3141,14 @@
        [
         "Customer",
         "Summit Wheelworks"
+       ],
+       [
+        "Description",
+        "Summit Wheelworks pays Nov 30 invoice"
+       ],
+       [
+        "Amount",
+        "6,900.00"
        ]
       ],
       "lines": []
@@ -2552,6 +3168,14 @@
        [
         "Customer",
         "Summit Wheelworks"
+       ],
+       [
+        "Description",
+        "Summit Wheelworks pays Nov 30 invoice"
+       ],
+       [
+        "Amount",
+        "6,900.00"
        ]
       ],
       "lines": []
@@ -2578,6 +3202,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "72.00"
        ]
       ],
       "lines": [
@@ -2600,6 +3232,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "72.00"
        ]
       ],
       "lines": [
@@ -2622,6 +3262,14 @@
        [
         "Document",
         "Cash register tape"
+       ],
+       [
+        "Description",
+        "Cash sale"
+       ],
+       [
+        "Amount",
+        "72.00"
        ]
       ],
       "lines": [
@@ -2683,6 +3331,14 @@
        [
         "Supplier",
         "Brightline Accessories"
+       ],
+       [
+        "Description",
+        "Brightline bills 40 racks; receiving report shows 38 received"
+       ],
+       [
+        "Amount",
+        "1,748.00"
        ]
       ],
       "lines": [
@@ -2733,6 +3389,14 @@
        [
         "Supplier",
         "Brightline Accessories"
+       ],
+       [
+        "Description",
+        "Brightline bills 44 racks; receiving report shows 42 received"
+       ],
+       [
+        "Amount",
+        "1,932.00"
        ]
       ],
       "lines": [
@@ -2783,6 +3447,14 @@
        [
         "Supplier",
         "Brightline Accessories"
+       ],
+       [
+        "Description",
+        "Brightline bills 48 racks; receiving report shows 46 received"
+       ],
+       [
+        "Amount",
+        "2,116.00"
        ]
       ],
       "lines": [
@@ -2820,6 +3492,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Trailhead Sports remits 4390.4 on a 4480 balance, deducting 2% outside the discount period"
+       ],
+       [
+        "Amount",
+        "4,390.40"
        ]
       ],
       "lines": []
@@ -2839,6 +3519,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Trailhead Sports remits 4390.4 on a 4480 balance, deducting 2% outside the discount period"
+       ],
+       [
+        "Amount",
+        "4,390.40"
        ]
       ],
       "lines": []
@@ -2858,6 +3546,14 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Description",
+        "Trailhead Sports remits 4390.4 on a 4480 balance, deducting 2% outside the discount period"
+       ],
+       [
+        "Amount",
+        "4,390.40"
        ]
       ],
       "lines": []
@@ -2884,6 +3580,46 @@
        [
         "Document",
         "Check 2206 / payroll register"
+       ],
+       [
+        "Payee",
+        "Payroll account"
+       ],
+       [
+        "For",
+        "Semimonthly payroll 1–15 December"
+       ],
+       [
+        "Description",
+        "Semimonthly payroll, Dec 1-15"
+       ],
+       [
+        "Gross pay",
+        "6,800.00"
+       ],
+       [
+        "Sales salaries",
+        "4,400.00"
+       ],
+       [
+        "Office salaries",
+        "2,400.00"
+       ],
+       [
+        "FICA withheld",
+        "520.20"
+       ],
+       [
+        "Federal income tax withheld",
+        "748.00"
+       ],
+       [
+        "State income tax withheld",
+        "224.00"
+       ],
+       [
+        "Amount",
+        "5,307.80"
        ]
       ],
       "lines": []
@@ -2899,6 +3635,46 @@
        [
         "Document",
         "Check 2206 / payroll register"
+       ],
+       [
+        "Payee",
+        "Payroll account"
+       ],
+       [
+        "For",
+        "Semimonthly payroll 1–15 December"
+       ],
+       [
+        "Description",
+        "Semimonthly payroll, Dec 1-15"
+       ],
+       [
+        "Gross pay",
+        "6,800.00"
+       ],
+       [
+        "Sales salaries",
+        "4,400.00"
+       ],
+       [
+        "Office salaries",
+        "2,400.00"
+       ],
+       [
+        "FICA withheld",
+        "520.20"
+       ],
+       [
+        "Federal income tax withheld",
+        "748.00"
+       ],
+       [
+        "State income tax withheld",
+        "224.00"
+       ],
+       [
+        "Amount",
+        "5,307.80"
        ]
       ],
       "lines": []
@@ -2914,6 +3690,46 @@
        [
         "Document",
         "Check 2206 / payroll register"
+       ],
+       [
+        "Payee",
+        "Payroll account"
+       ],
+       [
+        "For",
+        "Semimonthly payroll 1–15 December"
+       ],
+       [
+        "Description",
+        "Semimonthly payroll, Dec 1-15"
+       ],
+       [
+        "Gross pay",
+        "6,800.00"
+       ],
+       [
+        "Sales salaries",
+        "4,400.00"
+       ],
+       [
+        "Office salaries",
+        "2,400.00"
+       ],
+       [
+        "FICA withheld",
+        "520.20"
+       ],
+       [
+        "Federal income tax withheld",
+        "748.00"
+       ],
+       [
+        "State income tax withheld",
+        "224.00"
+       ],
+       [
+        "Amount",
+        "5,307.80"
        ]
       ],
       "lines": []
@@ -2940,6 +3756,18 @@
        [
         "Document",
         "Payroll register"
+       ],
+       [
+        "Description",
+        "Employer FICA on the Dec 15 payroll"
+       ],
+       [
+        "Employer FICA",
+        "520.20"
+       ],
+       [
+        "Amount",
+        "520.20"
        ]
       ],
       "lines": []
@@ -2955,6 +3783,18 @@
        [
         "Document",
         "Payroll register"
+       ],
+       [
+        "Description",
+        "Employer FICA on the Dec 15 payroll"
+       ],
+       [
+        "Employer FICA",
+        "520.20"
+       ],
+       [
+        "Amount",
+        "520.20"
        ]
       ],
       "lines": []
@@ -2970,6 +3810,18 @@
        [
         "Document",
         "Payroll register"
+       ],
+       [
+        "Description",
+        "Employer FICA on the Dec 15 payroll"
+       ],
+       [
+        "Employer FICA",
+        "520.20"
+       ],
+       [
+        "Amount",
+        "520.20"
        ]
       ],
       "lines": []
@@ -2996,6 +3848,34 @@
        [
         "Document",
         "Check 2208"
+       ],
+       [
+        "Payee",
+        "Collector of Revenue"
+       ],
+       [
+        "For",
+        "November payroll taxes remitted"
+       ],
+       [
+        "Description",
+        "Remitted November payroll taxes"
+       ],
+       [
+        "FICA payable",
+        "1,430.00"
+       ],
+       [
+        "Federal income tax payable",
+        "2,180.00"
+       ],
+       [
+        "State income tax payable",
+        "640.00"
+       ],
+       [
+        "Amount",
+        "4,250.00"
        ]
       ],
       "lines": []
@@ -3011,6 +3891,34 @@
        [
         "Document",
         "Check 2208"
+       ],
+       [
+        "Payee",
+        "Collector of Revenue"
+       ],
+       [
+        "For",
+        "November payroll taxes remitted"
+       ],
+       [
+        "Description",
+        "Remitted November payroll taxes"
+       ],
+       [
+        "FICA payable",
+        "1,430.00"
+       ],
+       [
+        "Federal income tax payable",
+        "2,180.00"
+       ],
+       [
+        "State income tax payable",
+        "640.00"
+       ],
+       [
+        "Amount",
+        "4,250.00"
        ]
       ],
       "lines": []
@@ -3026,6 +3934,34 @@
        [
         "Document",
         "Check 2208"
+       ],
+       [
+        "Payee",
+        "Collector of Revenue"
+       ],
+       [
+        "For",
+        "November payroll taxes remitted"
+       ],
+       [
+        "Description",
+        "Remitted November payroll taxes"
+       ],
+       [
+        "FICA payable",
+        "1,430.00"
+       ],
+       [
+        "Federal income tax payable",
+        "2,180.00"
+       ],
+       [
+        "State income tax payable",
+        "640.00"
+       ],
+       [
+        "Amount",
+        "4,250.00"
        ]
       ],
       "lines": []
@@ -3052,6 +3988,34 @@
        [
         "Document",
         "Check 2209"
+       ],
+       [
+        "Payee",
+        "Petty cash custodian"
+       ],
+       [
+        "For",
+        "Reimbursement — vouchers 41–45"
+       ],
+       [
+        "Description",
+        "Reimbursed petty cash - vouchers 41-46"
+       ],
+       [
+        "Delivery",
+        "190.00"
+       ],
+       [
+        "Office supplies",
+        "275.00"
+       ],
+       [
+        "Advertising",
+        "155.00"
+       ],
+       [
+        "Amount",
+        "620.00"
        ]
       ],
       "lines": []
@@ -3067,6 +4031,34 @@
        [
         "Document",
         "Check 2209"
+       ],
+       [
+        "Payee",
+        "Petty cash custodian"
+       ],
+       [
+        "For",
+        "Reimbursement — vouchers 41–45"
+       ],
+       [
+        "Description",
+        "Reimbursed petty cash - vouchers 41-46"
+       ],
+       [
+        "Delivery",
+        "190.00"
+       ],
+       [
+        "Office supplies",
+        "275.00"
+       ],
+       [
+        "Advertising",
+        "155.00"
+       ],
+       [
+        "Amount",
+        "620.00"
        ]
       ],
       "lines": []
@@ -3082,6 +4074,34 @@
        [
         "Document",
         "Check 2209"
+       ],
+       [
+        "Payee",
+        "Petty cash custodian"
+       ],
+       [
+        "For",
+        "Reimbursement — vouchers 41–45"
+       ],
+       [
+        "Description",
+        "Reimbursed petty cash - vouchers 41-46"
+       ],
+       [
+        "Delivery",
+        "190.00"
+       ],
+       [
+        "Office supplies",
+        "275.00"
+       ],
+       [
+        "Advertising",
+        "155.00"
+       ],
+       [
+        "Amount",
+        "620.00"
        ]
       ],
       "lines": []
@@ -3124,6 +4144,14 @@
        [
         "Supplier",
         "Kestrel Office Supply"
+       ],
+       [
+        "Description",
+        "Office supplies on account, Kestrel Office Supply"
+       ],
+       [
+        "Amount",
+        "340.00"
        ]
       ],
       "lines": [
@@ -3162,6 +4190,14 @@
        [
         "Supplier",
         "Kestrel Office Supply"
+       ],
+       [
+        "Description",
+        "Office supplies on account, Kestrel Office Supply"
+       ],
+       [
+        "Amount",
+        "340.00"
        ]
       ],
       "lines": [
@@ -3200,6 +4236,14 @@
        [
         "Supplier",
         "Kestrel Office Supply"
+       ],
+       [
+        "Description",
+        "Office supplies on account, Kestrel Office Supply"
+       ],
+       [
+        "Amount",
+        "340.00"
        ]
       ],
       "lines": [

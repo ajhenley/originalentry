@@ -96,6 +96,6 @@
   </table>
 </div>
 <p class="mt-2 text-sm {% if not proof.agrees %}text-attention{% else %}text-muted{% endif %}">
-  {% if proof.agrees %}Agrees{% else %}Does not agree — difference {{ proof.difference_cents | dollars }}{% endif %}
+  {% if proof.agrees %}Agrees{% else %}Does not agree: difference {{ proof.difference_cents | dollars }}{% endif %}
 </p>
 {% endmacro %}

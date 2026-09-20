@@ -131,7 +131,7 @@
   <p class="mb-2 text-sm text-muted">
     Handed in {{ workspace.submitted_at.strftime('%-d %b %H:%M') }}. Reopening lets them work on
     it again; that they handed it in, and when, stays on the record. If the deadline has passed,
-    say what they should work until — otherwise reopening would leave them still unable to write.
+    say what they should work until, otherwise reopening would leave them still unable to write.
   </p>
   <form method="post"
         action="{{ url_for('staff.workspace_reopen', assignment=assignment.public_id,
@@ -150,7 +150,7 @@
 <section class="mt-6 max-w-prose" aria-labelledby="archive">
   <h2 id="archive" class="mb-2 text-sm font-semibold">Wrong books?</h2>
   <p class="mb-2 text-sm text-muted">
-    Archive this workspace and start a fresh one for this student. Nothing is destroyed — the
+    Archive this workspace and start a fresh one for this student. Nothing is destroyed: the
     archived books stay viewable.
   </p>
   <form method="post"

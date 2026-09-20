@@ -33,7 +33,7 @@
       <label for="document_ref" class="field-label">Document</label>
       <select id="document_ref" name="document_ref" data-picker
               class="field mt-1">
-        <option value="">— choose the document this entry records —</option>
+        <option value="">Choose the document this entry records</option>
         {% for d in documents %}
         <option value="{{ d.ref }}" {% if values.get('document_ref') == d.ref %}selected{% endif %}>
           {{ d.display_ref }}</option>
@@ -52,7 +52,7 @@
   <div class="panel overflow-x-auto">
     <table class="data-table">
       <caption>
-        Columns — fill the ones this transaction uses
+        Columns: fill the ones this transaction uses
       </caption>
       <thead>
         <tr>
@@ -84,7 +84,7 @@
             <label class="sr-only" for="col-{{ col.key }}-account">{{ col.label }} account</label>
             <select id="col-{{ col.key }}-account" name="col-{{ col.key }}-account" data-picker
                     class="field">
-              <option value="">— choose an account —</option>
+              <option value="">Choose an account</option>
               {% for a in accounts %}
               <option value="{{ a.number }}"
                 {% if values.get('col-' ~ col.key ~ '-account') == a.number %}selected{% endif %}>

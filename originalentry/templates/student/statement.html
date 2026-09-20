@@ -45,7 +45,7 @@
     <div class="panel overflow-x-auto">
       <table class="data-table">
         <caption>
-          {{ statement.title }} — your rows
+          {{ statement.title }}: your rows
         </caption>
         <thead>
           <tr>
@@ -78,7 +78,7 @@
               <label class="sr-only" for="row-{{ i }}-account">Row {{ i + 1 }}, account</label>
               <select id="row-{{ i }}-account" name="row-{{ i }}-account"
                       class="field">
-                <option value="">— account —</option>
+                <option value="">Account</option>
                 {% for a in accounts %}
                 <option value="{{ a.number }}"
                   {% if row and row.account_number == a.number %}selected{% endif %}>
@@ -89,7 +89,7 @@
                 Row {{ i + 1 }}, subtotal</label>
               <select id="row-{{ i }}-subtotal_type" name="row-{{ i }}-subtotal_type"
                       class="field mt-1">
-                <option value="">— subtotal —</option>
+                <option value="">Subtotal</option>
                 {% for s in statement.subtotal_types %}
                 <option value="{{ s.key }}"
                   {% if row and row.subtotal_type == s.key %}selected{% endif %}>{{ s.label }}</option>

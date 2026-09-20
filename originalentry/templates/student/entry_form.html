@@ -43,7 +43,7 @@
       <label for="document_ref" class="field-label">Document (for regular entries)</label>
       <select id="document_ref" name="document_ref" data-picker
               class="field mt-1">
-        <option value="">— choose the document this entry records —</option>
+        <option value="">Choose the document this entry records</option>
         {% for d in documents %}
         <option value="{{ d.ref }}" {% if values.get('document_ref') == d.ref %}selected{% endif %}>
           {{ d.display_ref }}</option>

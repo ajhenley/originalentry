@@ -19,7 +19,7 @@
   </h1>
   <p class="mt-5 max-w-prose text-lg text-muted">
     Original Entry is a browser workspace for an introductory financial accounting course. A student
-    is given a small company's papers for a single month — invoices, cheque stubs, bank advices —
+    is given a small company's papers for a single month (invoices, cheque stubs, bank advices)
     and keeps its books: sorting the documents, journalising, posting to the ledgers, taking a
     trial balance, adjusting, building the statements and closing the year.
   </p>
@@ -96,7 +96,7 @@
        'Some papers need an entry. A quotation does not. Deciding which is which is the first
         judgement of the month, and it is marked.'),
       ('Journalise',
-       'Five journals — sales, purchases, cash receipts, cash payments and general. Choosing the
+       'Five journals: sales, purchases, cash receipts, cash payments and general. Choosing the
         one built for a transaction is part of the work.'),
       ('Post to the ledgers',
        'The general ledger and the customer and supplier ledgers. Balances are derived from the
@@ -105,7 +105,7 @@
        'A numeric self-check stands here. The student enters the figure they reached; the
         software says whether it agrees with the books it derived.'),
       ('Adjust',
-       'Depreciation, accruals, prepayments — recorded as entries, in the same journals, against
+       'Depreciation, accruals and prepayments, recorded as entries, in the same journals, against
         the same ledgers.'),
       ('Build the statements',
        'An income statement, a statement of owner equity, a balance sheet. The student chooses
@@ -250,7 +250,7 @@
     Both are facts about the books, not verdicts about the student. The marking happens once,
     afterwards, and what it found is shown to the instructor as evidence rather than as a score
     alone. Four judgemental words are kept out of the entire interface by an automated check that
-    reads the templates and the scripts — and, since this page is part of that interface, out of
+    reads the templates and the scripts. Since this page is part of that interface, they stay out of
     this page too.
   </p>
 </section>
@@ -266,7 +266,7 @@
        'A company ships with variants. Two students sitting together are keeping the books of
         the same company with different numbers, so the work has to be their own.'),
       ('The misunderstanding is named',
-       'A company is authored to provoke particular mistakes — treating a sale as an expense,
+       'A company is authored to provoke particular mistakes, such as treating a sale as an expense,
         say. When the marking engine recognises one, it names it for the instructor as a
         diagnosis. It never reaches the student, and it accuses nobody.'),
       ('Judgement stays with the person',
@@ -300,7 +300,7 @@
       does not announce a student to anybody else.
     </li>
     <li>
-      No dashboard of vanity metrics, and no messaging inside the app — a second inbox nobody
+      No dashboard of vanity metrics, and no messaging inside the app: a second inbox nobody
       checks is worse than none.
     </li>
     <li>
@@ -319,7 +319,7 @@
   <h2 class="text-3xl">Getting started</h2>
   <p class="mt-3 max-w-prose text-muted">
     Students join a section with a code from their instructor. Instructors sign in to set one up.
-    Signing in is a link sent to your school email address — there is no password to forget.
+    Signing in is a link sent to your school email address, so there is no password to forget.
   </p>
   <div class="mt-6 flex flex-wrap gap-3">
     {% if current_user.is_authenticated %}

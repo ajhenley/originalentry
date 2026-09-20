@@ -65,7 +65,7 @@
   <p class="mb-3 text-sm text-muted">
     Current choice:
     {% if disposition.choice == 'record' %}Record an entry
-    {% else %}No entry required — {{ disposition.reason }}{% endif %}
+    {% else %}No entry required: {{ disposition.reason }}{% endif %}
   </p>
   {% endif %}
 
@@ -85,7 +85,7 @@
           class="max-w-sm">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="choice" value="no_entry">
-      <label for="reason" class="field-label">No entry required — say why</label>
+      <label for="reason" class="field-label">No entry required: say why</label>
       <textarea id="reason" name="reason" rows="2" maxlength="200" required
                 class="mt-1 w-full field text-sm"></textarea>
       <button type="submit" class="mt-2 field text-sm">

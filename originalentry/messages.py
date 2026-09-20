@@ -115,7 +115,7 @@ def grading_batch_strings() -> dict[str, str]:
 def viewing_archived_books(student_name: str, archived_on: str) -> str:
     """Books that were archived and replaced with a fresh set (I1.12).
 
-    Staff can still read them — that is the whole reason archiving is safe to offer — and the
+    Staff can still read them, which is the whole reason archiving is safe to offer, and the
     banner says plainly that this is not where the student is working now.
     """
     return (
@@ -149,7 +149,7 @@ def document_in_other_workspace(display_ref: str, other_company_name: str) -> st
 
 # ── No-loss protocol banners (T7.4 / T7.5) ──────────────────────────────────────────────
 
-NOT_SAVED_RETRYING = "Not saved yet — retrying"
+NOT_SAVED_RETRYING = "Not saved yet, retrying"
 
 
 def saved_at(time_label: str) -> str:

@@ -1,5 +1,5 @@
 {% extends "layouts/staff.html" %}
-{% block heading %}{{ section.name }} — companies{% endblock %}
+{% block heading %}{{ section.name }}: companies{% endblock %}
 
 {% block console %}
 <p class="mb-4 text-sm text-muted">
@@ -44,7 +44,7 @@
   <p class="mb-3 text-sm text-muted">
     A CSV with a header row and a column called Email, and optionally Given name and Family name.
     Everyone named is enrolled and their books are opened. Importing an address does not sign
-    anybody in — they still get a link sent to that address — and importing the same file twice
+    anybody in (they still get a link sent to that address), and importing the same file twice
     changes nothing, so it is safe to run again if you are not sure the first one worked.
   </p>
   <form method="post" enctype="multipart/form-data"

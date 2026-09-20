@@ -18,7 +18,7 @@
   {% if record.dispositions %}
   <ul class="text-sm">
     {% for d in record.dispositions %}
-    <li>{{ d.document }} —
+    <li>{{ d.document }}:
       {% if d.choice == 'record' %}entry recorded{% else %}no entry required: {{ d.reason }}{% endif %}
     </li>
     {% endfor %}
@@ -68,7 +68,7 @@
   {% if record.postings %}
   <ul class="text-sm">
     {% for p in record.postings %}
-    <li>{{ p.journal_key }} → {{ p.target }} {{ p.ordinal }}{% if p.reversed %} — reversed: {{ p.reason }}{% endif %}</li>
+    <li>{{ p.journal_key }} → {{ p.target }} {{ p.ordinal }}{% if p.reversed %} (reversed: {{ p.reason }}){% endif %}</li>
     {% endfor %}
   </ul>
   {% else %}<p class="text-sm text-muted">Nothing posted.</p>{% endif %}
@@ -104,7 +104,7 @@
   {% if record.checkpoints %}
   <ul class="text-sm">
     {% for c in record.checkpoints %}
-    <li>{{ c.key }} attempt {{ c.attempt_no }} — {{ "passed" if c.passed else "not passed" }}</li>
+    <li>{{ c.key }} attempt {{ c.attempt_no }}: {{ "passed" if c.passed else "not passed" }}</li>
     {% endfor %}
   </ul>
   {% else %}<p class="text-sm text-muted">No checkpoint attempts.</p>{% endif %}
@@ -115,7 +115,7 @@
   {% if record.timeline %}
   <ul class="text-sm text-muted">
     {% for t in record.timeline %}
-    <li>{{ t.at.strftime('%b %-d, %H:%M') }} — {{ t.kind }}</li>
+    <li>{{ t.kind }} at {{ t.at.strftime('%b %-d, %H:%M') }}</li>
     {% endfor %}
   </ul>
   {% else %}<p class="text-sm text-muted">No activity recorded.</p>{% endif %}

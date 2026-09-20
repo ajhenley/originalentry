@@ -27,7 +27,7 @@
       </label>
       <label class="sr-only" for="section_id">Existing section</label>
       <select id="section_id" name="section_id" class="field">
-        <option value="">— choose a section —</option>
+        <option value="">Choose a section</option>
         {% for section in sections %}
         <option value="{{ section.id }}">{{ section.name }} ({{ section.term }})</option>
         {% endfor %}
@@ -69,7 +69,7 @@
     <label class="sr-only" for="pack_version_id">Company</label>
     <select id="pack_version_id" name="pack_version_id"
             class="field mt-1">
-      <option value="">— choose a company —</option>
+      <option value="">Choose a company</option>
       {% for entry in catalogue %}
       <option value="{{ entry.id }}">{{ entry.label }}</option>
       {% endfor %}
@@ -100,7 +100,7 @@
     <div>
       <label class="field-label" for="prerequisite">Opens after (optional)</label>
       <select id="prerequisite" name="prerequisite" class="field mt-1 w-auto">
-        <option value="">Nothing — students start straight away</option>
+        <option value="">Nothing: students start straight away</option>
         {% for p in prerequisites %}
         <option value="{{ p.public_id }}"
                 {% if values.get('prerequisite') == p.public_id %}selected{% endif %}>

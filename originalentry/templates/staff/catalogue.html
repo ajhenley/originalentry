@@ -13,7 +13,7 @@
   <p class="font-semibold">That pack was not loaded. Nothing in the catalogue has changed.</p>
   <ul class="mt-1 space-y-0.5">
     {% for problem in problems %}
-    <li><span class="font-mono">{{ problem.rule }}</span> · {{ problem.path }} — {{ problem.message }}</li>
+    <li><span class="font-mono">{{ problem.rule }}</span> · {{ problem.path }}: {{ problem.message }}</li>
     {% endfor %}
   </ul>
 </div>
@@ -25,7 +25,7 @@
   <p class="font-semibold">Loaded, with something worth a second look.</p>
   <ul class="mt-1 space-y-0.5">
     {% for warning in warnings %}
-    <li><span class="font-mono">{{ warning.rule }}</span> · {{ warning.path }} — {{ warning.message }}</li>
+    <li><span class="font-mono">{{ warning.rule }}</span> · {{ warning.path }}: {{ warning.message }}</li>
     {% endfor %}
   </ul>
 </div>

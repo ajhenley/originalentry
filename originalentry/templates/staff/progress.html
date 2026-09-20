@@ -34,6 +34,10 @@
              href="{{ url_for('student.overview', workspace=row.workspace_public_id, company_slug=company_slug) }}">{{ row.student_name }}</a>
           {% else %}{{ row.student_name }}{% endif %}
           <span class="block text-xs text-muted">{{ row.student_email }}</span>
+          {# Which figures they were given. The first question when a student queries a mark. #}
+          {% if row.variant_code %}
+          <span class="label-meta block">Version {{ row.variant_code }}</span>
+          {% endif %}
         </th>
         <td>
           {{ row.stage }}

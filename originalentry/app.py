@@ -118,6 +118,7 @@ def _register_jinja(app: Flask) -> None:
             "workspace": getattr(g, "workspace", None),
             "company": getattr(g, "company", None),
             "read_only": getattr(g, "read_only", False),
+            "variant_code": getattr(g, "variant_code", None),
             "read_only_message": getattr(g, "read_only_message", None),
             "save_messages": messages.save_banner_strings(),
             # The account menu appears in every chrome, so its data lives here rather than in

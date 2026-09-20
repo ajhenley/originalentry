@@ -272,6 +272,8 @@ def grading_detail(assignment: str, workspace: str):
         workspace=ws,
         company_slug=company.slug if company else None,
         student_name=f"{student.given_name} {student.family_name}".strip() or student.email,
+        # Which key these marks came from, so a regrade starts from the same figures.
+        variant_code=(db.session.get(Variant, ws.variant_id).code if ws.variant_id else None),
         marks=final_marks(db.session, ws),
         run=run,
         result=run.result if run else None,

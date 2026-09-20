@@ -11,7 +11,15 @@ from flask_login import current_user, login_required
 
 from . import messages
 from .extensions import db
-from .models import ROLE_GRADER, ROLE_INSTRUCTOR, ContentPack, PackVersion, User, Workspace
+from .models import (
+    ROLE_GRADER,
+    ROLE_INSTRUCTOR,
+    ContentPack,
+    PackVersion,
+    User,
+    Variant,
+    Workspace,
+)
 from .presentation import build_company
 
 STAFF_ROLES = frozenset({ROLE_GRADER, ROLE_INSTRUCTOR})
@@ -47,6 +55,11 @@ def workspace_view(view):
 
         g.workspace = ws
         g.pack_version = pv
+        # Which version of the company this is. Companies ship in versions with
+        # different figures, and until now nothing on screen said which you had.
+        g.variant_code = (
+            db.session.get(Variant, ws.variant_id).code if ws.variant_id else None
+        )
         g.company = company
         g.read_only = is_staff or ws.archived_at is not None or ws.status == "submitted"
         if is_staff and not is_owner:

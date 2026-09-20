@@ -83,6 +83,7 @@ class ProgressRow:
     accommodation: Accommodation | None = None
     last_refused: RefusedSave | None = None
     not_started_flag: bool = False
+    variant_code: str | None = None
 
 
 def assignment_progress(session: Session, assignment: Assignment) -> list[ProgressRow]:
@@ -104,6 +105,11 @@ def assignment_progress(session: Session, assignment: Assignment) -> list[Progre
         )
     ).scalar_one() if assignment.fixed_pack_version_id else 0
 
+    from ..models import Variant
+
+    variant_code = dict(
+        session.execute(select(Variant.id, Variant.code)).all()
+    )
     triaged = _triaged_counts(session, ids)
     entries = _entries(session, ids)
     posted_ids = _posted_entry_ids(session, ids)
@@ -125,6 +131,7 @@ def assignment_progress(session: Session, assignment: Assignment) -> list[Progre
                 or student.email,
                 student_email=student.email,
                 variant_id=ws.variant_id,
+                variant_code=variant_code.get(ws.variant_id),
                 documents_triaged=triaged.get(ws.id, 0),
                 documents_total=documents_total,
                 journals_posted=journals_posted,

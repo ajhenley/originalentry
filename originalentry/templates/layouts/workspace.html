@@ -20,7 +20,8 @@
     </span>
     <div class="mr-auto">
       <p class="font-display text-lg leading-tight text-paper">{{ company.name }}</p>
-      <p class="label-meta leading-tight text-paper/70">{{ company.period_label }}</p>
+      <p class="label-meta leading-tight text-paper/70">{{ company.period_label }}{%
+        if variant_code %} · Version {{ variant_code }}{% endif %}</p>
     </div>
     {% if switch_targets %}
     <details class="relative text-sm">

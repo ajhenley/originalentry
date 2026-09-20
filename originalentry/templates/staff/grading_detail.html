@@ -14,6 +14,7 @@
   <a class="underline" href="{{ url_for('student.print_record', workspace=workspace.public_id,
                                         company_slug=company_slug) }}">Print their record</a>
   {% endif %}
+  {% if variant_code %}<span class="text-muted"> · Version {{ variant_code }}</span>{% endif %}
   {% if run %}<span class="text-muted"> · graded by engine {{ run.engine_version }}</span>{% endif %}
 </p>
 

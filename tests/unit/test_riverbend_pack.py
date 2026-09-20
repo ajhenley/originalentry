@@ -1,0 +1,103 @@
+"""The real company: Riverbend Bicycle Supply, 1-15 December.
+
+The paper practice set is the source of truth, and `scripts/build_riverbend.py` only translates
+it. What this guards is that the translation stayed faithful: the figures the app derives by
+replaying the key through its own ledger engine must equal the figures printed in the
+instructor's solution set, to the cent, for all three versions.
+
+If those ever disagree, a student marked by this app and a student marked from the printed key
+would receive different marks for the same work, which is the one outcome nobody could defend.
+"""
+
+import json
+from decimal import Decimal
+from pathlib import Path
+
+import pytest
+from originalentry.generator import build
+from originalentry.packs import schema
+from originalentry.packs.validate import validate_pack, warn_pack
+
+SOURCE = Path(__file__).resolve().parents[2] / "packs" / "riverbend" / "source.json"
+
+# Straight from the practice set's own "Checkpoint Answers - All three versions" page.
+PAPER = {
+    "A": {"cash": Decimal("22295.60"), "trial_balance": Decimal("985315.40")},
+    "B": {"cash": Decimal("22413.20"), "trial_balance": Decimal("985769.40")},
+    "C": {"cash": Decimal("22530.80"), "trial_balance": Decimal("986223.40")},
+}
+
+
+@pytest.fixture(scope="module")
+def generated():
+    return build(json.loads(SOURCE.read_text()))
+
+
+def test_the_source_is_where_the_importer_looks():
+    assert SOURCE.exists()
+
+
+def test_it_builds_a_pack_the_app_would_accept(generated):
+    pack = schema.load_pack(generated.pack)
+    keys = {code: schema.load_answer_key(k) for code, k in generated.keys.items()}
+
+    assert sorted(keys) == ["A", "B", "C"]
+    assert not list(validate_pack(pack, keys))
+    assert not list(warn_pack(pack))
+
+
+def test_it_carries_the_whole_month(generated):
+    pack = schema.load_pack(generated.pack)
+
+    assert len(pack.documents) == 28
+    assert len(pack.accounts) == 42
+    assert {j.key for j in pack.journals} == {
+        "sales", "purchases", "cash_receipts", "cash_payments", "general"}
+
+
+@pytest.mark.parametrize("version", ["A", "B", "C"])
+def test_the_cash_balance_matches_the_printed_key(generated, version):
+    """Checkpoint 2 on the paper set: cash at 15 December."""
+    cash = Decimal(generated.keys[version]["checkpoints"]["cp2"]) / 100
+
+    assert cash == PAPER[version]["cash"]
+
+
+@pytest.mark.parametrize("version", ["A", "B", "C"])
+def test_the_trial_balance_matches_the_printed_key(generated, version):
+    balances = generated.keys[version]["expected_balances"]["adjusted"]
+
+    total = Decimal(sum(v for v in balances.values() if v > 0)) / 100
+
+    assert total == PAPER[version]["trial_balance"]
+
+
+@pytest.mark.parametrize("version", ["A", "B", "C"])
+def test_the_books_balance(generated, version):
+    balances = generated.keys[version]["expected_balances"]["adjusted"]
+
+    assert sum(balances.values()) == 0
+
+
+def test_the_versions_really_do_differ(generated):
+    """A student working from a classmate's figures should fail checkpoint 1 immediately."""
+    cash = {v: generated.keys[v]["checkpoints"]["cp2"] for v in ("A", "B", "C")}
+
+    assert len(set(cash.values())) == 3
+
+
+def test_every_designed_error_is_named(generated):
+    """The five traps the practice set builds in, each recognised on its own document."""
+    signatures = generated.keys["B"]["error_signatures"]
+
+    assert {s["key"] for s in signatures} == {
+        "freight", "receiving", "shortpay", "purchdisc", "earlydisc"}
+    for signature in signatures:
+        assert signature["detect"]["document"], signature["key"]
+
+
+def test_the_subsidiary_ledgers_are_wired(generated):
+    pack = schema.load_pack(generated.pack)
+    controls = {a.number: a.subsidiary_kind for a in pack.accounts if a.subsidiary_kind}
+
+    assert controls == {"105": "customer", "201": "supplier"}

@@ -1,0 +1,351 @@
+"""Turn the Riverbend paper practice set into an Original Entry pack source.
+
+The master model in the paper set is the source of truth (PRD §7): transactions are authored
+there, once, and this script only translates. It never invents a figure. Run it again after the
+practice set changes and the pack follows.
+
+    python scripts/build_riverbend.py [PATH_TO_PRACTICE_SET] > packs/riverbend/source.json
+
+What it reads: `03-Source/model.py` (chart, opening balances, parties, the 28 transactions for
+each of the three versions) and `03-Source/errors.py` (the five designed errors and the exact
+mis-entry each produces).
+
+Scope note: the Riverbend set runs 1–15 December and ends at the unadjusted trial balance. The
+adjusting and closing practice in the same packet belongs to a different company (Sundial Press),
+so this pack carries no adjustments, no statements and no closing entries.
+"""
+
+from __future__ import annotations
+
+import contextlib
+import importlib.util
+import io
+import json
+import sys
+from decimal import Decimal
+from pathlib import Path
+
+DEFAULT_SET = Path(__file__).resolve().parents[2] / "Riverbend-Paper-Practice-Set"
+
+
+def _load(source_dir: Path):
+    """Import the practice set's own modules, which expect to sit on sys.path together."""
+    sys.path.insert(0, str(source_dir))
+    out = {}
+    # The practice set prints a self-check banner when imported; it must not land in the JSON.
+    with contextlib.redirect_stdout(io.StringIO()):
+        for name in ("model", "errors"):
+            spec = importlib.util.spec_from_file_location(name, source_dir / f"{name}.py")
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules[name] = mod
+            spec.loader.exec_module(mod)
+            out[name] = mod
+    return out["model"], out["errors"]
+
+
+def cents(amount) -> int:
+    """Money is integer cents everywhere in this app (D1). The model works in dollars."""
+    return int((Decimal(str(amount)) * 100).quantize(Decimal("1")))
+
+
+# The paper set's one-letter account types, in this app's vocabulary.
+TYPE = {"A": "asset", "XA": "contra_asset", "L": "liability", "E": "equity",
+        "R": "revenue", "XR": "contra_revenue", "X": "expense"}
+DEBIT_NORMAL = {"asset", "expense", "contra_revenue"}
+
+SECTION = {
+    "asset": "current_assets", "contra_asset": "non_current_assets",
+    "liability": "current_liabilities", "equity": "equity",
+    "revenue": "sales_revenue", "contra_revenue": "sales_revenue",
+    "expense": "operating_expenses",
+}
+NON_CURRENT = {"150", "151", "155", "156"}
+ROLES = {"302": ["retained_earnings"], "399": ["income_summary"],
+         "105": ["ar_control"], "201": ["ap_control"]}
+SUBSIDIARY = {"105": "customer", "201": "supplier"}
+
+# The paper set's five cycles, and the journal each becomes here.
+JOURNAL_OF = {"Sales": "sales", "Purchases": "purchases", "Cash receipts": "cash_receipts",
+              "Cash payments": "cash_payments", "General": "general"}
+
+
+def journals() -> list[dict]:
+    """Five journals with the columns the transactions actually use.
+
+    Each special journal carries an "Other accounts" column (``account: null``), which is how a
+    real special journal handles the entries that do not fit its named columns; without it V8
+    would refuse the rent cheque and the payroll.
+    """
+    def col(key, label, side, account, posts="total", subsidiary=None):
+        c = {"key": key, "label": label, "side": side, "posts": posts}
+        if account is not None:
+            c["account"] = account
+        if subsidiary:
+            c["subsidiary_kind"] = subsidiary
+        return c
+
+    return [
+        {"key": "sales", "name": "Sales Journal", "ref_prefix": "S", "kind": "special",
+         "columns": [
+             col("ar_dr", "Accounts Receivable Dr", "debit", "105", subsidiary="customer"),
+             col("sales_cr", "Sales Cr", "credit", "401"),
+             col("cogs_dr", "Cost of Goods Sold Dr", "debit", "501"),
+             col("inv_cr", "Merchandise Inventory Cr", "credit", "110")]},
+        {"key": "purchases", "name": "Purchases Journal", "ref_prefix": "P", "kind": "special",
+         "columns": [
+             col("inv_dr", "Merchandise Inventory Dr", "debit", "110"),
+             col("other_dr", "Other accounts Dr", "debit", None, posts="individual"),
+             col("ap_cr", "Accounts Payable Cr", "credit", "201", subsidiary="supplier")]},
+        {"key": "cash_receipts", "name": "Cash Receipts Journal", "ref_prefix": "CR",
+         "kind": "special", "columns": [
+             col("cash_dr", "Cash Dr", "debit", "101"),
+             col("disc_dr", "Sales Discounts Dr", "debit", "403"),
+             col("cogs_dr", "Cost of Goods Sold Dr", "debit", "501"),
+             col("ar_cr", "Accounts Receivable Cr", "credit", "105", subsidiary="customer"),
+             col("sales_cr", "Sales Cr", "credit", "401"),
+             col("inv_cr", "Merchandise Inventory Cr", "credit", "110"),
+             col("other_cr", "Other accounts Cr", "credit", None, posts="individual")]},
+        {"key": "cash_payments", "name": "Cash Payments Journal", "ref_prefix": "CP",
+         "kind": "special", "columns": [
+             col("ap_dr", "Accounts Payable Dr", "debit", "201", subsidiary="supplier"),
+             col("other_dr", "Other accounts Dr", "debit", None, posts="individual"),
+             col("cash_cr", "Cash Cr", "credit", "101"),
+             col("inv_cr", "Merchandise Inventory Cr", "credit", "110"),
+             col("other_cr", "Other accounts Cr", "credit", None, posts="individual")]},
+        {"key": "general", "name": "General Journal", "ref_prefix": "J", "kind": "general"},
+    ]
+
+
+def _ref(txn) -> str:
+    """A stable, file-safe reference. The document's own number keeps them in order."""
+    return f"D{txn['no']:02d}"
+
+
+def _text_alternative(txn, model) -> dict:
+    """What the paper document says, as text. This is what a student reads in paper mode, and it
+    must carry every figure they need without telling them the entry."""
+    fields = [["Date", txn["date"]], ["Document", txn["doc"]]]
+    meta = txn.get("meta") or {}
+    for label, key in (("Vendor invoice", "vinv"), ("Purchase order", "po"),
+                       ("Receiving report", "rr"), ("Terms", "terms"), ("FOB", "fob"),
+                       ("Quantity billed", "billed"), ("Quantity received", "received")):
+        if key in meta:
+            fields.append([label, str(meta[key])])
+    if txn.get("ar"):
+        fields.append(["Customer", model.CUSTOMERS[txn["ar"][0]][0]])
+    if txn.get("ap"):
+        code = txn["ap"][0]
+        name = model.VENDORS.get(code, ("Kestrel Office Supply",))[0]
+        fields.append(["Supplier", name])
+
+    lines = []
+    for item in txn.get("items") or []:
+        sku, qty, unit, total = item
+        desc = model.SKUS[sku][0] if sku in model.SKUS else (
+            "Freight" if sku == "FRT" else "Office supplies")
+        lines.append([str(qty), desc, f"{unit:,.2f}", f"{total:,.2f}"])
+    return {"fields": fields, "lines": lines}
+
+
+def documents(model) -> list[dict]:
+    """One document per transaction, in the order they arrive on the desk."""
+    base = model.build("B")            # descriptions and metadata do not vary by version
+    docs = []
+    for seq, txn in enumerate(base, start=1):
+        docs.append({
+            "ref": _ref(txn),
+            "display_ref": txn["doc"],
+            "type": "source_document",
+            "date": _iso_date(txn["date"]),
+            "received_seq": seq,
+            # The first two documents are guided: which journal, and why. Never which accounts.
+            "guided": seq <= 2,
+            "guidance": (
+                "Sales on account are recorded in the journal built for them."
+                if seq == 2 else
+                "A payment by cheque belongs in the journal built for cash going out."
+            ) if seq <= 2 else None,
+            "variants": {},
+        })
+    return docs
+
+
+def _iso_date(label: str) -> str:
+    """"Dec 4" in the model; the pack wants a real date in the period."""
+    day = int(label.split()[1])
+    return f"2026-12-{day:02d}"
+
+
+def expected_entries(model, variant: str) -> list[dict]:
+    """Each transaction as the entry the key says it is, in cents."""
+    entries = []
+    for txn in model.build(variant):
+        lines = []
+        for account, debit, credit in txn["lines"]:
+            line = {"account": str(account)}
+            if debit:
+                line["debit"] = cents(debit)
+            if credit:
+                line["credit"] = cents(credit)
+            # The subsidiary account the line belongs to, where there is one.
+            if str(account) == "105" and txn.get("ar"):
+                line["party"] = txn["ar"][0]
+            if str(account) == "201" and txn.get("ap"):
+                line["party"] = txn["ap"][0]
+            lines.append(line)
+        entries.append({
+            "document": _ref(txn),
+            "journal": JOURNAL_OF[txn["cycle"]],
+            "kind": "regular",
+            "lines": lines,
+        })
+    return entries
+
+
+def error_signatures(model, errors_mod, variant: str) -> list[dict]:
+    """The five designed errors, each detected on the one document that produces it.
+
+    Detection is document-first (T8.5): the trap changes a named line on a named document, so the
+    signature names that line rather than hunting a balance difference.
+    """
+    txn_of = {t["no"]: t for t in model.build(variant)}
+    wrong_of = {t["no"]: t for t in errors_mod.mutate(variant, "freight")}
+    signatures = []
+    for kind, _date, label in errors_mod.TRAPS:
+        mutated = {t["no"]: t for t in errors_mod.mutate(variant, kind)}
+        for no, txn in txn_of.items():
+            if mutated[no]["lines"] == txn["lines"]:
+                continue
+            # The account and side that appear only in the mistaken version.
+            right = {(str(a), "debit" if d else "credit") for a, d, _c in txn["lines"] if d} | \
+                    {(str(a), "credit") for a, _d, c in txn["lines"] if c}
+            wrong = {(str(a), "debit") for a, d, _c in mutated[no]["lines"] if d} | \
+                    {(str(a), "credit") for a, _d, c in mutated[no]["lines"] if c}
+            tell = sorted(wrong - right)
+            if tell:
+                account, side = tell[0]
+                signatures.append({
+                    "key": kind, "label": label,
+                    "detect": {"type": "entry_line", "document": _ref(txn),
+                               "account": account, "side": side},
+                })
+            else:
+                # Same accounts, different figures: name the amount instead.
+                amount = next((cents(d) for a, d, _c in mutated[no]["lines"]
+                               if d and (str(a), "debit") in wrong), None)
+                account = next((str(a) for a, d, _c in mutated[no]["lines"] if d), None)
+                if amount and account:
+                    signatures.append({
+                        "key": kind, "label": label,
+                        "detect": {"type": "entry_amount", "document": _ref(txn),
+                                   "account": account, "side": "debit", "amount": amount},
+                    })
+            break
+    _ = wrong_of
+    return signatures
+
+
+def build_source(practice_set: Path) -> dict:
+    model, errors_mod = _load(practice_set / "03-Source")
+
+    accounts = []
+    for order, (number, name, kind) in enumerate(model.ACCOUNTS, start=1):
+        number = str(number)
+        atype = TYPE[kind]
+        section = SECTION[atype]
+        if number in NON_CURRENT:
+            section = "non_current_assets"
+        if atype == "liability" and number == "220":
+            section = "non_current_liabilities"
+        account = {
+            "number": number, "name": name, "type": atype,
+            "normal_balance": "debit" if atype in DEBIT_NORMAL else "credit",
+            "statement_section": section, "sort_order": order,
+        }
+        if number in ROLES:
+            account["roles"] = ROLES[number]
+        if number in SUBSIDIARY:
+            account["subsidiary_kind"] = SUBSIDIARY[number]
+        accounts.append(account)
+
+    parties = (
+        [{"code": c, "kind": "customer", "name": v[0]} for c, v in model.CUSTOMERS.items()]
+        + [{"code": c, "kind": "supplier", "name": v[0]} for c, v in model.VENDORS.items()]
+        + [{"code": "V-206", "kind": "supplier", "name": "Kestrel Office Supply"}]
+    )
+
+    variants = [{"code": c, "label": f"Version {c}", "drivers": model.VARIANTS[c]}
+                for c in sorted(model.VARIANTS)]
+
+    opening = {}
+    for code in sorted(model.VARIANTS):
+        opening[code] = {
+            "accounts": {str(a): cents(v) for a, v in model.OPENING.items()},
+            # Debit-positive throughout, so a supplier's credit balance is negative.
+            "parties": ({c: cents(v[1]) for c, v in model.CUSTOMERS.items()}
+                        | {c: -cents(v[1]) for c, v in model.VENDORS.items()}
+                        | {"V-206": 0}),
+        }
+
+    docs = documents(model)
+    answers = {}
+    for code in sorted(model.VARIANTS):
+        txns = model.build(code)
+        # strict: one document per transaction, always. A mismatch is an authoring bug.
+        for doc, txn in zip(docs, txns, strict=True):
+            doc["variants"][code] = {"text_alternative": _text_alternative(txn, model)}
+        answers[code] = {
+            "triage": {_ref(t): True for t in txns},
+            "designated_journal_documents": {_ref(t): JOURNAL_OF[t["cycle"]] for t in txns},
+            "expected_entries": expected_entries(model, code),
+            "adjustments": [],
+            "error_signatures": error_signatures(model, errors_mod, code),
+        }
+
+    return {
+        "format_version": 1,
+        "company": {
+            "slug": "riverbend", "name": "Riverbend Bicycle Supply",
+            "accent_hex": "#1F7A6E", "monogram": "RB",
+            "course_tags": ["ACCT1010"],
+            "scope_tags": ["merchandising", "special journals", "subsidiary ledgers"],
+        },
+        "version": 1,
+        "period": {"start": "2026-12-01", "end": "2026-12-15",
+                   "fiscal_year_end": "2026-12-31"},
+        "statement_sections": ["current_assets", "non_current_assets", "current_liabilities",
+                               "non_current_liabilities", "equity", "sales_revenue",
+                               "operating_expenses"],
+        "accounts": accounts,
+        "parties": parties,
+        "variants": variants,
+        "opening_balances": opening,
+        "journals": journals(),
+        "documents": docs,
+        # The paper set's own checkpoint answers table: the two control accounts and cash.
+        "checkpoints": [
+            {"key": "cp1", "ordinal": 1, "stage": "posted",
+             "prompt": "Accounts Receivable control balance at 15 December",
+             "measure": {"account": "105"}},
+            {"key": "cp2", "ordinal": 2, "stage": "posted",
+             "prompt": "Cash balance at 15 December", "measure": {"account": "101"}},
+            {"key": "cp3", "ordinal": 3, "stage": "posted",
+             "prompt": "Accounts Payable control balance at 15 December",
+             "measure": {"account": "201"}},
+        ],
+        "statements": [],
+        "rubric": {"components": [
+            {"key": "triage", "points": 10},
+            {"key": "journal_selection", "points": 20},
+            {"key": "entry_accuracy", "points": 40},
+            {"key": "posting_completeness", "points": 20},
+            {"key": "subsidiary_agreement", "points": 10},
+        ]},
+        "answers": answers,
+    }
+
+
+if __name__ == "__main__":
+    where = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SET
+    json.dump(build_source(where), sys.stdout, indent=1, ensure_ascii=False)
+    print()

@@ -1,0 +1,5278 @@
+{
+ "format_version": 1,
+ "company": {
+  "slug": "riverbend",
+  "name": "Riverbend Bicycle Supply",
+  "accent_hex": "#1F7A6E",
+  "monogram": "RB",
+  "course_tags": [
+   "ACCT1010"
+  ],
+  "scope_tags": [
+   "merchandising",
+   "special journals",
+   "subsidiary ledgers"
+  ]
+ },
+ "version": 1,
+ "period": {
+  "start": "2026-12-01",
+  "end": "2026-12-15",
+  "fiscal_year_end": "2026-12-31"
+ },
+ "statement_sections": [
+  "current_assets",
+  "non_current_assets",
+  "current_liabilities",
+  "non_current_liabilities",
+  "equity",
+  "sales_revenue",
+  "operating_expenses"
+ ],
+ "accounts": [
+  {
+   "number": "101",
+   "name": "Cash",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 1
+  },
+  {
+   "number": "102",
+   "name": "Petty Cash",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 2
+  },
+  {
+   "number": "105",
+   "name": "Accounts Receivable",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 3,
+   "roles": [
+    "ar_control"
+   ],
+   "subsidiary_kind": "customer"
+  },
+  {
+   "number": "106",
+   "name": "Allowance for Doubtful Accounts",
+   "type": "contra_asset",
+   "normal_balance": "credit",
+   "statement_section": "non_current_assets",
+   "sort_order": 4
+  },
+  {
+   "number": "110",
+   "name": "Merchandise Inventory",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 5
+  },
+  {
+   "number": "115",
+   "name": "Office Supplies",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 6
+  },
+  {
+   "number": "116",
+   "name": "Prepaid Insurance",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 7
+  },
+  {
+   "number": "150",
+   "name": "Store Equipment",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "non_current_assets",
+   "sort_order": 8
+  },
+  {
+   "number": "151",
+   "name": "Accum. Depreciation - Store Equipment",
+   "type": "contra_asset",
+   "normal_balance": "credit",
+   "statement_section": "non_current_assets",
+   "sort_order": 9
+  },
+  {
+   "number": "155",
+   "name": "Delivery Van",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "non_current_assets",
+   "sort_order": 10
+  },
+  {
+   "number": "156",
+   "name": "Accum. Depreciation - Delivery Van",
+   "type": "contra_asset",
+   "normal_balance": "credit",
+   "statement_section": "non_current_assets",
+   "sort_order": 11
+  },
+  {
+   "number": "201",
+   "name": "Accounts Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 12,
+   "roles": [
+    "ap_control"
+   ],
+   "subsidiary_kind": "supplier"
+  },
+  {
+   "number": "203",
+   "name": "Salaries Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 13
+  },
+  {
+   "number": "204",
+   "name": "FICA Taxes Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 14
+  },
+  {
+   "number": "205",
+   "name": "Federal Income Tax Withheld Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 15
+  },
+  {
+   "number": "206",
+   "name": "State Income Tax Withheld Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 16
+  },
+  {
+   "number": "207",
+   "name": "Unemployment Taxes Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 17
+  },
+  {
+   "number": "210",
+   "name": "Interest Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 18
+  },
+  {
+   "number": "215",
+   "name": "Unearned Sales Revenue",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 19
+  },
+  {
+   "number": "220",
+   "name": "Notes Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "non_current_liabilities",
+   "sort_order": 20
+  },
+  {
+   "number": "301",
+   "name": "Common Stock",
+   "type": "equity",
+   "normal_balance": "credit",
+   "statement_section": "equity",
+   "sort_order": 21
+  },
+  {
+   "number": "302",
+   "name": "Retained Earnings",
+   "type": "equity",
+   "normal_balance": "credit",
+   "statement_section": "equity",
+   "sort_order": 22,
+   "roles": [
+    "retained_earnings"
+   ]
+  },
+  {
+   "number": "303",
+   "name": "Dividends",
+   "type": "equity",
+   "normal_balance": "credit",
+   "statement_section": "equity",
+   "sort_order": 23
+  },
+  {
+   "number": "399",
+   "name": "Income Summary",
+   "type": "equity",
+   "normal_balance": "credit",
+   "statement_section": "equity",
+   "sort_order": 24,
+   "roles": [
+    "income_summary"
+   ]
+  },
+  {
+   "number": "401",
+   "name": "Sales",
+   "type": "revenue",
+   "normal_balance": "credit",
+   "statement_section": "sales_revenue",
+   "sort_order": 25
+  },
+  {
+   "number": "402",
+   "name": "Sales Returns and Allowances",
+   "type": "contra_revenue",
+   "normal_balance": "debit",
+   "statement_section": "sales_revenue",
+   "sort_order": 26
+  },
+  {
+   "number": "403",
+   "name": "Sales Discounts",
+   "type": "contra_revenue",
+   "normal_balance": "debit",
+   "statement_section": "sales_revenue",
+   "sort_order": 27
+  },
+  {
+   "number": "501",
+   "name": "Cost of Goods Sold",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 28
+  },
+  {
+   "number": "511",
+   "name": "Sales Salaries Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 29
+  },
+  {
+   "number": "512",
+   "name": "Office Salaries Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 30
+  },
+  {
+   "number": "513",
+   "name": "Payroll Tax Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 31
+  },
+  {
+   "number": "514",
+   "name": "Rent Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 32
+  },
+  {
+   "number": "515",
+   "name": "Advertising Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 33
+  },
+  {
+   "number": "516",
+   "name": "Delivery Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 34
+  },
+  {
+   "number": "517",
+   "name": "Office Supplies Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 35
+  },
+  {
+   "number": "518",
+   "name": "Insurance Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 36
+  },
+  {
+   "number": "519",
+   "name": "Depreciation Expense - Store Equipment",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 37
+  },
+  {
+   "number": "520",
+   "name": "Depreciation Expense - Delivery Van",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 38
+  },
+  {
+   "number": "521",
+   "name": "Bad Debts Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 39
+  },
+  {
+   "number": "522",
+   "name": "Utilities Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 40
+  },
+  {
+   "number": "523",
+   "name": "Bank Service Charge Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 41
+  },
+  {
+   "number": "590",
+   "name": "Interest Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 42
+  }
+ ],
+ "parties": [
+  {
+   "code": "C-101",
+   "kind": "customer",
+   "name": "Cascade Cyclery"
+  },
+  {
+   "code": "C-102",
+   "kind": "customer",
+   "name": "Depot Bikes"
+  },
+  {
+   "code": "C-103",
+   "kind": "customer",
+   "name": "Trailhead Sports"
+  },
+  {
+   "code": "C-104",
+   "kind": "customer",
+   "name": "Kingman Cycle Works"
+  },
+  {
+   "code": "C-105",
+   "kind": "customer",
+   "name": "Pedal & Post"
+  },
+  {
+   "code": "C-106",
+   "kind": "customer",
+   "name": "Summit Wheelworks"
+  },
+  {
+   "code": "C-107",
+   "kind": "customer",
+   "name": "Old Mill Bicycle"
+  },
+  {
+   "code": "V-201",
+   "kind": "supplier",
+   "name": "Norsk Frame Works"
+  },
+  {
+   "code": "V-202",
+   "kind": "supplier",
+   "name": "Cassette & Chain Co."
+  },
+  {
+   "code": "V-203",
+   "kind": "supplier",
+   "name": "Halcyon Components"
+  },
+  {
+   "code": "V-204",
+   "kind": "supplier",
+   "name": "Brightline Accessories"
+  },
+  {
+   "code": "V-205",
+   "kind": "supplier",
+   "name": "Ridgeline Tires"
+  },
+  {
+   "code": "V-206",
+   "kind": "supplier",
+   "name": "Kestrel Office Supply"
+  }
+ ],
+ "variants": [
+  {
+   "code": "A",
+   "label": "Version A",
+   "drivers": {
+    "P1": 340,
+    "QTY": 40
+   }
+  },
+  {
+   "code": "B",
+   "label": "Version B",
+   "drivers": {
+    "P1": 350,
+    "QTY": 44
+   }
+  },
+  {
+   "code": "C",
+   "label": "Version C",
+   "drivers": {
+    "P1": 360,
+    "QTY": 48
+   }
+  }
+ ],
+ "opening_balances": {
+  "A": {
+   "accounts": {
+    "101": 2845000,
+    "102": 20000,
+    "105": 4130000,
+    "106": -185000,
+    "110": 9670000,
+    "115": 124000,
+    "116": 360000,
+    "150": 3400000,
+    "151": -1190000,
+    "155": 2880000,
+    "156": -960000,
+    "201": -3790000,
+    "204": -143000,
+    "205": -218000,
+    "206": -64000,
+    "207": -31000,
+    "220": -2400000,
+    "301": -6000000,
+    "302": -8160000,
+    "303": 1200000,
+    "401": -74200000,
+    "402": 980000,
+    "403": 630000,
+    "501": 47140000,
+    "511": 9600000,
+    "512": 5280000,
+    "513": 1290000,
+    "514": 3300000,
+    "515": 870000,
+    "516": 740000,
+    "517": 290000,
+    "518": 396000,
+    "519": 550000,
+    "520": 528000,
+    "521": 240000,
+    "522": 660000,
+    "523": 42000,
+    "590": 176000
+   },
+   "parties": {
+    "C-101": 840000,
+    "C-102": 618000,
+    "C-103": 590000,
+    "C-104": 725000,
+    "C-105": 472000,
+    "C-106": 690000,
+    "C-107": 195000,
+    "V-201": -1240000,
+    "V-202": -930000,
+    "V-203": -785000,
+    "V-204": -520000,
+    "V-205": -315000,
+    "V-206": 0
+   }
+  },
+  "B": {
+   "accounts": {
+    "101": 2845000,
+    "102": 20000,
+    "105": 4130000,
+    "106": -185000,
+    "110": 9670000,
+    "115": 124000,
+    "116": 360000,
+    "150": 3400000,
+    "151": -1190000,
+    "155": 2880000,
+    "156": -960000,
+    "201": -3790000,
+    "204": -143000,
+    "205": -218000,
+    "206": -64000,
+    "207": -31000,
+    "220": -2400000,
+    "301": -6000000,
+    "302": -8160000,
+    "303": 1200000,
+    "401": -74200000,
+    "402": 980000,
+    "403": 630000,
+    "501": 47140000,
+    "511": 9600000,
+    "512": 5280000,
+    "513": 1290000,
+    "514": 3300000,
+    "515": 870000,
+    "516": 740000,
+    "517": 290000,
+    "518": 396000,
+    "519": 550000,
+    "520": 528000,
+    "521": 240000,
+    "522": 660000,
+    "523": 42000,
+    "590": 176000
+   },
+   "parties": {
+    "C-101": 840000,
+    "C-102": 618000,
+    "C-103": 590000,
+    "C-104": 725000,
+    "C-105": 472000,
+    "C-106": 690000,
+    "C-107": 195000,
+    "V-201": -1240000,
+    "V-202": -930000,
+    "V-203": -785000,
+    "V-204": -520000,
+    "V-205": -315000,
+    "V-206": 0
+   }
+  },
+  "C": {
+   "accounts": {
+    "101": 2845000,
+    "102": 20000,
+    "105": 4130000,
+    "106": -185000,
+    "110": 9670000,
+    "115": 124000,
+    "116": 360000,
+    "150": 3400000,
+    "151": -1190000,
+    "155": 2880000,
+    "156": -960000,
+    "201": -3790000,
+    "204": -143000,
+    "205": -218000,
+    "206": -64000,
+    "207": -31000,
+    "220": -2400000,
+    "301": -6000000,
+    "302": -8160000,
+    "303": 1200000,
+    "401": -74200000,
+    "402": 980000,
+    "403": 630000,
+    "501": 47140000,
+    "511": 9600000,
+    "512": 5280000,
+    "513": 1290000,
+    "514": 3300000,
+    "515": 870000,
+    "516": 740000,
+    "517": 290000,
+    "518": 396000,
+    "519": 550000,
+    "520": 528000,
+    "521": 240000,
+    "522": 660000,
+    "523": 42000,
+    "590": 176000
+   },
+   "parties": {
+    "C-101": 840000,
+    "C-102": 618000,
+    "C-103": 590000,
+    "C-104": 725000,
+    "C-105": 472000,
+    "C-106": 690000,
+    "C-107": 195000,
+    "V-201": -1240000,
+    "V-202": -930000,
+    "V-203": -785000,
+    "V-204": -520000,
+    "V-205": -315000,
+    "V-206": 0
+   }
+  }
+ },
+ "journals": [
+  {
+   "key": "sales",
+   "name": "Sales Journal",
+   "ref_prefix": "S",
+   "kind": "special",
+   "columns": [
+    {
+     "key": "ar_dr",
+     "label": "Accounts Receivable Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "105",
+     "subsidiary_kind": "customer"
+    },
+    {
+     "key": "sales_cr",
+     "label": "Sales Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "401"
+    },
+    {
+     "key": "cogs_dr",
+     "label": "Cost of Goods Sold Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "501"
+    },
+    {
+     "key": "inv_cr",
+     "label": "Merchandise Inventory Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "110"
+    }
+   ]
+  },
+  {
+   "key": "purchases",
+   "name": "Purchases Journal",
+   "ref_prefix": "P",
+   "kind": "special",
+   "columns": [
+    {
+     "key": "inv_dr",
+     "label": "Merchandise Inventory Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "110"
+    },
+    {
+     "key": "other_dr",
+     "label": "Other accounts Dr",
+     "side": "debit",
+     "posts": "individual"
+    },
+    {
+     "key": "ap_cr",
+     "label": "Accounts Payable Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "201",
+     "subsidiary_kind": "supplier"
+    }
+   ]
+  },
+  {
+   "key": "cash_receipts",
+   "name": "Cash Receipts Journal",
+   "ref_prefix": "CR",
+   "kind": "special",
+   "columns": [
+    {
+     "key": "cash_dr",
+     "label": "Cash Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "101"
+    },
+    {
+     "key": "disc_dr",
+     "label": "Sales Discounts Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "403"
+    },
+    {
+     "key": "cogs_dr",
+     "label": "Cost of Goods Sold Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "501"
+    },
+    {
+     "key": "ar_cr",
+     "label": "Accounts Receivable Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "105",
+     "subsidiary_kind": "customer"
+    },
+    {
+     "key": "sales_cr",
+     "label": "Sales Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "401"
+    },
+    {
+     "key": "inv_cr",
+     "label": "Merchandise Inventory Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "110"
+    },
+    {
+     "key": "other_cr",
+     "label": "Other accounts Cr",
+     "side": "credit",
+     "posts": "individual"
+    }
+   ]
+  },
+  {
+   "key": "cash_payments",
+   "name": "Cash Payments Journal",
+   "ref_prefix": "CP",
+   "kind": "special",
+   "columns": [
+    {
+     "key": "ap_dr",
+     "label": "Accounts Payable Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "201",
+     "subsidiary_kind": "supplier"
+    },
+    {
+     "key": "other_dr",
+     "label": "Other accounts Dr",
+     "side": "debit",
+     "posts": "individual"
+    },
+    {
+     "key": "cash_cr",
+     "label": "Cash Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "101"
+    },
+    {
+     "key": "inv_cr",
+     "label": "Merchandise Inventory Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "110"
+    },
+    {
+     "key": "other_cr",
+     "label": "Other accounts Cr",
+     "side": "credit",
+     "posts": "individual"
+    }
+   ]
+  },
+  {
+   "key": "general",
+   "name": "General Journal",
+   "ref_prefix": "J",
+   "kind": "general"
+  }
+ ],
+ "documents": [
+  {
+   "ref": "D01",
+   "display_ref": "Check 2201",
+   "type": "source_document",
+   "date": "2026-12-01",
+   "received_seq": 1,
+   "guided": true,
+   "guidance": "A payment by cheque belongs in the journal built for cash going out.",
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Check 2201"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Check 2201"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Check 2201"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D02",
+   "display_ref": "Invoice 4871",
+   "type": "source_document",
+   "date": "2026-12-01",
+   "received_seq": 2,
+   "guided": true,
+   "guidance": "Sales on account are recorded in the journal built for them.",
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Invoice 4871"
+       ],
+       [
+        "Customer",
+        "Cascade Cyclery"
+       ]
+      ],
+      "lines": [
+       [
+        "12",
+        "Riverbend R3 hybrid",
+        "340.00",
+        "4,080.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Invoice 4871"
+       ],
+       [
+        "Customer",
+        "Cascade Cyclery"
+       ]
+      ],
+      "lines": [
+       [
+        "12",
+        "Riverbend R3 hybrid",
+        "350.00",
+        "4,200.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Invoice 4871"
+       ],
+       [
+        "Customer",
+        "Cascade Cyclery"
+       ]
+      ],
+      "lines": [
+       [
+        "12",
+        "Riverbend R3 hybrid",
+        "360.00",
+        "4,320.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D03",
+   "display_ref": "Vendor inv N-8841",
+   "type": "source_document",
+   "date": "2026-12-02",
+   "received_seq": 3,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Vendor inv N-8841"
+       ],
+       [
+        "Vendor invoice",
+        "N-8841"
+       ],
+       [
+        "Purchase order",
+        "RB-1180"
+       ],
+       [
+        "Receiving report",
+        "RR-451"
+       ],
+       [
+        "Terms",
+        "1/15, n/30"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": [
+       [
+        "30",
+        "Helix road frameset",
+        "262.00",
+        "7,860.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Vendor inv N-8841"
+       ],
+       [
+        "Vendor invoice",
+        "N-8841"
+       ],
+       [
+        "Purchase order",
+        "RB-1180"
+       ],
+       [
+        "Receiving report",
+        "RR-451"
+       ],
+       [
+        "Terms",
+        "1/15, n/30"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": [
+       [
+        "30",
+        "Helix road frameset",
+        "262.00",
+        "7,860.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Vendor inv N-8841"
+       ],
+       [
+        "Vendor invoice",
+        "N-8841"
+       ],
+       [
+        "Purchase order",
+        "RB-1180"
+       ],
+       [
+        "Receiving report",
+        "RR-451"
+       ],
+       [
+        "Terms",
+        "1/15, n/30"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": [
+       [
+        "30",
+        "Helix road frameset",
+        "262.00",
+        "7,860.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D04",
+   "display_ref": "Remittance 4861",
+   "type": "source_document",
+   "date": "2026-12-02",
+   "received_seq": 4,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Remittance 4861"
+       ],
+       [
+        "Customer",
+        "Depot Bikes"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Remittance 4861"
+       ],
+       [
+        "Customer",
+        "Depot Bikes"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Remittance 4861"
+       ],
+       [
+        "Customer",
+        "Depot Bikes"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D05",
+   "display_ref": "Invoice 4872",
+   "type": "source_document",
+   "date": "2026-12-03",
+   "received_seq": 5,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Invoice 4872"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": [
+       [
+        "8",
+        "Cascade 29er mountain bike",
+        "640.00",
+        "5,120.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Invoice 4872"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": [
+       [
+        "8",
+        "Cascade 29er mountain bike",
+        "640.00",
+        "5,120.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Invoice 4872"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": [
+       [
+        "8",
+        "Cascade 29er mountain bike",
+        "640.00",
+        "5,120.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D06",
+   "display_ref": "Check 2202",
+   "type": "source_document",
+   "date": "2026-12-03",
+   "received_seq": 6,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Check 2202"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Check 2202"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Check 2202"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D07",
+   "display_ref": "Vendor inv CC-2290",
+   "type": "source_document",
+   "date": "2026-12-04",
+   "received_seq": 7,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Vendor inv CC-2290"
+       ],
+       [
+        "Vendor invoice",
+        "CC-2290"
+       ],
+       [
+        "Purchase order",
+        "RB-1181"
+       ],
+       [
+        "Receiving report",
+        "RR-452"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "FOB",
+        "Shipping point"
+       ],
+       [
+        "Supplier",
+        "Cassette & Chain Co."
+       ]
+      ],
+      "lines": [
+       [
+        "60",
+        "11-speed cassette",
+        "38.00",
+        "2,280.00"
+       ],
+       [
+        "40",
+        "Chain, 11-speed",
+        "14.00",
+        "560.00"
+       ],
+       [
+        "1",
+        "Freight",
+        "140.00",
+        "140.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Vendor inv CC-2290"
+       ],
+       [
+        "Vendor invoice",
+        "CC-2290"
+       ],
+       [
+        "Purchase order",
+        "RB-1181"
+       ],
+       [
+        "Receiving report",
+        "RR-452"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "FOB",
+        "Shipping point"
+       ],
+       [
+        "Supplier",
+        "Cassette & Chain Co."
+       ]
+      ],
+      "lines": [
+       [
+        "60",
+        "11-speed cassette",
+        "38.00",
+        "2,280.00"
+       ],
+       [
+        "40",
+        "Chain, 11-speed",
+        "14.00",
+        "560.00"
+       ],
+       [
+        "1",
+        "Freight",
+        "140.00",
+        "140.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Vendor inv CC-2290"
+       ],
+       [
+        "Vendor invoice",
+        "CC-2290"
+       ],
+       [
+        "Purchase order",
+        "RB-1181"
+       ],
+       [
+        "Receiving report",
+        "RR-452"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "FOB",
+        "Shipping point"
+       ],
+       [
+        "Supplier",
+        "Cassette & Chain Co."
+       ]
+      ],
+      "lines": [
+       [
+        "60",
+        "11-speed cassette",
+        "38.00",
+        "2,280.00"
+       ],
+       [
+        "40",
+        "Chain, 11-speed",
+        "14.00",
+        "560.00"
+       ],
+       [
+        "1",
+        "Freight",
+        "140.00",
+        "140.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D08",
+   "display_ref": "Remittance 4865",
+   "type": "source_document",
+   "date": "2026-12-05",
+   "received_seq": 8,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Remittance 4865"
+       ],
+       [
+        "Customer",
+        "Kingman Cycle Works"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Remittance 4865"
+       ],
+       [
+        "Customer",
+        "Kingman Cycle Works"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Remittance 4865"
+       ],
+       [
+        "Customer",
+        "Kingman Cycle Works"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D09",
+   "display_ref": "Invoice 4873",
+   "type": "source_document",
+   "date": "2026-12-05",
+   "received_seq": 9,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Invoice 4873"
+       ],
+       [
+        "Customer",
+        "Pedal & Post"
+       ]
+      ],
+      "lines": [
+       [
+        "6",
+        "Riverbend R3 hybrid",
+        "340.00",
+        "2,040.00"
+       ],
+       [
+        "10",
+        "Alloy wheelset, pair",
+        "158.00",
+        "1,580.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Invoice 4873"
+       ],
+       [
+        "Customer",
+        "Pedal & Post"
+       ]
+      ],
+      "lines": [
+       [
+        "6",
+        "Riverbend R3 hybrid",
+        "350.00",
+        "2,100.00"
+       ],
+       [
+        "10",
+        "Alloy wheelset, pair",
+        "158.00",
+        "1,580.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Invoice 4873"
+       ],
+       [
+        "Customer",
+        "Pedal & Post"
+       ]
+      ],
+      "lines": [
+       [
+        "6",
+        "Riverbend R3 hybrid",
+        "360.00",
+        "2,160.00"
+       ],
+       [
+        "10",
+        "Alloy wheelset, pair",
+        "158.00",
+        "1,580.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D10",
+   "display_ref": "Check 2203",
+   "type": "source_document",
+   "date": "2026-12-08",
+   "received_seq": 10,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Check 2203"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Check 2203"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Check 2203"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D11",
+   "display_ref": "Invoice 4874",
+   "type": "source_document",
+   "date": "2026-12-08",
+   "received_seq": 11,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Invoice 4874"
+       ],
+       [
+        "Customer",
+        "Summit Wheelworks"
+       ]
+      ],
+      "lines": [
+       [
+        "15",
+        "Hydraulic disc brake set",
+        "145.00",
+        "2,175.00"
+       ],
+       [
+        "20",
+        "Commuter tire, pair",
+        "54.00",
+        "1,080.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Invoice 4874"
+       ],
+       [
+        "Customer",
+        "Summit Wheelworks"
+       ]
+      ],
+      "lines": [
+       [
+        "15",
+        "Hydraulic disc brake set",
+        "145.00",
+        "2,175.00"
+       ],
+       [
+        "20",
+        "Commuter tire, pair",
+        "54.00",
+        "1,080.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Invoice 4874"
+       ],
+       [
+        "Customer",
+        "Summit Wheelworks"
+       ]
+      ],
+      "lines": [
+       [
+        "15",
+        "Hydraulic disc brake set",
+        "145.00",
+        "2,175.00"
+       ],
+       [
+        "20",
+        "Commuter tire, pair",
+        "54.00",
+        "1,080.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D12",
+   "display_ref": "Cash register tape",
+   "type": "source_document",
+   "date": "2026-12-08",
+   "received_seq": 12,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "4",
+        "Rear rack with panniers",
+        "78.00",
+        "312.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "4",
+        "Rear rack with panniers",
+        "78.00",
+        "312.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 8"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "4",
+        "Rear rack with panniers",
+        "78.00",
+        "312.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D13",
+   "display_ref": "Vendor inv H-5512",
+   "type": "source_document",
+   "date": "2026-12-09",
+   "received_seq": 13,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Vendor inv H-5512"
+       ],
+       [
+        "Vendor invoice",
+        "H-5512"
+       ],
+       [
+        "Purchase order",
+        "RB-1182"
+       ],
+       [
+        "Receiving report",
+        "RR-454"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Halcyon Components"
+       ]
+      ],
+      "lines": [
+       [
+        "18",
+        "Hydraulic disc brake set",
+        "88.00",
+        "1,584.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Vendor inv H-5512"
+       ],
+       [
+        "Vendor invoice",
+        "H-5512"
+       ],
+       [
+        "Purchase order",
+        "RB-1182"
+       ],
+       [
+        "Receiving report",
+        "RR-454"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Halcyon Components"
+       ]
+      ],
+      "lines": [
+       [
+        "18",
+        "Hydraulic disc brake set",
+        "88.00",
+        "1,584.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Vendor inv H-5512"
+       ],
+       [
+        "Vendor invoice",
+        "H-5512"
+       ],
+       [
+        "Purchase order",
+        "RB-1182"
+       ],
+       [
+        "Receiving report",
+        "RR-454"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Halcyon Components"
+       ]
+      ],
+      "lines": [
+       [
+        "18",
+        "Hydraulic disc brake set",
+        "88.00",
+        "1,584.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D14",
+   "display_ref": "Remittance 4871",
+   "type": "source_document",
+   "date": "2026-12-09",
+   "received_seq": 14,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Remittance 4871"
+       ],
+       [
+        "Customer",
+        "Cascade Cyclery"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Remittance 4871"
+       ],
+       [
+        "Customer",
+        "Cascade Cyclery"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Remittance 4871"
+       ],
+       [
+        "Customer",
+        "Cascade Cyclery"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D15",
+   "display_ref": "Cash register tape",
+   "type": "source_document",
+   "date": "2026-12-09",
+   "received_seq": 15,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "6",
+        "11-speed cassette",
+        "62.00",
+        "372.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "6",
+        "11-speed cassette",
+        "62.00",
+        "372.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 9"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "6",
+        "11-speed cassette",
+        "62.00",
+        "372.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D16",
+   "display_ref": "Credit memo CM-118",
+   "type": "source_document",
+   "date": "2026-12-10",
+   "received_seq": 16,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 10"
+       ],
+       [
+        "Document",
+        "Credit memo CM-118"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 10"
+       ],
+       [
+        "Document",
+        "Credit memo CM-118"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 10"
+       ],
+       [
+        "Document",
+        "Credit memo CM-118"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D17",
+   "display_ref": "Check 2204",
+   "type": "source_document",
+   "date": "2026-12-10",
+   "received_seq": 17,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 10"
+       ],
+       [
+        "Document",
+        "Check 2204"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 10"
+       ],
+       [
+        "Document",
+        "Check 2204"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 10"
+       ],
+       [
+        "Document",
+        "Check 2204"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D18",
+   "display_ref": "Check 2205",
+   "type": "source_document",
+   "date": "2026-12-11",
+   "received_seq": 18,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 11"
+       ],
+       [
+        "Document",
+        "Check 2205"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 11"
+       ],
+       [
+        "Document",
+        "Check 2205"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 11"
+       ],
+       [
+        "Document",
+        "Check 2205"
+       ],
+       [
+        "Supplier",
+        "Norsk Frame Works"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D19",
+   "display_ref": "Invoice 4875",
+   "type": "source_document",
+   "date": "2026-12-12",
+   "received_seq": 19,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Invoice 4875"
+       ],
+       [
+        "Customer",
+        "Depot Bikes"
+       ]
+      ],
+      "lines": [
+       [
+        "9",
+        "Riverbend R3 hybrid",
+        "340.00",
+        "3,060.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Invoice 4875"
+       ],
+       [
+        "Customer",
+        "Depot Bikes"
+       ]
+      ],
+      "lines": [
+       [
+        "9",
+        "Riverbend R3 hybrid",
+        "350.00",
+        "3,150.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Invoice 4875"
+       ],
+       [
+        "Customer",
+        "Depot Bikes"
+       ]
+      ],
+      "lines": [
+       [
+        "9",
+        "Riverbend R3 hybrid",
+        "360.00",
+        "3,240.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D20",
+   "display_ref": "Remittance 4867",
+   "type": "source_document",
+   "date": "2026-12-12",
+   "received_seq": 20,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Remittance 4867"
+       ],
+       [
+        "Customer",
+        "Summit Wheelworks"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Remittance 4867"
+       ],
+       [
+        "Customer",
+        "Summit Wheelworks"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Remittance 4867"
+       ],
+       [
+        "Customer",
+        "Summit Wheelworks"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D21",
+   "display_ref": "Cash register tape",
+   "type": "source_document",
+   "date": "2026-12-12",
+   "received_seq": 21,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "3",
+        "Chain, 11-speed",
+        "24.00",
+        "72.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "3",
+        "Chain, 11-speed",
+        "24.00",
+        "72.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 12"
+       ],
+       [
+        "Document",
+        "Cash register tape"
+       ]
+      ],
+      "lines": [
+       [
+        "3",
+        "Chain, 11-speed",
+        "24.00",
+        "72.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D22",
+   "display_ref": "Vendor inv B-3307 / RR-455",
+   "type": "source_document",
+   "date": "2026-12-14",
+   "received_seq": 22,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 14"
+       ],
+       [
+        "Document",
+        "Vendor inv B-3307 / RR-455"
+       ],
+       [
+        "Vendor invoice",
+        "B-3307"
+       ],
+       [
+        "Purchase order",
+        "RB-1183"
+       ],
+       [
+        "Receiving report",
+        "RR-455"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Quantity billed",
+        "40"
+       ],
+       [
+        "Quantity received",
+        "38"
+       ],
+       [
+        "Supplier",
+        "Brightline Accessories"
+       ]
+      ],
+      "lines": [
+       [
+        "40",
+        "Rear rack with panniers",
+        "46.00",
+        "1,840.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 14"
+       ],
+       [
+        "Document",
+        "Vendor inv B-3307 / RR-455"
+       ],
+       [
+        "Vendor invoice",
+        "B-3307"
+       ],
+       [
+        "Purchase order",
+        "RB-1183"
+       ],
+       [
+        "Receiving report",
+        "RR-455"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Quantity billed",
+        "44"
+       ],
+       [
+        "Quantity received",
+        "42"
+       ],
+       [
+        "Supplier",
+        "Brightline Accessories"
+       ]
+      ],
+      "lines": [
+       [
+        "44",
+        "Rear rack with panniers",
+        "46.00",
+        "2,024.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 14"
+       ],
+       [
+        "Document",
+        "Vendor inv B-3307 / RR-455"
+       ],
+       [
+        "Vendor invoice",
+        "B-3307"
+       ],
+       [
+        "Purchase order",
+        "RB-1183"
+       ],
+       [
+        "Receiving report",
+        "RR-455"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Quantity billed",
+        "48"
+       ],
+       [
+        "Quantity received",
+        "46"
+       ],
+       [
+        "Supplier",
+        "Brightline Accessories"
+       ]
+      ],
+      "lines": [
+       [
+        "48",
+        "Rear rack with panniers",
+        "46.00",
+        "2,208.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D23",
+   "display_ref": "Remittance 4872",
+   "type": "source_document",
+   "date": "2026-12-15",
+   "received_seq": 23,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Remittance 4872"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Remittance 4872"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Remittance 4872"
+       ],
+       [
+        "Customer",
+        "Trailhead Sports"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D24",
+   "display_ref": "Check 2206 / payroll register",
+   "type": "source_document",
+   "date": "2026-12-15",
+   "received_seq": 24,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2206 / payroll register"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2206 / payroll register"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2206 / payroll register"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D25",
+   "display_ref": "Payroll register",
+   "type": "source_document",
+   "date": "2026-12-15",
+   "received_seq": 25,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Payroll register"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Payroll register"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Payroll register"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D26",
+   "display_ref": "Check 2208",
+   "type": "source_document",
+   "date": "2026-12-15",
+   "received_seq": 26,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2208"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2208"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2208"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D27",
+   "display_ref": "Check 2209",
+   "type": "source_document",
+   "date": "2026-12-15",
+   "received_seq": 27,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2209"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2209"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Check 2209"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D28",
+   "display_ref": "Vendor inv K-991",
+   "type": "source_document",
+   "date": "2026-12-15",
+   "received_seq": 28,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Vendor inv K-991"
+       ],
+       [
+        "Vendor invoice",
+        "K-991"
+       ],
+       [
+        "Purchase order",
+        "RB-1184"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Kestrel Office Supply"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "340.00",
+        "340.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Vendor inv K-991"
+       ],
+       [
+        "Vendor invoice",
+        "K-991"
+       ],
+       [
+        "Purchase order",
+        "RB-1184"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Kestrel Office Supply"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "340.00",
+        "340.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 15"
+       ],
+       [
+        "Document",
+        "Vendor inv K-991"
+       ],
+       [
+        "Vendor invoice",
+        "K-991"
+       ],
+       [
+        "Purchase order",
+        "RB-1184"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Kestrel Office Supply"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "340.00",
+        "340.00"
+       ]
+      ]
+     }
+    }
+   }
+  }
+ ],
+ "checkpoints": [
+  {
+   "key": "cp1",
+   "ordinal": 1,
+   "stage": "posted",
+   "prompt": "Accounts Receivable control balance at 15 December",
+   "measure": {
+    "account": "105"
+   }
+  },
+  {
+   "key": "cp2",
+   "ordinal": 2,
+   "stage": "posted",
+   "prompt": "Cash balance at 15 December",
+   "measure": {
+    "account": "101"
+   }
+  },
+  {
+   "key": "cp3",
+   "ordinal": 3,
+   "stage": "posted",
+   "prompt": "Accounts Payable control balance at 15 December",
+   "measure": {
+    "account": "201"
+   }
+  }
+ ],
+ "statements": [],
+ "rubric": {
+  "components": [
+   {
+    "key": "triage",
+    "points": 10
+   },
+   {
+    "key": "journal_selection",
+    "points": 20
+   },
+   {
+    "key": "entry_accuracy",
+    "points": 40
+   },
+   {
+    "key": "posting_completeness",
+    "points": 20
+   },
+   {
+    "key": "subsidiary_agreement",
+    "points": 10
+   }
+  ]
+ },
+ "answers": {
+  "A": {
+   "triage": {
+    "D01": true,
+    "D02": true,
+    "D03": true,
+    "D04": true,
+    "D05": true,
+    "D06": true,
+    "D07": true,
+    "D08": true,
+    "D09": true,
+    "D10": true,
+    "D11": true,
+    "D12": true,
+    "D13": true,
+    "D14": true,
+    "D15": true,
+    "D16": true,
+    "D17": true,
+    "D18": true,
+    "D19": true,
+    "D20": true,
+    "D21": true,
+    "D22": true,
+    "D23": true,
+    "D24": true,
+    "D25": true,
+    "D26": true,
+    "D27": true,
+    "D28": true
+   },
+   "designated_journal_documents": {
+    "D01": "cash_payments",
+    "D02": "sales",
+    "D03": "purchases",
+    "D04": "cash_receipts",
+    "D05": "sales",
+    "D06": "cash_payments",
+    "D07": "purchases",
+    "D08": "cash_receipts",
+    "D09": "sales",
+    "D10": "cash_payments",
+    "D11": "sales",
+    "D12": "cash_receipts",
+    "D13": "purchases",
+    "D14": "cash_receipts",
+    "D15": "cash_receipts",
+    "D16": "general",
+    "D17": "cash_payments",
+    "D18": "cash_payments",
+    "D19": "sales",
+    "D20": "cash_receipts",
+    "D21": "cash_receipts",
+    "D22": "purchases",
+    "D23": "cash_receipts",
+    "D24": "cash_payments",
+    "D25": "general",
+    "D26": "cash_payments",
+    "D27": "cash_payments",
+    "D28": "purchases"
+   },
+   "expected_entries": [
+    {
+     "document": "D01",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "514",
+       "debit": 300000
+      },
+      {
+       "account": "101",
+       "credit": 300000
+      }
+     ]
+    },
+    {
+     "document": "D02",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 408000,
+       "party": "C-101"
+      },
+      {
+       "account": "401",
+       "credit": 408000
+      },
+      {
+       "account": "501",
+       "debit": 261600
+      },
+      {
+       "account": "110",
+       "credit": 261600
+      }
+     ]
+    },
+    {
+     "document": "D03",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 786000
+      },
+      {
+       "account": "201",
+       "credit": 786000,
+       "party": "V-201"
+      }
+     ]
+    },
+    {
+     "document": "D04",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 618000
+      },
+      {
+       "account": "105",
+       "credit": 618000,
+       "party": "C-102"
+      }
+     ]
+    },
+    {
+     "document": "D05",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 512000,
+       "party": "C-103"
+      },
+      {
+       "account": "401",
+       "credit": 512000
+      },
+      {
+       "account": "501",
+       "debit": 316000
+      },
+      {
+       "account": "110",
+       "credit": 316000
+      }
+     ]
+    },
+    {
+     "document": "D06",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "522",
+       "debit": 42000
+      },
+      {
+       "account": "101",
+       "credit": 42000
+      }
+     ]
+    },
+    {
+     "document": "D07",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 298000
+      },
+      {
+       "account": "201",
+       "credit": 298000,
+       "party": "V-202"
+      }
+     ]
+    },
+    {
+     "document": "D08",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 725000
+      },
+      {
+       "account": "105",
+       "credit": 725000,
+       "party": "C-104"
+      }
+     ]
+    },
+    {
+     "document": "D09",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 362000,
+       "party": "C-105"
+      },
+      {
+       "account": "401",
+       "credit": 362000
+      },
+      {
+       "account": "501",
+       "debit": 225800
+      },
+      {
+       "account": "110",
+       "credit": 225800
+      }
+     ]
+    },
+    {
+     "document": "D10",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 1240000,
+       "party": "V-201"
+      },
+      {
+       "account": "101",
+       "credit": 1240000
+      }
+     ]
+    },
+    {
+     "document": "D11",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 325500,
+       "party": "C-106"
+      },
+      {
+       "account": "401",
+       "credit": 325500
+      },
+      {
+       "account": "501",
+       "debit": 196000
+      },
+      {
+       "account": "110",
+       "credit": 196000
+      }
+     ]
+    },
+    {
+     "document": "D12",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 31200
+      },
+      {
+       "account": "401",
+       "credit": 31200
+      },
+      {
+       "account": "501",
+       "debit": 18400
+      },
+      {
+       "account": "110",
+       "credit": 18400
+      }
+     ]
+    },
+    {
+     "document": "D13",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 158400
+      },
+      {
+       "account": "201",
+       "credit": 158400,
+       "party": "V-203"
+      }
+     ]
+    },
+    {
+     "document": "D14",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 399840
+      },
+      {
+       "account": "403",
+       "debit": 8160
+      },
+      {
+       "account": "105",
+       "credit": 408000,
+       "party": "C-101"
+      }
+     ]
+    },
+    {
+     "document": "D15",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 37200
+      },
+      {
+       "account": "401",
+       "credit": 37200
+      },
+      {
+       "account": "501",
+       "debit": 22800
+      },
+      {
+       "account": "110",
+       "credit": 22800
+      }
+     ]
+    },
+    {
+     "document": "D16",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "402",
+       "debit": 64000
+      },
+      {
+       "account": "105",
+       "credit": 64000,
+       "party": "C-103"
+      },
+      {
+       "account": "110",
+       "debit": 39500
+      },
+      {
+       "account": "501",
+       "credit": 39500
+      }
+     ]
+    },
+    {
+     "document": "D17",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "515",
+       "debit": 185000
+      },
+      {
+       "account": "101",
+       "credit": 185000
+      }
+     ]
+    },
+    {
+     "document": "D18",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 786000,
+       "party": "V-201"
+      },
+      {
+       "account": "110",
+       "credit": 7860
+      },
+      {
+       "account": "101",
+       "credit": 778140
+      }
+     ]
+    },
+    {
+     "document": "D19",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 306000,
+       "party": "C-102"
+      },
+      {
+       "account": "401",
+       "credit": 306000
+      },
+      {
+       "account": "501",
+       "debit": 196200
+      },
+      {
+       "account": "110",
+       "credit": 196200
+      }
+     ]
+    },
+    {
+     "document": "D20",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 690000
+      },
+      {
+       "account": "105",
+       "credit": 690000,
+       "party": "C-106"
+      }
+     ]
+    },
+    {
+     "document": "D21",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 7200
+      },
+      {
+       "account": "401",
+       "credit": 7200
+      },
+      {
+       "account": "501",
+       "debit": 4200
+      },
+      {
+       "account": "110",
+       "credit": 4200
+      }
+     ]
+    },
+    {
+     "document": "D22",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 174800
+      },
+      {
+       "account": "201",
+       "credit": 174800,
+       "party": "V-204"
+      }
+     ]
+    },
+    {
+     "document": "D23",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 439040
+      },
+      {
+       "account": "105",
+       "credit": 439040,
+       "party": "C-103"
+      }
+     ]
+    },
+    {
+     "document": "D24",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "511",
+       "debit": 440000
+      },
+      {
+       "account": "512",
+       "debit": 240000
+      },
+      {
+       "account": "204",
+       "credit": 52020
+      },
+      {
+       "account": "205",
+       "credit": 74800
+      },
+      {
+       "account": "206",
+       "credit": 22400
+      },
+      {
+       "account": "101",
+       "credit": 530780
+      }
+     ]
+    },
+    {
+     "document": "D25",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "513",
+       "debit": 52020
+      },
+      {
+       "account": "204",
+       "credit": 52020
+      }
+     ]
+    },
+    {
+     "document": "D26",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "204",
+       "debit": 143000
+      },
+      {
+       "account": "205",
+       "debit": 218000
+      },
+      {
+       "account": "206",
+       "debit": 64000
+      },
+      {
+       "account": "101",
+       "credit": 425000
+      }
+     ]
+    },
+    {
+     "document": "D27",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "516",
+       "debit": 19000
+      },
+      {
+       "account": "115",
+       "debit": 27500
+      },
+      {
+       "account": "515",
+       "debit": 15500
+      },
+      {
+       "account": "101",
+       "credit": 62000
+      }
+     ]
+    },
+    {
+     "document": "D28",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 34000
+      },
+      {
+       "account": "201",
+       "credit": 34000,
+       "party": "V-206"
+      }
+     ]
+    }
+   ],
+   "adjustments": [],
+   "error_signatures": [
+    {
+     "key": "freight",
+     "label": "Freight on an FOB shipping point purchase charged to Delivery Expense",
+     "detect": {
+      "type": "entry_line",
+      "document": "D07",
+      "account": "516",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "receiving",
+     "label": "Recorded the quantity billed rather than the quantity received",
+     "detect": {
+      "type": "entry_amount",
+      "document": "D22",
+      "account": "110",
+      "side": "debit",
+      "amount": 184000
+     }
+    },
+    {
+     "key": "shortpay",
+     "label": "Treated an unearned 2% deduction as a sales discount",
+     "detect": {
+      "type": "entry_line",
+      "document": "D23",
+      "account": "403",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "purchdisc",
+     "label": "Credited a revenue account for a purchase discount",
+     "detect": {
+      "type": "entry_line",
+      "document": "D18",
+      "account": "401",
+      "side": "credit"
+     }
+    },
+    {
+     "key": "earlydisc",
+     "label": "Allowed a discount on an invoice already past its discount period",
+     "detect": {
+      "type": "entry_line",
+      "document": "D04",
+      "account": "403",
+      "side": "debit"
+     }
+    }
+   ]
+  },
+  "B": {
+   "triage": {
+    "D01": true,
+    "D02": true,
+    "D03": true,
+    "D04": true,
+    "D05": true,
+    "D06": true,
+    "D07": true,
+    "D08": true,
+    "D09": true,
+    "D10": true,
+    "D11": true,
+    "D12": true,
+    "D13": true,
+    "D14": true,
+    "D15": true,
+    "D16": true,
+    "D17": true,
+    "D18": true,
+    "D19": true,
+    "D20": true,
+    "D21": true,
+    "D22": true,
+    "D23": true,
+    "D24": true,
+    "D25": true,
+    "D26": true,
+    "D27": true,
+    "D28": true
+   },
+   "designated_journal_documents": {
+    "D01": "cash_payments",
+    "D02": "sales",
+    "D03": "purchases",
+    "D04": "cash_receipts",
+    "D05": "sales",
+    "D06": "cash_payments",
+    "D07": "purchases",
+    "D08": "cash_receipts",
+    "D09": "sales",
+    "D10": "cash_payments",
+    "D11": "sales",
+    "D12": "cash_receipts",
+    "D13": "purchases",
+    "D14": "cash_receipts",
+    "D15": "cash_receipts",
+    "D16": "general",
+    "D17": "cash_payments",
+    "D18": "cash_payments",
+    "D19": "sales",
+    "D20": "cash_receipts",
+    "D21": "cash_receipts",
+    "D22": "purchases",
+    "D23": "cash_receipts",
+    "D24": "cash_payments",
+    "D25": "general",
+    "D26": "cash_payments",
+    "D27": "cash_payments",
+    "D28": "purchases"
+   },
+   "expected_entries": [
+    {
+     "document": "D01",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "514",
+       "debit": 300000
+      },
+      {
+       "account": "101",
+       "credit": 300000
+      }
+     ]
+    },
+    {
+     "document": "D02",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 420000,
+       "party": "C-101"
+      },
+      {
+       "account": "401",
+       "credit": 420000
+      },
+      {
+       "account": "501",
+       "debit": 261600
+      },
+      {
+       "account": "110",
+       "credit": 261600
+      }
+     ]
+    },
+    {
+     "document": "D03",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 786000
+      },
+      {
+       "account": "201",
+       "credit": 786000,
+       "party": "V-201"
+      }
+     ]
+    },
+    {
+     "document": "D04",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 618000
+      },
+      {
+       "account": "105",
+       "credit": 618000,
+       "party": "C-102"
+      }
+     ]
+    },
+    {
+     "document": "D05",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 512000,
+       "party": "C-103"
+      },
+      {
+       "account": "401",
+       "credit": 512000
+      },
+      {
+       "account": "501",
+       "debit": 316000
+      },
+      {
+       "account": "110",
+       "credit": 316000
+      }
+     ]
+    },
+    {
+     "document": "D06",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "522",
+       "debit": 42000
+      },
+      {
+       "account": "101",
+       "credit": 42000
+      }
+     ]
+    },
+    {
+     "document": "D07",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 298000
+      },
+      {
+       "account": "201",
+       "credit": 298000,
+       "party": "V-202"
+      }
+     ]
+    },
+    {
+     "document": "D08",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 725000
+      },
+      {
+       "account": "105",
+       "credit": 725000,
+       "party": "C-104"
+      }
+     ]
+    },
+    {
+     "document": "D09",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 368000,
+       "party": "C-105"
+      },
+      {
+       "account": "401",
+       "credit": 368000
+      },
+      {
+       "account": "501",
+       "debit": 225800
+      },
+      {
+       "account": "110",
+       "credit": 225800
+      }
+     ]
+    },
+    {
+     "document": "D10",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 1240000,
+       "party": "V-201"
+      },
+      {
+       "account": "101",
+       "credit": 1240000
+      }
+     ]
+    },
+    {
+     "document": "D11",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 325500,
+       "party": "C-106"
+      },
+      {
+       "account": "401",
+       "credit": 325500
+      },
+      {
+       "account": "501",
+       "debit": 196000
+      },
+      {
+       "account": "110",
+       "credit": 196000
+      }
+     ]
+    },
+    {
+     "document": "D12",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 31200
+      },
+      {
+       "account": "401",
+       "credit": 31200
+      },
+      {
+       "account": "501",
+       "debit": 18400
+      },
+      {
+       "account": "110",
+       "credit": 18400
+      }
+     ]
+    },
+    {
+     "document": "D13",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 158400
+      },
+      {
+       "account": "201",
+       "credit": 158400,
+       "party": "V-203"
+      }
+     ]
+    },
+    {
+     "document": "D14",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 411600
+      },
+      {
+       "account": "403",
+       "debit": 8400
+      },
+      {
+       "account": "105",
+       "credit": 420000,
+       "party": "C-101"
+      }
+     ]
+    },
+    {
+     "document": "D15",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 37200
+      },
+      {
+       "account": "401",
+       "credit": 37200
+      },
+      {
+       "account": "501",
+       "debit": 22800
+      },
+      {
+       "account": "110",
+       "credit": 22800
+      }
+     ]
+    },
+    {
+     "document": "D16",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "402",
+       "debit": 64000
+      },
+      {
+       "account": "105",
+       "credit": 64000,
+       "party": "C-103"
+      },
+      {
+       "account": "110",
+       "debit": 39500
+      },
+      {
+       "account": "501",
+       "credit": 39500
+      }
+     ]
+    },
+    {
+     "document": "D17",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "515",
+       "debit": 185000
+      },
+      {
+       "account": "101",
+       "credit": 185000
+      }
+     ]
+    },
+    {
+     "document": "D18",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 786000,
+       "party": "V-201"
+      },
+      {
+       "account": "110",
+       "credit": 7860
+      },
+      {
+       "account": "101",
+       "credit": 778140
+      }
+     ]
+    },
+    {
+     "document": "D19",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 315000,
+       "party": "C-102"
+      },
+      {
+       "account": "401",
+       "credit": 315000
+      },
+      {
+       "account": "501",
+       "debit": 196200
+      },
+      {
+       "account": "110",
+       "credit": 196200
+      }
+     ]
+    },
+    {
+     "document": "D20",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 690000
+      },
+      {
+       "account": "105",
+       "credit": 690000,
+       "party": "C-106"
+      }
+     ]
+    },
+    {
+     "document": "D21",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 7200
+      },
+      {
+       "account": "401",
+       "credit": 7200
+      },
+      {
+       "account": "501",
+       "debit": 4200
+      },
+      {
+       "account": "110",
+       "credit": 4200
+      }
+     ]
+    },
+    {
+     "document": "D22",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 193200
+      },
+      {
+       "account": "201",
+       "credit": 193200,
+       "party": "V-204"
+      }
+     ]
+    },
+    {
+     "document": "D23",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 439040
+      },
+      {
+       "account": "105",
+       "credit": 439040,
+       "party": "C-103"
+      }
+     ]
+    },
+    {
+     "document": "D24",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "511",
+       "debit": 440000
+      },
+      {
+       "account": "512",
+       "debit": 240000
+      },
+      {
+       "account": "204",
+       "credit": 52020
+      },
+      {
+       "account": "205",
+       "credit": 74800
+      },
+      {
+       "account": "206",
+       "credit": 22400
+      },
+      {
+       "account": "101",
+       "credit": 530780
+      }
+     ]
+    },
+    {
+     "document": "D25",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "513",
+       "debit": 52020
+      },
+      {
+       "account": "204",
+       "credit": 52020
+      }
+     ]
+    },
+    {
+     "document": "D26",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "204",
+       "debit": 143000
+      },
+      {
+       "account": "205",
+       "debit": 218000
+      },
+      {
+       "account": "206",
+       "debit": 64000
+      },
+      {
+       "account": "101",
+       "credit": 425000
+      }
+     ]
+    },
+    {
+     "document": "D27",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "516",
+       "debit": 19000
+      },
+      {
+       "account": "115",
+       "debit": 27500
+      },
+      {
+       "account": "515",
+       "debit": 15500
+      },
+      {
+       "account": "101",
+       "credit": 62000
+      }
+     ]
+    },
+    {
+     "document": "D28",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 34000
+      },
+      {
+       "account": "201",
+       "credit": 34000,
+       "party": "V-206"
+      }
+     ]
+    }
+   ],
+   "adjustments": [],
+   "error_signatures": [
+    {
+     "key": "freight",
+     "label": "Freight on an FOB shipping point purchase charged to Delivery Expense",
+     "detect": {
+      "type": "entry_line",
+      "document": "D07",
+      "account": "516",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "receiving",
+     "label": "Recorded the quantity billed rather than the quantity received",
+     "detect": {
+      "type": "entry_amount",
+      "document": "D22",
+      "account": "110",
+      "side": "debit",
+      "amount": 202400
+     }
+    },
+    {
+     "key": "shortpay",
+     "label": "Treated an unearned 2% deduction as a sales discount",
+     "detect": {
+      "type": "entry_line",
+      "document": "D23",
+      "account": "403",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "purchdisc",
+     "label": "Credited a revenue account for a purchase discount",
+     "detect": {
+      "type": "entry_line",
+      "document": "D18",
+      "account": "401",
+      "side": "credit"
+     }
+    },
+    {
+     "key": "earlydisc",
+     "label": "Allowed a discount on an invoice already past its discount period",
+     "detect": {
+      "type": "entry_line",
+      "document": "D04",
+      "account": "403",
+      "side": "debit"
+     }
+    }
+   ]
+  },
+  "C": {
+   "triage": {
+    "D01": true,
+    "D02": true,
+    "D03": true,
+    "D04": true,
+    "D05": true,
+    "D06": true,
+    "D07": true,
+    "D08": true,
+    "D09": true,
+    "D10": true,
+    "D11": true,
+    "D12": true,
+    "D13": true,
+    "D14": true,
+    "D15": true,
+    "D16": true,
+    "D17": true,
+    "D18": true,
+    "D19": true,
+    "D20": true,
+    "D21": true,
+    "D22": true,
+    "D23": true,
+    "D24": true,
+    "D25": true,
+    "D26": true,
+    "D27": true,
+    "D28": true
+   },
+   "designated_journal_documents": {
+    "D01": "cash_payments",
+    "D02": "sales",
+    "D03": "purchases",
+    "D04": "cash_receipts",
+    "D05": "sales",
+    "D06": "cash_payments",
+    "D07": "purchases",
+    "D08": "cash_receipts",
+    "D09": "sales",
+    "D10": "cash_payments",
+    "D11": "sales",
+    "D12": "cash_receipts",
+    "D13": "purchases",
+    "D14": "cash_receipts",
+    "D15": "cash_receipts",
+    "D16": "general",
+    "D17": "cash_payments",
+    "D18": "cash_payments",
+    "D19": "sales",
+    "D20": "cash_receipts",
+    "D21": "cash_receipts",
+    "D22": "purchases",
+    "D23": "cash_receipts",
+    "D24": "cash_payments",
+    "D25": "general",
+    "D26": "cash_payments",
+    "D27": "cash_payments",
+    "D28": "purchases"
+   },
+   "expected_entries": [
+    {
+     "document": "D01",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "514",
+       "debit": 300000
+      },
+      {
+       "account": "101",
+       "credit": 300000
+      }
+     ]
+    },
+    {
+     "document": "D02",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 432000,
+       "party": "C-101"
+      },
+      {
+       "account": "401",
+       "credit": 432000
+      },
+      {
+       "account": "501",
+       "debit": 261600
+      },
+      {
+       "account": "110",
+       "credit": 261600
+      }
+     ]
+    },
+    {
+     "document": "D03",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 786000
+      },
+      {
+       "account": "201",
+       "credit": 786000,
+       "party": "V-201"
+      }
+     ]
+    },
+    {
+     "document": "D04",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 618000
+      },
+      {
+       "account": "105",
+       "credit": 618000,
+       "party": "C-102"
+      }
+     ]
+    },
+    {
+     "document": "D05",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 512000,
+       "party": "C-103"
+      },
+      {
+       "account": "401",
+       "credit": 512000
+      },
+      {
+       "account": "501",
+       "debit": 316000
+      },
+      {
+       "account": "110",
+       "credit": 316000
+      }
+     ]
+    },
+    {
+     "document": "D06",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "522",
+       "debit": 42000
+      },
+      {
+       "account": "101",
+       "credit": 42000
+      }
+     ]
+    },
+    {
+     "document": "D07",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 298000
+      },
+      {
+       "account": "201",
+       "credit": 298000,
+       "party": "V-202"
+      }
+     ]
+    },
+    {
+     "document": "D08",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 725000
+      },
+      {
+       "account": "105",
+       "credit": 725000,
+       "party": "C-104"
+      }
+     ]
+    },
+    {
+     "document": "D09",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 374000,
+       "party": "C-105"
+      },
+      {
+       "account": "401",
+       "credit": 374000
+      },
+      {
+       "account": "501",
+       "debit": 225800
+      },
+      {
+       "account": "110",
+       "credit": 225800
+      }
+     ]
+    },
+    {
+     "document": "D10",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 1240000,
+       "party": "V-201"
+      },
+      {
+       "account": "101",
+       "credit": 1240000
+      }
+     ]
+    },
+    {
+     "document": "D11",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 325500,
+       "party": "C-106"
+      },
+      {
+       "account": "401",
+       "credit": 325500
+      },
+      {
+       "account": "501",
+       "debit": 196000
+      },
+      {
+       "account": "110",
+       "credit": 196000
+      }
+     ]
+    },
+    {
+     "document": "D12",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 31200
+      },
+      {
+       "account": "401",
+       "credit": 31200
+      },
+      {
+       "account": "501",
+       "debit": 18400
+      },
+      {
+       "account": "110",
+       "credit": 18400
+      }
+     ]
+    },
+    {
+     "document": "D13",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 158400
+      },
+      {
+       "account": "201",
+       "credit": 158400,
+       "party": "V-203"
+      }
+     ]
+    },
+    {
+     "document": "D14",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 423360
+      },
+      {
+       "account": "403",
+       "debit": 8640
+      },
+      {
+       "account": "105",
+       "credit": 432000,
+       "party": "C-101"
+      }
+     ]
+    },
+    {
+     "document": "D15",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 37200
+      },
+      {
+       "account": "401",
+       "credit": 37200
+      },
+      {
+       "account": "501",
+       "debit": 22800
+      },
+      {
+       "account": "110",
+       "credit": 22800
+      }
+     ]
+    },
+    {
+     "document": "D16",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "402",
+       "debit": 64000
+      },
+      {
+       "account": "105",
+       "credit": 64000,
+       "party": "C-103"
+      },
+      {
+       "account": "110",
+       "debit": 39500
+      },
+      {
+       "account": "501",
+       "credit": 39500
+      }
+     ]
+    },
+    {
+     "document": "D17",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "515",
+       "debit": 185000
+      },
+      {
+       "account": "101",
+       "credit": 185000
+      }
+     ]
+    },
+    {
+     "document": "D18",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 786000,
+       "party": "V-201"
+      },
+      {
+       "account": "110",
+       "credit": 7860
+      },
+      {
+       "account": "101",
+       "credit": 778140
+      }
+     ]
+    },
+    {
+     "document": "D19",
+     "journal": "sales",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 324000,
+       "party": "C-102"
+      },
+      {
+       "account": "401",
+       "credit": 324000
+      },
+      {
+       "account": "501",
+       "debit": 196200
+      },
+      {
+       "account": "110",
+       "credit": 196200
+      }
+     ]
+    },
+    {
+     "document": "D20",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 690000
+      },
+      {
+       "account": "105",
+       "credit": 690000,
+       "party": "C-106"
+      }
+     ]
+    },
+    {
+     "document": "D21",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 7200
+      },
+      {
+       "account": "401",
+       "credit": 7200
+      },
+      {
+       "account": "501",
+       "debit": 4200
+      },
+      {
+       "account": "110",
+       "credit": 4200
+      }
+     ]
+    },
+    {
+     "document": "D22",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "110",
+       "debit": 211600
+      },
+      {
+       "account": "201",
+       "credit": 211600,
+       "party": "V-204"
+      }
+     ]
+    },
+    {
+     "document": "D23",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 439040
+      },
+      {
+       "account": "105",
+       "credit": 439040,
+       "party": "C-103"
+      }
+     ]
+    },
+    {
+     "document": "D24",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "511",
+       "debit": 440000
+      },
+      {
+       "account": "512",
+       "debit": 240000
+      },
+      {
+       "account": "204",
+       "credit": 52020
+      },
+      {
+       "account": "205",
+       "credit": 74800
+      },
+      {
+       "account": "206",
+       "credit": 22400
+      },
+      {
+       "account": "101",
+       "credit": 530780
+      }
+     ]
+    },
+    {
+     "document": "D25",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "513",
+       "debit": 52020
+      },
+      {
+       "account": "204",
+       "credit": 52020
+      }
+     ]
+    },
+    {
+     "document": "D26",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "204",
+       "debit": 143000
+      },
+      {
+       "account": "205",
+       "debit": 218000
+      },
+      {
+       "account": "206",
+       "debit": 64000
+      },
+      {
+       "account": "101",
+       "credit": 425000
+      }
+     ]
+    },
+    {
+     "document": "D27",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "516",
+       "debit": 19000
+      },
+      {
+       "account": "115",
+       "debit": 27500
+      },
+      {
+       "account": "515",
+       "debit": 15500
+      },
+      {
+       "account": "101",
+       "credit": 62000
+      }
+     ]
+    },
+    {
+     "document": "D28",
+     "journal": "purchases",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 34000
+      },
+      {
+       "account": "201",
+       "credit": 34000,
+       "party": "V-206"
+      }
+     ]
+    }
+   ],
+   "adjustments": [],
+   "error_signatures": [
+    {
+     "key": "freight",
+     "label": "Freight on an FOB shipping point purchase charged to Delivery Expense",
+     "detect": {
+      "type": "entry_line",
+      "document": "D07",
+      "account": "516",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "receiving",
+     "label": "Recorded the quantity billed rather than the quantity received",
+     "detect": {
+      "type": "entry_amount",
+      "document": "D22",
+      "account": "110",
+      "side": "debit",
+      "amount": 220800
+     }
+    },
+    {
+     "key": "shortpay",
+     "label": "Treated an unearned 2% deduction as a sales discount",
+     "detect": {
+      "type": "entry_line",
+      "document": "D23",
+      "account": "403",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "purchdisc",
+     "label": "Credited a revenue account for a purchase discount",
+     "detect": {
+      "type": "entry_line",
+      "document": "D18",
+      "account": "401",
+      "side": "credit"
+     }
+    },
+    {
+     "key": "earlydisc",
+     "label": "Allowed a discount on an invoice already past its discount period",
+     "detect": {
+      "type": "entry_line",
+      "document": "D04",
+      "account": "403",
+      "side": "debit"
+     }
+    }
+   ]
+  }
+ }
+}

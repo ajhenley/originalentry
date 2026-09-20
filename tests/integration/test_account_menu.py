@@ -154,3 +154,27 @@ def test_the_open_menu_says_who_is_signed_in(client, people):
     body = client.get("/").get_data(as_text=True)
 
     assert student.email in body
+
+
+def test_the_light_header_does_not_use_the_dark_chrome_class(client, people):
+    """`.nav-link` is white at 75% opacity, for navy chrome. On the cream public header it made
+    the whole trigger invisible: not a missing caret, a missing control."""
+    student, _, _ = people
+    client.sign_in(student)
+
+    body = client.get("/").get_data(as_text=True)
+    summary = body[body.index("<summary"):body.index("</summary>")]
+
+    assert "nav-link" not in summary
+
+
+def test_the_menu_reads_as_a_control_on_the_public_pages(client, people):
+    """Beside plain underlined links, a dropdown needs to look like something you open."""
+    student, _, _ = people
+    client.sign_in(student)
+
+    body = client.get("/").get_data(as_text=True)
+    summary = body[body.index("<summary"):body.index("</summary>")]
+
+    assert "border" in summary          # a bordered control, not another link
+    assert "text-navy" in summary       # and legible on cream

@@ -87,6 +87,27 @@
       <p class="mt-1 text-xs text-muted">Then choose a journal and enter the lines.</p>
     </form>
 
+    {# Marking the decision used to leave the student to find a journal and pick this document
+       out of a list again. Every journal is offered, because choosing between them is the work
+       and it is marked; the link only carries the document and its date. #}
+    {% if disposition and disposition.choice == 'record' and not read_only %}
+    <div class="w-full">
+      <p class="field-label">Record it in</p>
+      <ul class="mt-1 flex flex-wrap gap-2">
+        {% for j in journals %}
+        <li>
+          <a class="btn btn--outline btn--small"
+             href="{{ url_for('student.entry_new', workspace=workspace.public_id,
+                              company_slug=company.slug, key=j.key, document=doc.ref) }}">
+            {{ j.name }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    <form class="hidden">
+    </form>
+
     <form method="post" action="{{ url_for('student.disposition', workspace=workspace.public_id,
                                            company_slug=company.slug, ref=doc.ref) }}"
           class="max-w-sm">

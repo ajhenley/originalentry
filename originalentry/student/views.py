@@ -483,6 +483,9 @@ def document(ref):
         # The image is shown only in screen mode, and only when the pack brought one (S2.1/S2.2).
         has_image=bool(screen_mode and variant_doc.get("image")),
         disposition=current,
+        # Every journal, so the student still chooses: which one is marked (journal_selection).
+        journals=[{"key": j["key"], "name": j["name"]}
+                  for j in (g.pack_version.manifest or {}).get("journals", [])],
         error=None,
     )
 
@@ -745,10 +748,21 @@ def entry_new(key):
     journal_cfg = _journal_or_404(key)
     # The key the browser retries on, and the version a second tab is measured against
     # (T7.4/T7.5). A retry with the same key is one entry, not two.
-    return _render_entry_form(
-        journal_cfg, key,
-        values={"client_key": uuid4().hex, "workspace_version": g.workspace.version},
-    )
+    values = {"client_key": uuid4().hex, "workspace_version": g.workspace.version}
+
+    # Arriving from a document: bring it, and its date. The date field otherwise defaults to the
+    # start of the period, so an entry for a document dated the tenth arrived dated the first.
+    # An unknown ref is ignored rather than refused; it only ever came from a link.
+    ref = (request.args.get("document") or "").strip()
+    if ref:
+        document = db.session.execute(
+            db.select(SourceDocument).filter_by(pack_version_id=g.pack_version.id, ref=ref)
+        ).scalar_one_or_none()
+        if document is not None:
+            values["document_ref"] = document.ref
+            values["entry_date"] = document.doc_date.isoformat()
+
+    return _render_entry_form(journal_cfg, key, values=values)
 
 
 @bp.post("/w/<workspace>/<company_slug>/journals/<key>/entries/new")

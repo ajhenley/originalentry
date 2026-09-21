@@ -62,10 +62,17 @@
         <td class="figure text-right">
           {% for line in e.lines %}{% if line.credit_cents %}{{ line.credit_cents | money }}<br>{% endif %}{% endfor %}
         </td>
+        {# One line per ledger, in the same words both times. "Not posted · sub posted" said two
+           different things in two different vocabularies and left you to work out which was
+           which. #}
         <td class="text-sm">
           {% if e.voided %}Voided{% else %}
-            {{ 'Posted' if e.posted_general else 'Not posted' }}
-            {%- if e.has_party %} · {{ 'sub posted' if e.posted_subsidiary else 'sub open' }}{% endif %}
+          <span class="block">
+            General ledger: {{ 'posted' if e.posted_general else 'not posted' }}</span>
+          {% if e.has_party %}
+          <span class="block">
+            Subsidiary ledger: {{ 'posted' if e.posted_subsidiary else 'not posted' }}</span>
+          {% endif %}
           {% endif %}
         </td>
         {% if not read_only %}
@@ -86,6 +93,12 @@
               {{ csrf() }}{{ jk() }}
               <button type="submit" class="btn btn--outline btn--small">Void</button>
             </form>
+            {% else %}
+            {# Posted entries are what the ledgers were built from, so voiding one is refused
+               until its posting is reversed. The cell used to be simply empty, which reads as
+               nothing being possible rather than one thing being needed first. #}
+            <p class="text-xs text-muted">
+              Posted. Reverse its posting below before voiding it.</p>
             {% endif %}
           </div>
           {% endif %}

@@ -100,10 +100,10 @@ def test_the_reason_is_recorded_with_who_gave_it(session, section):
                       reason="Approved extended time", actor=instructor)
 
     action = session.scalars(
-        select(StaffAction).where(StaffAction.action == "set_accommodation")
+        select(StaffAction).where(StaffAction.action == "set_accommodation",
+                                  StaffAction.actor_id == instructor.id)
     ).one()
     assert action.reason == "Approved extended time"
-    assert action.actor_id == instructor.id
 
 
 def test_an_accommodation_needs_a_reason(session, section):

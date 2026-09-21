@@ -110,10 +110,10 @@ def test_an_override_changes_the_mark_and_is_recorded_as_a_staff_action(client, 
     assert triage.points == 8.0
     assert triage.reason == "Marked by hand on appeal"
     action = session.scalars(
-        select(StaffAction).where(StaffAction.action == "grade_override")
+        select(StaffAction).where(StaffAction.action == "grade_override",
+                                  StaffAction.target_id == ws.id)
     ).first()
     assert action is not None
-    assert action.target_id == ws.id
 
 
 def test_an_override_without_a_reason_is_refused(client, section, session):
@@ -156,7 +156,8 @@ def test_releasing_marks_opens_them_to_the_whole_section_once(client, section, s
     session.refresh(assignment)
     assert assignment.marks_released_at is not None
     action = session.scalars(
-        select(StaffAction).where(StaffAction.action == "release_marks")
+        select(StaffAction).where(StaffAction.action == "release_marks",
+                                  StaffAction.target_id == assignment.id)
     ).first()
     assert action is not None
 

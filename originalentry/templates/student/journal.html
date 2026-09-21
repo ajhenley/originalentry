@@ -117,12 +117,16 @@
 <h2 class="mt-6 mb-2 font-semibold">Postings</h2>
 <ul class="divide-y divide-rule rounded border border-silver">
   {% for run in runs %}
+  {% set covered = run.refs | join(', ') if run.refs else 'no entries' %}
   <li class="flex flex-wrap items-center gap-3 p-3 text-sm">
     <span class="mr-auto">
-      {{ run.target | capitalize }} posting {{ run.ordinal }}
+      {{ run.target | capitalize }} posting {{ run.ordinal }}:
+      <span class="font-medium">{{ covered }}</span>
       <span class="label-meta block">
         {{ run.entries }} {{ 'entry' if run.entries == 1 else 'entries' }} ·
         {{ run.posted_at.strftime('%-d %b %H:%M') }}
+        {%- if run.parties %} · {{ run.parties[:3] | join(', ') }}{% if run.parties | length > 3 %}
+        and {{ run.parties | length - 3 }} more{% endif %}{% endif %}
       </span>
       {% for ledger in run.ledgers %}
       <a class="text-xs underline" href="{{ ledger.href }}">{{ ledger.label }}</a>{% if not loop.last %} · {% endif %}
@@ -133,8 +137,10 @@
           workspace=workspace.public_id, company_slug=company.slug, run_id=run.public_id) }}">
       {{ csrf() }}{{ jk() }}
       <input type="text" name="reason" required placeholder="Reason to reverse"
-             class="btn btn--outline btn--small" aria-label="Reason to reverse">
-      <button type="submit" class="btn btn--outline btn--small">Reverse</button>
+             class="btn btn--outline btn--small"
+             aria-label="Reason to reverse the posting of {{ covered }}">
+      <button type="submit" class="btn btn--outline btn--small"
+              aria-label="Reverse the posting of {{ covered }}">Reverse</button>
     </form>
     {% endif %}
   </li>

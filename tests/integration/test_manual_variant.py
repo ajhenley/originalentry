@@ -101,9 +101,9 @@ def test_the_instructor_who_assigned_it_is_recorded(session, manual):
     assign_variant(session, workspace, code, actor=instructor)
 
     action = session.scalars(
-        select(StaffAction).where(StaffAction.action == "assign_variant")
+        select(StaffAction).where(StaffAction.action == "assign_variant",
+                                  StaffAction.target_id == workspace.id)
     ).one()
-    assert action.target_id == workspace.id
     assert action.detail["variant"] == code
 
 

@@ -20,7 +20,7 @@ from originalentry.packs import schema
 from originalentry.packs.importer import import_content
 from originalentry.services import workspace_write
 from originalentry.services.entries import record_entry
-from originalentry.services.posting import post_entry_subsidiary
+from originalentry.services.posting import post_entry_subsidiary, post_journal_general
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
@@ -49,11 +49,11 @@ def workspace(session, client):
     return ws, student
 
 
-def _record(session, ws, student, key="js-1"):
+def _record(session, ws, student, key="js-1", *, party="C-ONE", document="INV-1"):
     command = EntryCommand(
-        journal_key="general", kind="regular", document_ref="INV-1",
+        journal_key="general", kind="regular", document_ref=document,
         entry_date=date(2026, 12, 2), description=None,
-        lines=[LineCommand("112", "C-ONE", 120000, 0), LineCommand("401", None, 0, 120000)],
+        lines=[LineCommand("112", party, 120000, 0), LineCommand("401", None, 0, 120000)],
         client_key=key,
     )
     return workspace_write(session, ws.public_id, student, activity_kind="save",
@@ -168,3 +168,77 @@ def test_a_general_posting_links_to_the_general_ledger(client, session, workspac
     postings = body[body.index("Postings"):]
 
     assert f"/w/{ws.public_id}/testco-alpha/ledgers/general" in postings
+
+
+# ── Telling one posting from another ────────────────────────────────────────────────────
+#
+# "Subsidiary posting 1", "Subsidiary posting 2", each with a Reverse button. An ordinal is a
+# serial number, not a description: with several of them there is nothing to choose between them,
+# and reversing is destructive. A posting is a set of entries, so it should name them, using the
+# same references the table above prints.
+
+def _postings(client, ws) -> str:
+    body = client.get(f"/w/{ws.public_id}/testco-alpha/journals/general").get_data(as_text=True)
+    return re.sub(r"\s+", " ", body[body.index("Postings"):])
+
+
+def test_a_posting_names_the_entries_it_covered(client, session, workspace):
+    ws, student = workspace
+    first = _record(session, ws, student, key="js-1")
+    _record(session, ws, student, key="js-2", party="C-TWO", document="INV-2")
+    workspace_write(session, ws.public_id, student, activity_kind="post",
+                    mutate=lambda s, w: post_entry_subsidiary(s, w, first.public_id))
+    session.commit()
+    client.sign_in(student)
+
+    postings = _postings(client, ws)
+
+    assert "J1" in postings
+    assert "J2" not in postings       # the entry this posting left alone
+
+
+def test_a_posting_of_several_entries_names_them_all(client, session, workspace):
+    """Posting a journal to the general ledger takes every live entry in one run, so the run has
+    to list them rather than say "2 entries" and leave you to work out which two."""
+    ws, student = workspace
+    _record(session, ws, student, key="js-1")
+    _record(session, ws, student, key="js-2", party="C-TWO", document="INV-2")
+    workspace_write(session, ws.public_id, student, activity_kind="post",
+                    mutate=lambda s, w: post_journal_general(s, w, "general"))
+    session.commit()
+    client.sign_in(student)
+
+    postings = _postings(client, ws)
+    first_run = postings[:postings.index("</li>")]
+
+    assert "J1, J2" in first_run
+
+
+def test_a_subsidiary_posting_names_whose_accounts_it_reached(client, session, workspace):
+    """Which customer was charged is the thing a student is checking when something looks wrong
+    in the customers ledger, and it is what tells two postings apart at a glance."""
+    ws, student = workspace
+    entry = _record(session, ws, student)
+    workspace_write(session, ws.public_id, student, activity_kind="post",
+                    mutate=lambda s, w: post_entry_subsidiary(s, w, entry.public_id))
+    session.commit()
+    client.sign_in(student)
+
+    postings = _postings(client, ws)
+
+    assert "Firstborn Supply" in postings
+
+
+def test_the_reverse_button_says_which_posting_it_would_undo(client, session, workspace):
+    """Two identical "Reverse" buttons one above the other, read out by a screen reader or
+    glanced at in a hurry, are the same button twice."""
+    ws, student = workspace
+    entry = _record(session, ws, student)
+    workspace_write(session, ws.public_id, student, activity_kind="post",
+                    mutate=lambda s, w: post_entry_subsidiary(s, w, entry.public_id))
+    session.commit()
+    client.sign_in(student)
+
+    postings = _postings(client, ws)
+
+    assert 'aria-label="Reverse the posting of J1"' in postings

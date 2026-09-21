@@ -712,8 +712,10 @@ def journal(key):
             "lines": lines,
         })
     # A posting used to say only "Subsidiary posting 1", with reversing as the one thing you
-    # could do to something you could not look at. Each now carries when it happened, how much it
-    # covered, and the ledgers it reached.
+    # could do to something you could not look at. Each now carries when it happened, which
+    # entries it covered, whose accounts it reached, and the ledgers to see the result in. An
+    # ordinal is a serial number: with two postings on the page it does not say which to reverse.
+    ref_of = {e.id: (e.seq, f"{journal_cfg.get('ref_prefix', '')}{e.seq}") for e in entries}
     runs = []
     for run in db.session.scalars(
         db.select(PostingRun)
@@ -725,12 +727,15 @@ def journal(key):
             db.select(PostingRunEntry.entry_id).where(
                 PostingRunEntry.posting_run_id == run.id, PostingRunEntry.active.is_(True))
         ))
+        parties = []
         if run.target == "subsidiary":
-            kinds = sorted(set(db.session.scalars(
-                db.select(Party.kind)
+            touched = sorted(set(db.session.execute(
+                db.select(Party.kind, Party.name)
                 .join(EntryLine, EntryLine.party_id == Party.id)
                 .where(EntryLine.entry_id.in_(entry_ids))
-            ))) if entry_ids else []
+            ).all())) if entry_ids else []
+            parties = [name for _, name in touched]
+            kinds = sorted({kind for kind, _ in touched})
             ledgers = [{"label": f"{kind.capitalize()}s ledger",
                         "href": url_for("student.subsidiary", workspace=g.workspace.public_id,
                                         company_slug=g.company.slug, kind=kind)}
@@ -743,6 +748,8 @@ def journal(key):
         runs.append({
             "public_id": run.public_id, "target": run.target, "ordinal": run.ordinal,
             "posted_at": run.posted_at, "entries": len(entry_ids), "ledgers": ledgers,
+            "refs": [ref for _, ref in sorted(ref_of[eid] for eid in entry_ids if eid in ref_of)],
+            "parties": parties,
         })
     return render_template("student/journal.html", journal=journal_cfg, entries=rows, runs=runs)
 

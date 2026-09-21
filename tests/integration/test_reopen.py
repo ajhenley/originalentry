@@ -86,11 +86,13 @@ def test_reopening_is_recorded_with_its_reason(session, workspace):
 
     reopen_workspace(session, ws, reason="Pressed it by accident", actor=instructor)
 
+    # Scoped to this workspace: the suite shares a database with the running app, so an
+    # instructor reopening anything for real adds a row this query would otherwise pick up.
     action = session.scalars(
-        select(StaffAction).where(StaffAction.action == "reopen_workspace")
+        select(StaffAction).where(StaffAction.action == "reopen_workspace",
+                                  StaffAction.target_id == ws.id)
     ).one()
     assert action.reason == "Pressed it by accident"
-    assert action.target_id == ws.id
 
 
 def test_reopening_needs_a_reason(session, workspace):

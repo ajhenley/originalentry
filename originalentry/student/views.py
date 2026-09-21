@@ -61,6 +61,7 @@ from ..services.entries import record_entry, void_entry
 from ..services.grades import final_marks
 from ..services.posting import (
     active_posted_entry_ids,
+    outstanding_postings,
     post_entry_subsidiary,
     post_journal_general,
     post_journal_subsidiary_all,
@@ -1159,12 +1160,24 @@ def submit():
         )
     ).scalar_one()
     started = statement_counts(db.session, g.workspace)
+    # Recording is not the last step, and the page used to behave as though it were: it counted
+    # documents, entries and statements, told the student to check they had "recorded and
+    # posted", and never counted the posting. Posting carries 30 of the 100 marks.
+    journals = _journals(g.pack_version.manifest or {})
+    counts = outstanding_postings(db.session, g.workspace, [j["key"] for j in journals])
+    unposted = [
+        {"key": j["key"], "name": j["name"],
+         "general": counts[j["key"]]["general"], "subsidiary": counts[j["key"]]["subsidiary"]}
+        for j in journals
+        if counts[j["key"]]["general"] or counts[j["key"]]["subsidiary"]
+    ]
     return render_template(
         "student/submit.html",
         triaged=triaged, total=len(docs), entry_count=entry_count,
         statements_started=len([t for t, n in started.items() if n]),
         statements_total=len(_manifest_statements()),
         submitted=(g.workspace.status == "submitted"),
+        unposted=unposted, anything_recorded=entry_count > 0,
     )
 
 

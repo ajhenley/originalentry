@@ -38,6 +38,29 @@ def active_posted_entry_ids(session: Session, workspace: Workspace, target: str)
     return set(rows)
 
 
+def outstanding_postings(
+    session: Session, workspace: Workspace, journal_keys: list[str]
+) -> dict[str, dict[str, int]]:
+    """Per journal, how much of it is recorded but not yet posted.
+
+    Two separate counts, because the two ledgers are posted by two separate actions: entries not
+    in the general ledger, and entries carrying a party that are not in a subsidiary ledger. A
+    voided entry is neither, and never will be, so it is not something left to do.
+    """
+    general = active_posted_entry_ids(session, workspace, TARGET_GENERAL)
+    subsidiary = active_posted_entry_ids(session, workspace, TARGET_SUBSIDIARY)
+    counts: dict[str, dict[str, int]] = {}
+    for key in journal_keys:
+        entries = _live_entries(session, workspace, key)
+        with_party = _entry_ids_with_party(session, [e.id for e in entries])
+        counts[key] = {
+            "general": sum(1 for e in entries if e.id not in general),
+            "subsidiary": sum(1 for e in entries
+                              if e.id in with_party and e.id not in subsidiary),
+        }
+    return counts
+
+
 def _next_ordinal(session: Session, workspace: Workspace, journal_key: str, target: str) -> int:
     return session.execute(
         select(func.coalesce(func.max(PostingRun.ordinal), 0) + 1).where(

@@ -19,6 +19,38 @@
     <dt class="font-medium">Statements started</dt><dd>{{ statements_started }} of {{ statements_total }}</dd>
   </dl>
 
+  {% if unposted %}
+  <section class="callout callout--attention mt-6" role="status" aria-labelledby="to-post">
+    <h2 id="to-post" class="font-semibold">Still to post</h2>
+    <p class="mt-1 text-sm">
+      Recording an entry writes it in the journal. Posting is what carries it into the ledgers,
+      and it is a separate step in each journal.
+    </p>
+    <ul class="mt-2 space-y-1 text-sm">
+      {% for j in unposted %}
+      <li>
+        <a class="underline" href="{{ url_for('student.journal', workspace=workspace.public_id,
+                                              company_slug=company.slug, key=j.key) }}">{{ j.name }}</a>
+        <span class="label-meta">
+          {%- if j.general %}
+          {{ j.general }} {{ 'entry' if j.general == 1 else 'entries' }} not in the general ledger
+          {%- endif %}
+          {%- if j.general and j.subsidiary %} · {% endif %}
+          {%- if j.subsidiary %}
+          {{ j.subsidiary }} not in a subsidiary ledger
+          {%- endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="mt-2 text-sm">You can still submit without posting. The ledgers will be as you left them.</p>
+  </section>
+  {% elif anything_recorded %}
+  <p class="callout mt-6 text-sm" role="status">
+    Everything you have recorded is posted.
+  </p>
+  {% endif %}
+
   <form method="post" class="mt-6"
         action="{{ url_for('student.submit_confirm', workspace=workspace.public_id,
                            company_slug=company.slug) }}">

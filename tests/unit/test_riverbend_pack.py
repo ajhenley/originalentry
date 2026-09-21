@@ -179,3 +179,36 @@ def test_no_two_documents_look_the_same_in_the_list(generated):
 
     assert len(labels) == len(set(labels)), sorted(
         label for label in labels if labels.count(label) > 1)
+
+
+# ── The instructor copy has to account for every document ───────────────────────────────
+
+def _walkthrough_html(version: str) -> str:
+    """Load the generator by path: scripts/ is not a package, and importing it is cheaper and
+    more honest than asserting against a rendered PDF."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[2] / "scripts" / "build_walkthrough.py"
+    spec = importlib.util.spec_from_file_location("build_walkthrough", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    src = json.loads(SOURCE.read_text())
+    return module.build_html(src, version, build(src).keys[version])
+
+
+@pytest.mark.parametrize("version", ["A", "B", "C"])
+def test_the_instructor_copy_accounts_for_every_document(version):
+    """A document missing from the schedule cannot be told from one the converter dropped. The
+    three that need no entry were simply absent, which is the same thing as being lost."""
+    html = _walkthrough_html(version)
+    src = json.loads(SOURCE.read_text())
+
+    for document in src["documents"]:
+        assert document["display_ref"] in html, document["display_ref"]
+
+
+def test_the_no_entry_documents_say_so_and_say_why():
+    html = _walkthrough_html("B")
+
+    assert html.count("no entry required") == 3
+    assert "not to ship before 15 January" in html

@@ -293,9 +293,20 @@ def instructor_sections(src: dict, version: str, key: dict) -> str:
     entries = {e["document"]: e for e in answer["expected_entries"]}
 
     blocks = []
-    for ref in sorted(entries):
-        entry = entries[ref]
-        d = doc[ref]
+    # Every document in the order it arrives, not only the ones that take an entry. A document
+    # silently absent from this list is indistinguishable from one the converter dropped, and
+    # deciding that a document needs nothing is itself marked.
+    for d in sorted(src["documents"], key=lambda d: d["received_seq"]):
+        ref = d["ref"]
+        entry = entries.get(ref)
+        if entry is None:
+            why = dict(d["variants"][version]["text_alternative"]["fields"]).get("Description", "")
+            blocks.append(
+                f'<div class="entry"><h3>{esc(d["display_ref"])}</h3>'
+                f'<p class="meta">{d["date"]} &middot; no entry required</p>'
+                f'<p style="margin:2pt 0 0">{esc(why)}</p></div>'
+            )
+            continue
         rows = []
         for line in entry["lines"]:
             number = line["account"]
@@ -328,9 +339,10 @@ def instructor_sections(src: dict, version: str, key: dict) -> str:
 
     return f"""
 <section class="newpage staff">
-<h2>Every entry, document by document</h2>
+<h2>Every document, in order</h2>
 <p>Version {version}. These are the entries the app marks against, generated from the same pack
-it imported, so the two cannot disagree.</p>
+it imported, so the two cannot disagree. The documents that take no entry are listed in their
+place, because deciding that is the first thing marked.</p>
 {"".join(blocks)}
 </section>
 

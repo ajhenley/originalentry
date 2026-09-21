@@ -24,6 +24,7 @@ from .. import messages, money
 from ..decorators import STAFF_ROLES, workspace_view
 from ..extensions import db
 from ..forms.entries import (
+    OTHER_ROWS,
     AccountInfo,
     EntryContext,
     parse_general_entry,
@@ -732,7 +733,8 @@ def _render_entry_form(journal_cfg, key, *, values, errors=None, error_list=None
         kwargs["error_list"] = error_list
     if journal_cfg.get("kind") == "special":
         kwargs["columns"] = journal_cfg.get("columns", [])
-        return render_template("student/special_entry_form.html", **kwargs)
+        return render_template("student/special_entry_form.html",
+        other_rows=list(range(1, OTHER_ROWS + 1)), **kwargs)
     kwargs["line_range"] = range(1, 9)
     return render_template("student/entry_form.html", **kwargs)
 

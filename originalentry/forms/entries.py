@@ -123,6 +123,31 @@ def parse_general_entry(form, ctx: EntryContext) -> ParseResult:
     return result
 
 
+# How many rows an "Other accounts" column offers. A payroll cheque needs three on one side; the
+# petty cash reimbursement needs three on the other. Anything beyond that belongs in the general
+# journal, which takes any number of lines.
+OTHER_ROWS = 4
+
+
+def _special_cells(form, columns: list[dict]):
+    """Every cell to read, as (column, suffix) pairs.
+
+    A column with a fixed account holds one figure, so its fields are unsuffixed. An "Other
+    accounts" column names its own account and may hold several, exactly as the column on paper
+    does, so its rows are numbered. The unsuffixed form is still read, which keeps a single row
+    simple and anything already in flight working.
+    """
+    for column in columns:
+        key = column["key"]
+        if column.get("account") is not None:
+            yield column, ""
+            continue
+        yield column, ""
+        for index in range(1, OTHER_ROWS + 1):
+            if any(form.get(f"col-{key}-{index}-{part}") for part in ("amount", "account")):
+                yield column, f"-{index}"
+
+
 def parse_special_entry(form, ctx: EntryContext, columns: list[dict]) -> ParseResult:
     """Parse one special-journal transaction: a filled cell per column becomes a line carrying its
     ``column_key`` (T6.1). The column fixes the account and side; a control column takes a party,
@@ -135,35 +160,36 @@ def parse_special_entry(form, ctx: EntryContext, columns: list[dict]) -> ParseRe
         result.add("document_ref", messages.ENTRY_NEEDS_DOCUMENT)
 
     lines: list[LineCommand] = []
-    for column in columns:
+    for column, suffix in _special_cells(form, columns):
         key = column["key"]
-        raw = (form.get(f"col-{key}-amount") or "").strip()
+        raw = (form.get(f"col-{key}{suffix}-amount") or "").strip()
         if not raw:
             continue
         try:
             cents = money.parse_money(raw)
         except money.MoneyError as exc:
-            result.add(f"col-{key}-amount", messages.money_error(exc.reason))
+            result.add(f"col-{key}{suffix}-amount", messages.money_error(exc.reason))
             continue
 
         number = column.get("account")
         if number is None:  # an "Other accounts" column: the student names the account
-            number = (form.get(f"col-{key}-account") or "").strip()
+            number = (form.get(f"col-{key}{suffix}-account") or "").strip()
             if not number:
-                result.add(f"col-{key}-account", messages.LINE_NEEDS_ACCOUNT)
+                result.add(f"col-{key}{suffix}-account", messages.LINE_NEEDS_ACCOUNT)
                 continue
         account = ctx.accounts.get(number)
         if account is None:
-            result.add(f"col-{key}-account", messages.LINE_NEEDS_ACCOUNT)
+            result.add(f"col-{key}{suffix}-account", messages.LINE_NEEDS_ACCOUNT)
             continue
 
         kind = column.get("subsidiary_kind") or account.subsidiary_kind
-        party = (form.get(f"col-{key}-party") or "").strip() or None
+        party = (form.get(f"col-{key}{suffix}-party") or "").strip() or None
         if kind and party is None:
-            result.add(f"col-{key}-party", messages.line_needs_party(kind))
+            result.add(f"col-{key}{suffix}-party", messages.line_needs_party(kind))
             continue
         if party is not None and party not in ctx.party_codes:
-            result.add(f"col-{key}-party", messages.line_needs_party(kind or "customer"))
+            result.add(f"col-{key}{suffix}-party",
+                       messages.line_needs_party(kind or "customer"))
             continue
 
         debit = cents if column["side"] == "debit" else 0

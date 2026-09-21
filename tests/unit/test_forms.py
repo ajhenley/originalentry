@@ -164,3 +164,93 @@ def test_special_entry_needs_a_document():
     result = parse_special_entry(_special_form(document_ref=""), _special_ctx(), _COLUMNS)
     assert not result.ok
     assert any("document" in m.lower() for _, m in result.errors)
+
+
+# ── An "Other accounts" column holds more than one account ──────────────────────────────
+#
+# A payroll cheque debits sales salaries and office salaries and credits three withholding
+# accounts, all through the Other accounts columns. The form allowed exactly one account per
+# column, so the entry could not be recorded at all: not refused with a reason, simply
+# impossible. A paper special journal writes each account on its own line within the entry.
+
+_PAYROLL_COLUMNS = [
+    {"key": "other_dr", "label": "Other Dr", "side": "debit", "account": None,
+     "posts": "individual"},
+    {"key": "cash_cr", "label": "Cash Cr", "side": "credit", "account": "101",
+     "posts": "total"},
+    {"key": "other_cr", "label": "Other Cr", "side": "credit", "account": None,
+     "posts": "individual"},
+]
+
+
+def _payroll_ctx():
+    ctx = _ctx()
+    ctx.journal_key = "cash_payments"
+    ctx.accounts.update({
+        "204": AccountInfo("204", None), "205": AccountInfo("205", None),
+        "511": AccountInfo("511", None), "512": AccountInfo("512", None),
+    })
+    return ctx
+
+
+def test_an_other_column_takes_several_accounts():
+    form = MultiDict({
+        "entry_date": "2026-12-15", "document_ref": "INV-1",
+        "col-other_dr-1-account": "511", "col-other_dr-1-amount": "4,400.00",
+        "col-other_dr-2-account": "512", "col-other_dr-2-amount": "2,400.00",
+        "col-other_cr-1-account": "204", "col-other_cr-1-amount": "520.20",
+        "col-other_cr-2-account": "205", "col-other_cr-2-amount": "748.00",
+        "col-cash_cr-amount": "5,531.80",
+    })
+
+    result = parse_special_entry(form, _payroll_ctx(), _PAYROLL_COLUMNS)
+
+    assert result.ok, result.errors
+    lines = result.command.lines
+    assert len(lines) == 5
+    assert sum(line.debit_cents for line in lines) == sum(line.credit_cents for line in lines)
+    assert {line.account_number for line in lines} == {"511", "512", "204", "205", "101"}
+
+
+def test_every_row_of_an_other_column_keeps_that_column():
+    """They are still that column's lines: posting individually is what the column says."""
+    form = MultiDict({
+        "entry_date": "2026-12-15", "document_ref": "INV-1",
+        "col-other_dr-1-account": "511", "col-other_dr-1-amount": "4,400.00",
+        "col-other_dr-2-account": "512", "col-other_dr-2-amount": "2,400.00",
+        "col-cash_cr-amount": "6,800.00",
+    })
+
+    result = parse_special_entry(form, _payroll_ctx(), _PAYROLL_COLUMNS)
+
+    assert result.ok, result.errors
+    others = [line for line in result.command.lines if line.column_key == "other_dr"]
+    assert len(others) == 2
+
+
+def test_a_row_with_an_amount_and_no_account_is_refused():
+    form = MultiDict({
+        "entry_date": "2026-12-15", "document_ref": "INV-1",
+        "col-other_dr-1-account": "511", "col-other_dr-1-amount": "4,400.00",
+        "col-other_dr-2-amount": "2,400.00",          # no account named
+        "col-cash_cr-amount": "6,800.00",
+    })
+
+    result = parse_special_entry(form, _payroll_ctx(), _PAYROLL_COLUMNS)
+
+    assert not result.ok
+    assert "col-other_dr-2-account" in dict(result.errors)
+
+
+def test_a_single_unindexed_other_row_still_works():
+    """The simple case stays simple: one account in the column, no row numbers."""
+    form = MultiDict({
+        "entry_date": "2026-12-15", "document_ref": "INV-1",
+        "col-other_dr-account": "511", "col-other_dr-amount": "4,400.00",
+        "col-cash_cr-amount": "4,400.00",
+    })
+
+    result = parse_special_entry(form, _payroll_ctx(), _PAYROLL_COLUMNS)
+
+    assert result.ok, result.errors
+    assert len(result.command.lines) == 2

@@ -63,31 +63,37 @@
       </thead>
       <tbody>
         {% for col in columns %}
+        {# A column with a fixed account holds one figure. An "Other accounts" column names its
+           own account and may hold several, exactly as the column on paper does, so it gets a
+           numbered row each. No JavaScript: the rows are simply there. #}
+        {% set rows = other_rows if not col.account else [none] %}
+        {% for n in rows %}
+        {% set sfx = '-' ~ n if n else '' %}
         <tr>
           <td>
-            {{ col.label }}
-            <span class="text-muted">({{ col.side }})</span>
+            {% if not n or n == 1 %}{{ col.label }}
+            <span class="text-muted">({{ col.side }})</span>{% endif %}
           </td>
           <td>
             {% if col.subsidiary_kind %}
-            <label class="sr-only" for="col-{{ col.key }}-party">{{ col.label }} party</label>
-            <select id="col-{{ col.key }}-party" name="col-{{ col.key }}-party" data-picker
+            <label class="sr-only" for="col-{{ col.key }}{{ sfx }}-party">{{ col.label }} party</label>
+            <select id="col-{{ col.key }}{{ sfx }}-party" name="col-{{ col.key }}{{ sfx }}-party" data-picker
                     class="field">
               <option value="">—</option>
               {% for p in parties %}
               <option value="{{ p.code }}"
-                {% if values.get('col-' ~ col.key ~ '-party') == p.code %}selected{% endif %}>
+                {% if values.get('col-' ~ col.key ~ sfx ~ '-party') == p.code %}selected{% endif %}>
                 {{ p.name }}</option>
               {% endfor %}
             </select>
             {% elif not col.account %}
-            <label class="sr-only" for="col-{{ col.key }}-account">{{ col.label }} account</label>
-            <select id="col-{{ col.key }}-account" name="col-{{ col.key }}-account" data-picker
+            <label class="sr-only" for="col-{{ col.key }}{{ sfx }}-account">{{ col.label }} account</label>
+            <select id="col-{{ col.key }}{{ sfx }}-account" name="col-{{ col.key }}{{ sfx }}-account" data-picker
                     class="field">
               <option value="">Choose an account</option>
               {% for a in accounts %}
               <option value="{{ a.number }}"
-                {% if values.get('col-' ~ col.key ~ '-account') == a.number %}selected{% endif %}>
+                {% if values.get('col-' ~ col.key ~ sfx ~ '-account') == a.number %}selected{% endif %}>
                 {{ a.number }} · {{ a.name }}</option>
               {% endfor %}
             </select>
@@ -96,12 +102,13 @@
             {% endif %}
           </td>
           <td>
-            <label class="sr-only" for="col-{{ col.key }}-amount">{{ col.label }} amount</label>
-            <input id="col-{{ col.key }}-amount" name="col-{{ col.key }}-amount" inputmode="decimal"
+            <label class="sr-only" for="col-{{ col.key }}{{ sfx }}-amount">{{ col.label }} amount</label>
+            <input id="col-{{ col.key }}{{ sfx }}-amount" name="col-{{ col.key }}{{ sfx }}-amount" inputmode="decimal"
                    value="{{ values.get('col-' ~ col.key ~ '-amount', '') }}"
                    class="field field--figure w-32">
           </td>
         </tr>
+        {% endfor %}
         {% endfor %}
       </tbody>
     </table>

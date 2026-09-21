@@ -60,12 +60,14 @@
 </section>
 
 <section aria-label="What to do with this document">
-  <h2 class="mb-2 font-semibold">Handle this document</h2>
-  {% if disposition %}
+  <h2 class="mb-2 font-semibold">What does this document need?</h2>
+  {# Both choices stay available and the service supersedes the old one, but the page used to
+     show the current choice in a sentence and then two identical buttons, which reads as a
+     record of what you picked rather than something you can still alter. #}
+  {% if disposition and not read_only %}
   <p class="mb-3 text-sm text-muted">
-    Current choice:
-    {% if disposition.choice == 'record' %}Record an entry
-    {% else %}No entry required: {{ disposition.reason }}{% endif %}
+    You can change this while the books are open. Changing it does not remove any entry you have
+    already recorded.
   </p>
   {% endif %}
 
@@ -75,8 +77,13 @@
                                            company_slug=company.slug, ref=doc.ref) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="choice" value="record">
-      <button type="submit" class="btn btn--primary btn--small">
-        Record an entry</button>
+      {% if disposition and disposition.choice == 'record' %}
+      <p class="label-meta">Current choice</p>
+      {% endif %}
+      <button type="submit"
+              class="btn btn--small {{ 'btn--outline' if disposition and disposition.choice == 'record' else 'btn--primary' }}">
+        {{ "Keep: this needs an entry" if disposition and disposition.choice == 'record'
+           else "This needs an entry" }}</button>
       <p class="mt-1 text-xs text-muted">Then choose a journal and enter the lines.</p>
     </form>
 
@@ -85,11 +92,17 @@
           class="max-w-sm">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="choice" value="no_entry">
+      {% if disposition and disposition.choice == 'no_entry' %}
+      <p class="label-meta">Current choice</p>
+      {# Their reason is part of the work and it is marked, so it stays on the page. #}
+      <p class="mb-2 text-sm">No entry required: {{ disposition.reason }}</p>
+      {% endif %}
       <label for="reason" class="field-label">No entry required: say why</label>
       <textarea id="reason" name="reason" rows="2" maxlength="200" required
                 class="mt-1 w-full field text-sm"></textarea>
-      <button type="submit" class="mt-2 field text-sm">
-        No entry required</button>
+      <button type="submit" class="btn btn--outline btn--small mt-2">
+        {{ "Change the reason" if disposition and disposition.choice == 'no_entry'
+           else "This needs no entry" }}</button>
     </form>
   </div>
   {% endif %}

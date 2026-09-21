@@ -117,3 +117,54 @@ def test_a_posted_entry_still_says_where_it_reached(client, session, workspace):
 
     assert "subsidiary ledger" in row.lower()
     assert "general ledger" in row.lower()
+
+
+# ── A posting you can actually look at ──────────────────────────────────────────────────
+#
+# The Postings list said "Subsidiary posting 1" and offered to reverse it. It did not say when it
+# happened, how much it covered, or where the result could be seen. Reversing was the only thing
+# you could do with it, which is a strange only option for something you cannot inspect.
+
+def test_a_posting_says_when_it_happened_and_how_much_it_covered(client, session, workspace):
+    ws, student = workspace
+    entry = _record(session, ws, student)
+    workspace_write(session, ws.public_id, student, activity_kind="post",
+                    mutate=lambda s, w: post_entry_subsidiary(s, w, entry.public_id))
+    session.commit()
+    client.sign_in(student)
+
+    body = client.get(f"/w/{ws.public_id}/testco-alpha/journals/general").get_data(as_text=True)
+    postings = body[body.index("Postings"):]
+
+    assert "1 entry" in postings
+    assert re.search(r"\d{1,2} \w{3}", postings), "no date on the posting"
+
+
+def test_a_subsidiary_posting_links_to_the_ledger_it_reached(client, session, workspace):
+    ws, student = workspace
+    entry = _record(session, ws, student)
+    workspace_write(session, ws.public_id, student, activity_kind="post",
+                    mutate=lambda s, w: post_entry_subsidiary(s, w, entry.public_id))
+    session.commit()
+    client.sign_in(student)
+
+    body = client.get(f"/w/{ws.public_id}/testco-alpha/journals/general").get_data(as_text=True)
+    postings = body[body.index("Postings"):]
+
+    assert f"/w/{ws.public_id}/testco-alpha/ledgers/customer" in postings
+
+
+def test_a_general_posting_links_to_the_general_ledger(client, session, workspace):
+    ws, student = workspace
+    _record(session, ws, student)
+    session.commit()
+    client.sign_in(student)
+    page = client.get(f"/w/{ws.public_id}/testco-alpha/journals/general").get_data(as_text=True)
+    csrf = re.search(r'name="csrf_token"[^>]*value="([^"]+)"', page).group(1)
+    client.post(f"/w/{ws.public_id}/testco-alpha/journals/general/post",
+                data={"csrf_token": csrf}, follow_redirects=True)
+
+    body = client.get(f"/w/{ws.public_id}/testco-alpha/journals/general").get_data(as_text=True)
+    postings = body[body.index("Postings"):]
+
+    assert f"/w/{ws.public_id}/testco-alpha/ledgers/general" in postings

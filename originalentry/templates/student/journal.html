@@ -118,7 +118,16 @@
 <ul class="divide-y divide-rule rounded border border-silver">
   {% for run in runs %}
   <li class="flex flex-wrap items-center gap-3 p-3 text-sm">
-    <span class="mr-auto">{{ run.target | capitalize }} posting {{ run.ordinal }}</span>
+    <span class="mr-auto">
+      {{ run.target | capitalize }} posting {{ run.ordinal }}
+      <span class="label-meta block">
+        {{ run.entries }} {{ 'entry' if run.entries == 1 else 'entries' }} ·
+        {{ run.posted_at.strftime('%-d %b %H:%M') }}
+      </span>
+      {% for ledger in run.ledgers %}
+      <a class="text-xs underline" href="{{ ledger.href }}">{{ ledger.label }}</a>{% if not loop.last %} · {% endif %}
+      {% endfor %}
+    </span>
     {% if not read_only %}
     <form method="post" action="{{ url_for('student.posting_reverse',
           workspace=workspace.public_id, company_slug=company.slug, run_id=run.public_id) }}">

@@ -40,11 +40,13 @@ from ..models import (
     Assignment,
     ContentPack,
     Enrollment,
+    EntryLine,
     JournalEntry,
     PackAsset,
     PackVersion,
     Party,
     PostingRun,
+    PostingRunEntry,
     SourceDocument,
     Variant,
     Workspace,
@@ -709,14 +711,39 @@ def journal(key):
             "has_party": any(line.party_id for line in e.lines),
             "lines": lines,
         })
-    runs = list(
-        db.session.scalars(
-            db.select(PostingRun)
-            .where(PostingRun.workspace_id == g.workspace.id, PostingRun.journal_key == key,
-                   PostingRun.reversed_at.is_(None))
-            .order_by(PostingRun.target, PostingRun.ordinal)
-        )
-    )
+    # A posting used to say only "Subsidiary posting 1", with reversing as the one thing you
+    # could do to something you could not look at. Each now carries when it happened, how much it
+    # covered, and the ledgers it reached.
+    runs = []
+    for run in db.session.scalars(
+        db.select(PostingRun)
+        .where(PostingRun.workspace_id == g.workspace.id, PostingRun.journal_key == key,
+               PostingRun.reversed_at.is_(None))
+        .order_by(PostingRun.target, PostingRun.ordinal)
+    ):
+        entry_ids = list(db.session.scalars(
+            db.select(PostingRunEntry.entry_id).where(
+                PostingRunEntry.posting_run_id == run.id, PostingRunEntry.active.is_(True))
+        ))
+        if run.target == "subsidiary":
+            kinds = sorted(set(db.session.scalars(
+                db.select(Party.kind)
+                .join(EntryLine, EntryLine.party_id == Party.id)
+                .where(EntryLine.entry_id.in_(entry_ids))
+            ))) if entry_ids else []
+            ledgers = [{"label": f"{kind.capitalize()}s ledger",
+                        "href": url_for("student.subsidiary", workspace=g.workspace.public_id,
+                                        company_slug=g.company.slug, kind=kind)}
+                       for kind in kinds]
+        else:
+            ledgers = [{"label": "General ledger",
+                        "href": url_for("student.general_ledger",
+                                        workspace=g.workspace.public_id,
+                                        company_slug=g.company.slug)}]
+        runs.append({
+            "public_id": run.public_id, "target": run.target, "ordinal": run.ordinal,
+            "posted_at": run.posted_at, "entries": len(entry_ids), "ledgers": ledgers,
+        })
     return render_template("student/journal.html", journal=journal_cfg, entries=rows, runs=runs)
 
 

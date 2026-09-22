@@ -90,6 +90,17 @@ def build(source: dict, *, render_images: bool = False) -> GeneratedPack:
     return GeneratedPack(pack=src, keys=keys, images=images)
 
 
+def _checkpoint_value(signed_cents: int, normal_balance: str) -> int:
+    """A balance as it would be stated, rather than as it is stored.
+
+    Internally every balance is signed with debits positive, so a liability carries a negative
+    number. Nobody writes it that way: a trial balance puts Accounts Payable in the credit column
+    as a positive figure, and a checkpoint asks for the balance in those words. The sign is
+    turned, not dropped, so an account standing on the wrong side of itself still reads negative.
+    """
+    return signed_cents if normal_balance == "debit" else -signed_cents
+
+
 def _build_key(
     src: dict, pack: schema.Pack, code: str, answer: dict, measures: dict[str, dict]
 ) -> dict:
@@ -112,6 +123,7 @@ def _build_key(
         "post_closing": {n: c for n, c in sorted(post_closing.items()) if c != 0},
     }
 
+    normal_side = {a["number"]: a.get("normal_balance", "debit") for a in src["accounts"]}
     checkpoint_values: dict[str, int] = {}
     by_stage: dict[str, dict[str, int]] = {}
     for checkpoint in src.get("checkpoints", []):
@@ -122,7 +134,9 @@ def _build_key(
         if stage is None:
             continue
         stage_balances = by_stage.setdefault(stage, balances(snapshot, stage))
-        checkpoint_values[checkpoint["key"]] = stage_balances.get(measure["account"], 0)
+        account = measure["account"]
+        checkpoint_values[checkpoint["key"]] = _checkpoint_value(
+            stage_balances.get(account, 0), normal_side.get(account, "debit"))
     key_dict["checkpoints"] = checkpoint_values
     return key_dict
 

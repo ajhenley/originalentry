@@ -51,10 +51,14 @@
           {% endfor %}
         </td>
         <td class="figure text-right">
-          {% for line in e.lines %}{% if line.debit_cents %}{{ line.debit_cents | money }}<br>{% endif %}{% endfor %}
+          {% for line in e.lines %}
+          <div>{% if line.debit_cents %}{{ line.debit_cents | money }}{% else %}&nbsp;{% endif %}</div>
+          {% endfor %}
         </td>
         <td class="figure text-right">
-          {% for line in e.lines %}{% if line.credit_cents %}{{ line.credit_cents | money }}<br>{% endif %}{% endfor %}
+          {% for line in e.lines %}
+          <div>{% if line.credit_cents %}{{ line.credit_cents | money }}{% else %}&nbsp;{% endif %}</div>
+          {% endfor %}
         </td>
       </tr>
       {% endfor %}

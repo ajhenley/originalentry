@@ -56,11 +56,23 @@
             {% endfor %}
           </ul>
         </td>
+        {# A cell per line in every column, empty where that line has nothing on this side. Listing
+           only the lines that carry a figure let each column close up its own gaps, so a debit on
+           line 1 and a credit on line 2 both landed on the first visual row, against the wrong
+           accounts. A journal is read across. #}
         <td class="figure text-right">
-          {% for line in e.lines %}{% if line.debit_cents %}{{ line.debit_cents | money }}<br>{% endif %}{% endfor %}
+          <ul>
+            {% for line in e.lines %}
+            <li>{% if line.debit_cents %}{{ line.debit_cents | money }}{% else %}&nbsp;{% endif %}</li>
+            {% endfor %}
+          </ul>
         </td>
         <td class="figure text-right">
-          {% for line in e.lines %}{% if line.credit_cents %}{{ line.credit_cents | money }}<br>{% endif %}{% endfor %}
+          <ul>
+            {% for line in e.lines %}
+            <li>{% if line.credit_cents %}{{ line.credit_cents | money }}{% else %}&nbsp;{% endif %}</li>
+            {% endfor %}
+          </ul>
         </td>
         {# One line per ledger, in the same words both times. "Not posted · sub posted" said two
            different things in two different vocabularies and left you to work out which was

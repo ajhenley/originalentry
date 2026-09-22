@@ -47,10 +47,14 @@
           {% else %}<span class="text-muted">—</span>{% endfor %}
         </td>
         <td class="figure text-right">
-          {% for line in doc.lines %}{% if line.debit_cents %}{{ line.debit_cents | money }}<br>{% endif %}{% endfor %}
+          {% for line in doc.lines %}
+          <div>{% if line.debit_cents %}{{ line.debit_cents | money }}{% else %}&nbsp;{% endif %}</div>
+          {% endfor %}
         </td>
         <td class="figure text-right">
-          {% for line in doc.lines %}{% if line.credit_cents %}{{ line.credit_cents | money }}<br>{% endif %}{% endfor %}
+          {% for line in doc.lines %}
+          <div>{% if line.credit_cents %}{{ line.credit_cents | money }}{% else %}&nbsp;{% endif %}</div>
+          {% endfor %}
         </td>
       </tr>
       {% endfor %}
@@ -84,10 +88,14 @@
           <div>{% if line.credit_cents %}<span class="pl-4">{% endif %}{{ line.account }}{% if line.credit_cents %}</span>{% endif %}</div>
           {% endfor %}</td>
         <td class="figure text-right">
-          {% for line in adj.lines %}{% if line.debit_cents %}{{ line.debit_cents | money }}<br>{% endif %}{% endfor %}
+          {% for line in adj.lines %}
+          <div>{% if line.debit_cents %}{{ line.debit_cents | money }}{% else %}&nbsp;{% endif %}</div>
+          {% endfor %}
         </td>
         <td class="figure text-right">
-          {% for line in adj.lines %}{% if line.credit_cents %}{{ line.credit_cents | money }}<br>{% endif %}{% endfor %}
+          {% for line in adj.lines %}
+          <div>{% if line.credit_cents %}{{ line.credit_cents | money }}{% else %}&nbsp;{% endif %}</div>
+          {% endfor %}
         </td>
       </tr>
       {% endfor %}

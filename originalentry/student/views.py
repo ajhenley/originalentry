@@ -758,9 +758,12 @@ def journal(key):
 def _render_entry_form(journal_cfg, key, *, values, errors=None, error_list=None):
     """Pick the right entry form for the journal: the column grid for a special journal, the
     line grid for the general journal."""
+    # By name, not by number. The chart's own order is right when you are reading the chart, and
+    # wrong when you are hunting one account out of forty-two while looking at a document that
+    # names it in words. The ledgers and the trial balance keep chart order.
     kwargs = dict(
         journal=journal_cfg,
-        accounts=_accounts(g.pack_version.id),
+        accounts=sorted(_accounts(g.pack_version.id), key=lambda a: a.name.lower()),
         parties=_parties(g.pack_version.id),
         documents=_documents(g.pack_version.id),
         period=_entry_context(key),

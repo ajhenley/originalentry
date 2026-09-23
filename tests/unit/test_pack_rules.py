@@ -207,3 +207,54 @@ def test_a_warning_never_refuses_the_pack():
 
 def test_the_rule_is_no_longer_listed_as_unwritten():
     assert "W1" not in validate.DEFERRED_RULES
+
+
+# ── W2: a figure a student has to read ──────────────────────────────────────────────────
+#
+# A real one. Riverbend's remittance advice described a payment as "remits 4390.4 on a 4480
+# balance". The Amount field beside it read 4,390.40 and was right; the sentence was the same
+# number typed as a bare float. A student worked from the sentence, recorded 4,390.00, and their
+# accounts receivable and cash were each out by forty cents for the rest of the month.
+#
+# Nothing in the pack rules caught it, because arithmetically there was nothing to catch. It is
+# a warning rather than a refusal for the same reason W1 is: "a 2% discount" and "Rule 6" are
+# ordinary prose, and only the author can tell a quantity from a figure.
+
+def test_a_money_figure_written_with_one_decimal_is_warned_about():
+    pack = schema.load_pack(
+        _pack_with("documents.0.guidance", "Trailhead remits 4390.4 on a 4480 balance.")
+    )
+
+    warnings = [w for w in validate.warn_pack(pack) if w.rule == "W2"]
+
+    assert len(warnings) == 1
+    assert "4390.4" in warnings[0].message
+
+
+def test_a_properly_written_figure_is_left_alone():
+    pack = schema.load_pack(
+        _pack_with("documents.0.guidance", "Trailhead remits 4,390.40 on a 4,480.00 balance.")
+    )
+
+    assert [w for w in validate.warn_pack(pack) if w.rule == "W2"] == []
+
+
+def test_a_plain_count_is_not_a_money_figure():
+    """"Terms 2/10, n/30" and "Rule 6.1" are prose, not money badly typed."""
+    for text in ("Terms 2/10, n/30.", "See rule 6.1 of the handbook.", "Version 1.2 of the form."):
+        pack = schema.load_pack(_pack_with("documents.0.guidance", text))
+
+        assert [w for w in validate.warn_pack(pack) if w.rule == "W2"] == [], text
+
+
+def test_the_riverbend_pack_has_no_such_figure():
+    """The pack this rule was written for must now pass it."""
+    import json
+    from pathlib import Path
+
+    from originalentry.generator import build
+
+    source = Path(__file__).resolve().parents[2] / "packs" / "riverbend" / "source.json"
+    pack = schema.load_pack(build(json.loads(source.read_text())).pack)
+
+    assert [w for w in validate.warn_pack(pack) if w.rule == "W2"] == []

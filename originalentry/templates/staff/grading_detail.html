@@ -26,7 +26,7 @@
   <table class="data-table">
     <caption>
       {{ '%.1f' | format(marks.total_points) }} of {{ '%.0f' | format(marks.max_points) }}
-      ({{ '%.0f' | format(marks.percent) }}%)
+      ({{ '%.1f' | format(marks.percent) }}%)
       {# Without this the total would not equal the rows beneath it, and nobody could see why. #}
       {% if marks.deductions %}
       <span class="block text-xs font-normal text-muted">

@@ -521,6 +521,16 @@ def _contrast_against_white(hex_color: str) -> float:
 # Word boundaries matter: "copyright" is not "right", and "corrected" is not "correct".
 BANNED_WORDS = re.compile(r"\b(correct|incorrect|right|wrong)\b", re.IGNORECASE)
 
+# A money figure typed with a single decimal place: 4390.4 where 4,390.40 was meant. Anchored so
+# that "2/10" and "6.1" are left alone, and so that a properly written 4,390.40 does not match.
+LOOSE_MONEY = re.compile(r"(?<![\d./])\d{3,}\.\d(?![\d.])")
+
+W2_MESSAGE = (
+    'This text writes a figure as "{figure}". A student reads the sentence, not the field beside '
+    "it, and a money amount with one decimal place is read as the wrong number or copied as one. "
+    "Write it the way it should be recorded."
+)
+
 W1_MESSAGE = (
     'This text says "{word}". The app never tells a student their work is right or wrong — it '
     "says what it found and what it could not do. Consider rewording."
@@ -540,7 +550,9 @@ def _strings(node, path: str) -> Iterator[tuple[str, str]]:
 
 
 def warn_pack(pack: Pack) -> Iterator[Problem]:
-    """W1 — warn about pack text that tells a student they are right or wrong.
+    """W1 and W2 — warn about pack text a student would be misled by.
+
+    W1 — text that tells a student they are right or wrong.
 
     A **warning**, never a refusal: "a correcting entry" is ordinary accounting prose, and the
     author is the one who can tell an instruction from a term of art. Refusing would put this
@@ -550,8 +562,14 @@ def warn_pack(pack: Pack) -> Iterator[Problem]:
     the wrong amount" is diagnosis for an instructor and never reaches a student.
     """
     seen: set[str] = set()
+    loose: set[str] = set()
     for path, text in _strings(pack.model_dump(mode="json"), ""):
         found = BANNED_WORDS.search(text)
         if found and path not in seen:
             seen.add(path)
             yield Problem(path=path, rule="W1", message=W1_MESSAGE.format(word=found.group(0)))
+        figure = LOOSE_MONEY.search(text)
+        if figure and path not in loose:
+            loose.add(path)
+            yield Problem(path=path, rule="W2",
+                          message=W2_MESSAGE.format(figure=figure.group(0)))

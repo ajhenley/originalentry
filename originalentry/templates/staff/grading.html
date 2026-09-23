@@ -75,7 +75,7 @@
         <td class="figure text-right">
           {% if row.marks %}
           {{ '%.1f' | format(row.marks.total_points) }} of {{ '%.0f' | format(row.marks.max_points) }}
-          <span class="block text-xs text-muted">{{ '%.0f' | format(row.marks.percent) }}%</span>
+          <span class="block text-xs text-muted">{{ '%.1f' | format(row.marks.percent) }}%</span>
           {% else %}Not graded{% endif %}
         </td>
         <td>{{ (row.submission_status or '—') | replace('_', ' ') }}</td>

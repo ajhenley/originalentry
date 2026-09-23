@@ -1,8 +1,13 @@
-# Paralegal case file — product requirements
+# Original Docket — product requirements
 
 **Status:** design, approved in outline, not yet planned
-**Product:** a second discipline inside Original Entry
+**Product:** Original Docket, a second discipline inside the Original Practice platform
 **Date:** 23 September 2026
+
+> **Docketing is the job, not a metaphor.** Entering deadlines into the case calendar is what a
+> litigation paralegal is responsible for; firms employ docket clerks and buy docketing systems.
+> The deadline calendar a student builds here is a docket. The name is a term of art used
+> literally, which is the same thing "books of original entry" does for the accounting set.
 
 ---
 
@@ -232,8 +237,22 @@ closest a machine gets to working the file by hand.
 
 ## 13. Open questions
 
-1. **What is the product called now?** The app stops being about one subject. "Original Entry"
-   is an accounting term of art; it does not cover a case file.
+1. ~~**What is the product called now?**~~ **Settled.** The platform becomes **Original
+   Practice**, and the two products sit under it:
+
+   | | Name | Domain |
+   | --- | --- | --- |
+   | Platform | Original Practice | `originalpractice.com` |
+   | Accounting | Original Entry | `originalentry.com` (live) |
+   | Paralegal | Original Docket | `originaldocket.com` |
+
+   Nothing is renamed. Original Entry stays as deployed, with students in it. *Practice* carries
+   all three senses at once: an accounting practice, a legal practice, and a practice set.
+
+   One known limit: "docket" is US usage. English and Canadian practice say *diary* or
+   *limitation dates*. The set is FRCP-based, so it is already a US product, but it forecloses
+   an export that was never really open.
+
 2. **Does the paper set come first?** The accounting product exists on paper and in the browser.
    A paper case file could pilot this term and would surface content problems before any code is
    written. Recommended, but it is a scheduling decision.

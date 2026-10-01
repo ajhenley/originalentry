@@ -289,8 +289,14 @@ def _bare(text: str) -> str:
     return text.strip().lower()
 
 
+# The translator guides these two sequence numbers (``documents()`` in build_pack.py) and no
+# others; defined once here so the two checks below do not each repeat the literal.
+GUIDED_SEQUENCES = {1, 2}
+
+
 def check(model):
-    """A special-cased number that no longer exists must fail, not quietly do nothing."""
+    """Special-cased transaction numbers, journal column accounts, checkpoint accounts and
+    guidance coverage — everything this profile asserts about itself before it is trusted."""
     numbers = {t["no"] for t in model.build(sorted(model.VARIANTS)[0])}
     missing = _SPECIAL_TRANSACTIONS - numbers
     if missing:
@@ -325,3 +331,21 @@ def check(model):
                 f"{COMPANY['slug']}: checkpoint {cp['key']} measures account {account}, which "
                 f"is not in the chart. Nothing was written."
             )
+
+    # Every sequence number the translator guides must have words in GUIDANCE (an empty string
+    # counts as missing, which is why this tests truthiness rather than key presence), and
+    # GUIDANCE must hold nothing for a sequence that is never guided. A guided document with no
+    # guidance passed silently until this, the hole this round's own guidance fix opened.
+    missing = {seq for seq in GUIDED_SEQUENCES if not GUIDANCE.get(seq)}
+    if missing:
+        raise SystemExit(
+            f"{COMPANY['slug']}: document {sorted(missing)} is guided but GUIDANCE says nothing "
+            f"for it. A guided document with no guidance is worse than an unguided one. "
+            f"Nothing was written."
+        )
+    stray = set(GUIDANCE) - GUIDED_SEQUENCES
+    if stray:
+        raise SystemExit(
+            f"{COMPANY['slug']}: GUIDANCE has text for document {sorted(stray)}, which is never "
+            f"guided, so nobody would read it. Nothing was written."
+        )

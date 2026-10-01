@@ -149,8 +149,8 @@ def _payroll_page(model) -> dict:
             {"type": "p", "text": "Staff are paid weekly. The employer owes the same FICA as the "
                                   "employee, which is a separate entry from the wages."},
             {"type": "table",
-             "rows": [["Clinical salaries", f"{pr['sales_sal']:,.2f}"],
-                      ["Office salaries", f"{pr['office_sal']:,.2f}"],
+             "rows": [[PAYROLL_LABELS[511], f"{pr['sales_sal']:,.2f}"],
+                      [PAYROLL_LABELS[512], f"{pr['office_sal']:,.2f}"],
                       ["FICA rate", f"{pr['fica_rate'] * 100:.2f}%"],
                       ["Federal withholding", f"{pr['fed_wh']:,.2f}"],
                       ["State withholding", f"{pr['st_wh']:,.2f}"]]},
@@ -159,6 +159,13 @@ def _payroll_page(model) -> dict:
 
 
 REFERENCE_PAGES = [{"key": "payroll", "title": "Payroll", "builder": _payroll_page}]
+
+# One statement of what the documents call each payroll salary account, read by both the stub
+# (extra_fields) and the reference page, so there is one name rather than three. The chart calls
+# 511 "Veterinary Salaries Expense"; this packet once called it "Clinical salaries" on the
+# reference page and "Sales salaries" on the document a student actually reads, in a practice
+# with no sales staff. check() below refuses a label the chart does not contain.
+PAYROLL_LABELS = {511: "Veterinary salaries", 512: "Office salaries"}
 
 # Transaction numbers extra_fields special-cases, kept apart from the literal ifs so check() can
 # confirm they still exist: 7 for the reception tape's till furniture, 13 and 15 for the weekly
@@ -190,8 +197,8 @@ def extra_fields(txn, model, money, cents, *, stage):
     fica = float(model.money(D(str(gross)) * pay["fica_rate"]))
     if txn["no"] == 13:
         fields += [["Gross pay", money(cents(gross))],
-                   ["Sales salaries", money(cents(pay["sales_sal"]))],
-                   ["Office salaries", money(cents(pay["office_sal"]))],
+                   [PAYROLL_LABELS[511], money(cents(pay["sales_sal"]))],
+                   [PAYROLL_LABELS[512], money(cents(pay["office_sal"]))],
                    ["FICA withheld", money(cents(fica))],
                    ["Federal income tax withheld", money(cents(pay["fed_wh"]))],
                    ["State income tax withheld", money(cents(pay["st_wh"]))]]
@@ -206,3 +213,14 @@ def check(model):
     missing = _SPECIAL_TRANSACTIONS - numbers
     if missing:
         raise SystemExit(f"{COMPANY['slug']}: no transaction numbered {sorted(missing)}.")
+
+    # One account, one name. The packet once called 511 "Veterinary Salaries Expense" in the
+    # chart, "Clinical salaries" on the reference page and "Sales salaries" on the document a
+    # student reads. Nothing could see it: every figure was right.
+    for number, label in PAYROLL_LABELS.items():
+        chart = model.ACCT_NAME[number]
+        if label.lower() not in chart.lower():
+            raise SystemExit(
+                f"{COMPANY['slug']}: the payroll document calls account {number} {label!r}, "
+                f"but the chart calls it {chart!r}. Nothing was written."
+            )

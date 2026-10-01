@@ -53,9 +53,10 @@ def require_practicesets(path: Path) -> Path:
 def load_model(generators: Path, company: str):
     """Import the practice set's model and errors for one company.
 
-    model.py reads PRACTICESET_COMPANY as it is imported, so the variable is set first and the
-    module cache is cleared. Without the clearing, a second company in the same process returns
-    the first one's figures and nothing complains.
+    model.py reads PRACTICESET_COMPANY as it is imported, so the variable is set first. Each
+    call then builds a fresh module and rebinds sys.modules[name] before executing it, which is
+    what keeps two companies in one process apart. The pop is belt and braces: it matters only
+    if this ever becomes a plain `import model`.
     """
     os.environ["PRACTICESET_COMPANY"] = company
     if str(generators) not in sys.path:

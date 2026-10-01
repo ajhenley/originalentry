@@ -236,11 +236,12 @@ def documents(model, profile) -> list[dict]:
             "type": "source_document",
             "date": _iso_date(txn["date"], profile),
             "received_seq": seq,
-            # The first two documents are guided: which journal, and why. Never which accounts.
-            # What to say is the company's own, since "sales on account" is not true of a
-            # service practice with no sales.
-            "guided": seq <= 2,
-            "guidance": profile.GUIDANCE.get(seq) if seq <= 2 else None,
+            # Which documents are guided, and what to say, are the company's own: which journal
+            # and why, never which accounts, and "sales on account" is not true of a service
+            # practice with no sales. check() has already proven GUIDANCE covers exactly
+            # GUIDED_SEQUENCES and nothing past it, so .get is safe here rather than a guess.
+            "guided": seq in profile.GUIDED_SEQUENCES,
+            "guidance": profile.GUIDANCE.get(seq),
             "variants": {},
         })
     for extra in profile.NO_ENTRY_DOCUMENTS:

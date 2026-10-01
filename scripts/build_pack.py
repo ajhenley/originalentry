@@ -25,8 +25,8 @@ import json
 import os
 import sys
 from collections import Counter
+from datetime import date
 from decimal import Decimal
-from decimal import Decimal as D
 from pathlib import Path
 
 DEFAULT_PRACTICESETS = Path(__file__).resolve().parents[2] / "practicesets"
@@ -108,68 +108,30 @@ SECTION = {
 }
 
 
-def reference(model) -> list[dict]:
-    """What the instruction booklet puts in front of the student and the documents cannot.
-
-    Chiefly the cost of each item. A sales invoice shows what the customer pays; the cost of
-    goods sold comes from the company's own records, and without it half the sales entries
-    cannot be made at all. Costs do not vary by version, so this is pack-level: only S-01's
-    selling price changes, and that is printed on the invoice.
-    """
-    rows = [[sku, spec[0], f"{spec[1]:,.2f}", "Yes" if spec[4] else "\u2014"]
-            for sku, spec in model.SKUS.items()]
-    return [{
-        "key": "inventory",
-        "title": "Inventory and costs",
-        "blocks": [
-            {"type": "p", "text":
-             "Riverbend keeps a perpetual inventory. Every sale records the revenue and, in the "
-             "same entry, the cost of the goods that left. The selling price is on the invoice; "
-             "the cost is here."},
-            {"type": "table", "caption": "Cost and stock records",
-             "headers": ["Item", "Description", "Our cost", "Stock card kept?"],
-             "rows": rows},
-            {"type": "p", "text":
-             "A stock card is kept for the items marked above. Freight paid on goods bought FOB "
-             "shipping point is part of what the inventory cost, not a separate expense."},
-        ],
-    }, {
-        "key": "payroll",
-        "title": "Payroll",
-        "blocks": [
-            {"type": "ul", "items": [
-                f"FICA is withheld at {float(model.PR['fica_rate']) * 100:.2f} per cent of gross "
-                "pay, and the company owes the same amount again as its own expense.",
-                "Amounts withheld from employees are liabilities until they are remitted; the "
-                "company's own share is Payroll Tax Expense. Keeping those apart is the single "
-                "most common payroll error.",
-                "No federal or state unemployment tax is due in December: every employee passed "
-                "the wage base earlier in the year.",
-            ]},
-        ],
-    }]
-
-
 def _ref(txn) -> str:
     """A stable, file-safe reference. The document's own number keeps them in order."""
     return f"D{txn['no']:02d}"
 
 
-def _face_amount(txn) -> int | None:
+def _face_amount(txn, profile) -> int | None:
     """What the document itself is for, in cents.
 
     Cash where cash moves, otherwise the receivable or the payable. Summing the debits would
-    double-count a sale, which also posts cost of goods sold.
+    double-count a sale, which also posts cost of goods sold. Which accounts mean "cash",
+    "receivable" and "payable" is the profile's to say.
     """
+    cash = int(profile.FACE_ACCOUNTS["cash"])
+    receivable = int(profile.FACE_ACCOUNTS["receivable"])
+    payable = int(profile.FACE_ACCOUNTS["payable"])
     lines = txn["lines"]
     for account, debit, credit in lines:
-        if account == 101:
+        if account == cash:
             return cents(debit or credit)
     for account, debit, _credit in lines:
-        if account == 105 and debit:
+        if account == receivable and debit:
             return cents(debit)
     for account, _debit, credit in lines:
-        if account == 201 and credit:
+        if account == payable and credit:
             return cents(credit)
     return cents(sum(d for _a, d, _c in lines))
 
@@ -178,7 +140,7 @@ def _money(value: int) -> str:
     return f"{value / 100:,.2f}"
 
 
-def _text_alternative(txn, model, cheques: dict) -> dict:
+def _text_alternative(txn, model, cheques: dict, profile) -> dict:
     """What the paper document says, as text.
 
     This is the whole document in paper mode, so it has to carry everything a student needs to
@@ -199,8 +161,7 @@ def _text_alternative(txn, model, cheques: dict) -> dict:
         name = model.VENDORS.get(code, ("Kestrel Office Supply",))[0]
         fields.append(["Supplier", name])
 
-    if txn["doc"] == "Cash register tape":
-        fields += [["Register", "1"], ["Clerk", "04"]]
+    fields += profile.extra_fields(txn, model, _money, cents, stage="furniture")
 
     stub = cheques.get(txn["no"])
     if stub:
@@ -211,30 +172,9 @@ def _text_alternative(txn, model, cheques: dict) -> dict:
     # What the document is about, in the words on the paper.
     fields.append(["Description", txn["desc"]])
 
-    # The breakdowns a stub carries because the face amount alone cannot be journalised.
-    pay = model.PR
-    gross = pay["sales_sal"] + pay["office_sal"]
-    fica = float(model.money(D(str(gross)) * pay["fica_rate"]))
-    if txn["no"] == 24:
-        fields += [["Gross pay", _money(cents(gross))],
-                   ["Sales salaries", _money(cents(pay["sales_sal"]))],
-                   ["Office salaries", _money(cents(pay["office_sal"]))],
-                   ["FICA withheld", _money(cents(fica))],
-                   ["Federal income tax withheld", _money(cents(pay["fed_wh"]))],
-                   ["State income tax withheld", _money(cents(pay["st_wh"]))]]
-    if txn["no"] == 25:
-        fields.append(["Employer FICA", _money(cents(fica))])
-    if txn["no"] == 26:
-        fields += [["FICA payable", _money(cents(1430))],
-                   ["Federal income tax payable", _money(cents(2180))],
-                   ["State income tax payable", _money(cents(640))]]
-    if txn["no"] == 18:
-        fields += [["Invoice", "N-8841, 7,860.00"], ["Discount taken", "1%, 78.60"]]
-    if txn["no"] == 27:
-        fields += [["Delivery", _money(cents(190))], ["Office supplies", _money(cents(275))],
-                   ["Advertising", _money(cents(155))]]
+    fields += profile.extra_fields(txn, model, _money, cents, stage="detail")
 
-    amount = _face_amount(txn)
+    amount = _face_amount(txn, profile)
     if amount is not None:
         fields.append(["Amount", _money(amount)])
 
@@ -255,7 +195,11 @@ def documents(model, profile) -> list[dict]:
     itself by its date, so that is what is added, and it is added to anything that repeats
     rather than to the tapes by name.
     """
-    base = model.build("B")            # descriptions and metadata do not vary by version
+    # Descriptions and metadata do not vary by version; which version is "base" does not matter,
+    # so the lowest-sorting one stands in rather than a letter this profile might not have.
+    base_variant = sorted(model.VARIANTS)[0]
+    assert base_variant in model.VARIANTS, f"no such variant: {base_variant!r}"
+    base = model.build(base_variant)
     repeated = {doc for doc, count in Counter(t["doc"] for t in base).items() if count > 1}
     docs = []
     for seq, txn in enumerate(base, start=1):
@@ -264,7 +208,7 @@ def documents(model, profile) -> list[dict]:
             "display_ref": (f'{txn["doc"]}, {txn["date"]}' if txn["doc"] in repeated
                             else txn["doc"]),
             "type": "source_document",
-            "date": _iso_date(txn["date"]),
+            "date": _iso_date(txn["date"], profile),
             "received_seq": seq,
             # The first two documents are guided: which journal, and why. Never which accounts.
             "guided": seq <= 2,
@@ -285,10 +229,15 @@ def documents(model, profile) -> list[dict]:
     return docs
 
 
-def _iso_date(label: str) -> str:
-    """"Dec 4" in the model; the pack wants a real date in the period."""
+def _iso_date(label: str, profile) -> str:
+    """"Dec 4" in the model; the pack wants a real date in the period.
+
+    The year and month come from the profile's own period, not a literal: the next company this
+    runs for is not necessarily in December 2026.
+    """
     day = int(label.split()[1])
-    return f"2026-12-{day:02d}"
+    year, month, _day = profile.PERIOD["start"].split("-")
+    return f"{year}-{month}-{day:02d}"
 
 
 def expected_entries(model, variant: str, profile) -> list[dict]:
@@ -362,6 +311,7 @@ def build_source(company: str, practicesets: Path, slug: str | None = None) -> d
     generators = require_practicesets(practicesets)
     model, errors_mod = load_model(generators, company)
     profile = load_profile(slug or company)
+    profile.check(model)
 
     accounts = []
     for order, (number, name, kind) in enumerate(model.ACCOUNTS, start=1):
@@ -370,7 +320,7 @@ def build_source(company: str, practicesets: Path, slug: str | None = None) -> d
         section = SECTION[atype]
         if number in profile.NON_CURRENT:
             section = "non_current_assets"
-        if atype == "liability" and number == "220":
+        if atype == "liability" and number in profile.NON_CURRENT_LIABILITIES:
             section = "non_current_liabilities"
         account = {
             "number": number, "name": name, "type": atype,
@@ -386,7 +336,7 @@ def build_source(company: str, practicesets: Path, slug: str | None = None) -> d
     parties = (
         [{"code": c, "kind": "customer", "name": v[0]} for c, v in model.CUSTOMERS.items()]
         + [{"code": c, "kind": "supplier", "name": v[0]} for c, v in model.VENDORS.items()]
-        + [{"code": "V-206", "kind": "supplier", "name": "Kestrel Office Supply"}]
+        + profile.EXTRA_PARTIES
     )
 
     variants = [{"code": c, "label": f"Version {c}", "drivers": model.VARIANTS[c]}
@@ -399,20 +349,25 @@ def build_source(company: str, practicesets: Path, slug: str | None = None) -> d
             # Debit-positive throughout, so a supplier's credit balance is negative.
             "parties": ({c: cents(v[1]) for c, v in model.CUSTOMERS.items()}
                         | {c: -cents(v[1]) for c, v in model.VENDORS.items()}
-                        | {"V-206": 0}),
+                        | {p["code"]: 0 for p in profile.EXTRA_PARTIES}),
         }
 
     docs = documents(model, profile)
     cheques = model.DOCS.get("cheques", {})
+    # No-entry documents all land on the period's last day; formatted like the model's own
+    # dates ("Dec 4"), which _iso_date then turns into a real one.
+    period_end = date.fromisoformat(profile.PERIOD["end"])
+    no_entry_date = f"{period_end:%b} {period_end.day}"
     answers = {}
     for code in sorted(model.VARIANTS):
         txns = model.build(code)
         # strict: one document per transaction, always. A mismatch is an authoring bug.
         for doc, txn in zip(docs[:len(txns)], txns, strict=True):
-            doc["variants"][code] = {"text_alternative": _text_alternative(txn, model, cheques)}
+            doc["variants"][code] = {
+                "text_alternative": _text_alternative(txn, model, cheques, profile)}
         for doc, extra in zip(docs[len(txns):], profile.NO_ENTRY_DOCUMENTS, strict=True):
             doc["variants"][code] = {"text_alternative":
-                                     {"fields": [["Date", "Dec 15"],
+                                     {"fields": [["Date", no_entry_date],
                                                  ["Document", extra["display_ref"]],
                                                  *extra["fields"]],
                                       "lines": extra["lines"]}}
@@ -438,7 +393,7 @@ def build_source(company: str, practicesets: Path, slug: str | None = None) -> d
         "opening_balances": opening,
         "journals": profile.JOURNALS,
         "documents": docs,
-        "reference": reference(model),
+        "reference": [page["builder"](model) for page in profile.REFERENCE_PAGES],
         # The paper set's own checkpoint answers table: the two control accounts and cash.
         "checkpoints": profile.CHECKPOINTS,
         "statements": [],

@@ -10,10 +10,24 @@ move altered nothing.
 
 from __future__ import annotations
 
+from decimal import Decimal as D
+
 NON_CURRENT = {"150", "151", "155", "156"}
+NON_CURRENT_LIABILITIES = {"220"}
 ROLES = {"302": ["retained_earnings"], "399": ["income_summary"],
          "105": ["ar_control"], "201": ["ap_control"]}
 SUBSIDIARY = {"105": "customer", "201": "supplier"}
+
+# What a document is for, in cents: cash where cash moves, otherwise the receivable or the
+# payable. The clinic happens to use the same three numbers, which is exactly why leaving them
+# as literals in the translator would go unnoticed until a company that does not.
+FACE_ACCOUNTS = {"cash": "101", "receivable": "105", "payable": "201"}
+
+# A vendor who first appears during the month, so Riverbend never meant it to live in
+# generators/companies/riverbend.py's VENDORS. The clinic never traded with this supplier at
+# all; left as a translator literal, it would show up in the clinic's subsidiary ledger with no
+# history behind it. Defaults to [] for any company that has no such party.
+EXTRA_PARTIES = [{"code": "V-206", "kind": "supplier", "name": "Kestrel Office Supply"}]
 
 # The paper set's five cycles, and the journal each becomes here.
 JOURNAL_OF = {"Sales": "sales", "Purchases": "purchases", "Cash receipts": "cash_receipts",
@@ -135,3 +149,118 @@ RUBRIC = [
     {"key": "posting_completeness", "points": 20},
     {"key": "subsidiary_agreement", "points": 10},
 ]
+
+
+def _inventory_page(model) -> dict:
+    """What the instruction booklet puts in front of the student and the documents cannot.
+
+    Chiefly the cost of each item. A sales invoice shows what the customer pays; the cost of
+    goods sold comes from the company's own records, and without it half the sales entries
+    cannot be made at all. Costs do not vary by version, so this is pack-level: only S-01's
+    selling price changes, and that is printed on the invoice.
+
+    Riverbend keeps a perpetual inventory and sells stock. A company with no inventory — a
+    service business — has nothing to put on this page, which is why it is Riverbend's own page
+    rather than the translator's.
+    """
+    rows = [[sku, spec[0], f"{spec[1]:,.2f}", "Yes" if spec[4] else "—"]
+            for sku, spec in model.SKUS.items()]
+    return {
+        "key": "inventory",
+        "title": "Inventory and costs",
+        "blocks": [
+            {"type": "p", "text":
+             "Riverbend keeps a perpetual inventory. Every sale records the revenue and, in the "
+             "same entry, the cost of the goods that left. The selling price is on the invoice; "
+             "the cost is here."},
+            {"type": "table", "caption": "Cost and stock records",
+             "headers": ["Item", "Description", "Our cost", "Stock card kept?"],
+             "rows": rows},
+            {"type": "p", "text":
+             "A stock card is kept for the items marked above. Freight paid on goods bought FOB "
+             "shipping point is part of what the inventory cost, not a separate expense."},
+        ],
+    }
+
+
+def _payroll_page(model) -> dict:
+    """The payroll rules a student needs and no document states on its own."""
+    return {
+        "key": "payroll",
+        "title": "Payroll",
+        "blocks": [
+            {"type": "ul", "items": [
+                f"FICA is withheld at {float(model.PR['fica_rate']) * 100:.2f} per cent of gross "
+                "pay, and the company owes the same amount again as its own expense.",
+                "Amounts withheld from employees are liabilities until they are remitted; the "
+                "company's own share is Payroll Tax Expense. Keeping those apart is the single "
+                "most common payroll error.",
+                "No federal or state unemployment tax is due in December: every employee passed "
+                "the wage base earlier in the year.",
+            ]},
+        ],
+    }
+
+
+REFERENCE_PAGES = [
+    {"key": "inventory", "title": "Inventory and costs", "builder": _inventory_page},
+    {"key": "payroll", "title": "Payroll", "builder": _payroll_page},
+]
+
+# Transaction numbers extra_fields special-cases, kept apart from the literal ifs so check() can
+# confirm they still exist. Riverbend has 28 transactions; a company with fewer (the clinic has
+# 15) would make every one of these branches dead, silently, with nothing reporting it.
+_SPECIAL_TRANSACTIONS = {18, 24, 25, 26, 27}
+
+
+def extra_fields(txn, model, money, cents, *, stage):
+    """Document detail only this company's documents carry.
+
+    These are Riverbend's figures and Riverbend's document furniture. They were literals in the
+    translator, which is machinery shared with every other company; an invoice number belongs to
+    the company that issued it.
+
+    Called twice per document, because the two kinds of detail sit on opposite sides of the
+    free-text description in the paper document itself: a register tape's till number is part of
+    what identifies the document (``stage="furniture"``), read before the description; a payroll
+    or discount breakdown explains the description's figure (``stage="detail"``), read after it.
+    Splitting the call is what keeps the pack byte-identical to the one this replaced.
+    """
+    if stage == "furniture":
+        if txn["doc"] == "Cash register tape":
+            return [["Register", "1"], ["Clerk", "04"]]
+        return []
+
+    # stage == "detail": the breakdowns a stub carries because the face amount alone cannot be
+    # journalised.
+    fields = []
+    pay = model.PR
+    gross = pay["sales_sal"] + pay["office_sal"]
+    fica = float(model.money(D(str(gross)) * pay["fica_rate"]))
+    if txn["no"] == 24:
+        fields += [["Gross pay", money(cents(gross))],
+                   ["Sales salaries", money(cents(pay["sales_sal"]))],
+                   ["Office salaries", money(cents(pay["office_sal"]))],
+                   ["FICA withheld", money(cents(fica))],
+                   ["Federal income tax withheld", money(cents(pay["fed_wh"]))],
+                   ["State income tax withheld", money(cents(pay["st_wh"]))]]
+    if txn["no"] == 25:
+        fields.append(["Employer FICA", money(cents(fica))])
+    if txn["no"] == 26:
+        fields += [["FICA payable", money(cents(1430))],
+                   ["Federal income tax payable", money(cents(2180))],
+                   ["State income tax payable", money(cents(640))]]
+    if txn["no"] == 18:
+        fields += [["Invoice", "N-8841, 7,860.00"], ["Discount taken", "1%, 78.60"]]
+    if txn["no"] == 27:
+        fields += [["Delivery", money(cents(190))], ["Office supplies", money(cents(275))],
+                   ["Advertising", money(cents(155))]]
+    return fields
+
+
+def check(model):
+    """A special-cased number that no longer exists must fail, not quietly do nothing."""
+    numbers = {t["no"] for t in model.build(sorted(model.VARIANTS)[0])}
+    missing = _SPECIAL_TRANSACTIONS - numbers
+    if missing:
+        raise SystemExit(f"{COMPANY['slug']}: no transaction numbered {sorted(missing)}.")

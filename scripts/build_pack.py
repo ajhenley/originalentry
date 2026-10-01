@@ -258,9 +258,10 @@ def expected_entries(model, variant: str, profile) -> list[dict]:
             if credit:
                 line["credit"] = cents(credit)
             # The subsidiary account the line belongs to, where there is one.
-            if str(account) == "105" and txn.get("ar"):
+            kind = profile.SUBSIDIARY.get(str(account))
+            if kind == "customer" and txn.get("ar"):
                 line["party"] = txn["ar"][0]
-            if str(account) == "201" and txn.get("ap"):
+            if kind == "supplier" and txn.get("ap"):
                 line["party"] = txn["ap"][0]
             lines.append(line)
         entries.append({

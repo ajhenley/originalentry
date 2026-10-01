@@ -626,6 +626,12 @@
      "side": "credit",
      "posts": "total",
      "account": "101"
+    },
+    {
+     "key": "other_cr",
+     "label": "Other accounts Cr",
+     "side": "credit",
+     "posts": "individual"
     }
    ]
   },

@@ -79,7 +79,8 @@ def _journals() -> list[dict]:
          "kind": "special", "columns": [
              col("ap_dr", "Accounts Payable Dr", "debit", "201", subsidiary="supplier"),
              col("other_dr", "Other accounts Dr", "debit", None, posts="individual"),
-             col("cash_cr", "Cash Cr", "credit", "101")]},
+             col("cash_cr", "Cash Cr", "credit", "101"),
+             col("other_cr", "Other accounts Cr", "credit", None, posts="individual")]},
         # No "columns" key at all, exactly as Riverbend's general journal is written.
         {"key": "general", "name": "General Journal", "ref_prefix": "J", "kind": "general"},
     ]

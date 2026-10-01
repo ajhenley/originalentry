@@ -158,7 +158,13 @@ def _text_alternative(txn, model, cheques: dict, profile) -> dict:
         fields.append(["Customer", model.CUSTOMERS[txn["ar"][0]][0]])
     if txn.get("ap"):
         code = txn["ap"][0]
-        name = model.VENDORS.get(code, ("Kestrel Office Supply",))[0]
+        known = {**model.VENDORS, **getattr(model, "LATE_VENDORS", {})}
+        if code not in known:
+            raise SystemExit(
+                f"{profile.COMPANY['slug']}: document {txn['no']} is payable to {code}, which is "
+                f"in neither VENDORS nor LATE_VENDORS. Nothing was written."
+            )
+        name = known[code][0]
         fields.append(["Supplier", name])
 
     fields += profile.extra_fields(txn, model, _money, cents, stage="furniture")

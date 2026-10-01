@@ -292,6 +292,17 @@ def expected_entries(model, variant: str, profile) -> list[dict]:
     return entries
 
 
+def _amount_lines(lines):
+    """Every posting as (account, side, cents), so a changed figure can be found on either side."""
+    out = []
+    for account, debit, credit in lines:
+        if debit:
+            out.append((str(account), "debit", cents(debit)))
+        if credit:
+            out.append((str(account), "credit", cents(credit)))
+    return out
+
+
 def error_signatures(model, errors_mod, variant: str) -> list[dict]:
     """The five designed errors, each detected on the one document that produces it.
 
@@ -319,15 +330,21 @@ def error_signatures(model, errors_mod, variant: str) -> list[dict]:
                                "account": account, "side": side},
                 })
             else:
-                # Same accounts, different figures: name the amount instead.
-                amount = next((cents(d) for a, d, _c in mutated[no]["lines"]
-                               if d and (str(a), "debit") in wrong), None)
-                account = next((str(a) for a, d, _c in mutated[no]["lines"] if d), None)
-                if amount and account:
+                # Same accounts and sides, different figures: name the posting whose figure
+                # actually moved. The filter this replaces tested membership in `wrong`, which
+                # holds every line of the mutated entry, so it excluded nothing and the first
+                # debit was named however the trap had been drawn. A multi-debit entry, or any
+                # trap on a credit, would therefore name a figure the student got right and
+                # report the designed error present for everyone who did the work properly.
+                # Sorting makes the choice deterministic when a trap moves more than one figure.
+                changed = sorted(set(_amount_lines(mutated[no]["lines"]))
+                                 - set(_amount_lines(txn["lines"])))
+                if changed:
+                    account, side, amount = changed[0]
                     signatures.append({
                         "key": kind, "label": label,
                         "detect": {"type": "entry_amount", "document": _ref(txn),
-                                   "account": account, "side": "debit", "amount": amount},
+                                   "account": account, "side": side, "amount": amount},
                     })
             break
     return signatures

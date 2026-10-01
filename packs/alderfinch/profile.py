@@ -41,6 +41,10 @@ FACE_ACCOUNTS = {"cash": "101", "receivable": "105", "payable": "201"}
 # The clinic's LATE_VENDORS is empty; it trades with nobody extra.
 EXTRA_PARTIES = []
 
+# The clinic has nothing to shorten; its one extra item code (MED) takes the model's own words
+# as they are.
+ITEM_DESCRIPTIONS = {}
+
 # The clinic has no Purchases Journal, so a purchase on account goes where the paper books send
 # it: "Use the General Journal only when no special journal fits."
 JOURNAL_OF = {"Fees": "fees", "Purchases": "general", "Cash receipts": "cash_receipts",
@@ -90,14 +94,14 @@ JOURNALS = _journals()
 
 # Documents that arrive and need nothing done with them. Dated inside 1-7 December, the clinic's
 # own period, not Riverbend's 15 December. The second is deliberately close to transaction 9,
-# where Harborview Kennels *does* pay 900 in advance and that deposit is a real entry: a student
-# who records the enquiry has not distinguished a booking from an enquiry, which is the judgement
-# the triage marks are for.
+# where Harborview Kennels *does* pay in advance for boarding and that deposit is a real entry: a
+# student who records the enquiry has not distinguished a booking from an enquiry, which is the
+# judgement the triage marks are for.
 NO_ENTRY_DOCUMENTS = [
     {
         "ref": "N01", "display_ref": "Quotation CV-Q-0118", "date": "2026-12-07",
         "fields": [["From", "Cedarline Veterinary Supply"], ["Quotation", "CV-Q-0118"],
-                   ["Valid until", "31 January"], ["Terms", "2/10, n/30"],
+                   ["Valid until", "31 January"], ["Terms", "n/30"],
                    ["Description", "Price held for a digital dental radiography unit, "
                                    "no order placed"],
                    ["Amount", "6,400.00"]],
@@ -107,8 +111,7 @@ NO_ENTRY_DOCUMENTS = [
         "ref": "N02", "display_ref": "Boarding enquiry BK-2209", "date": "2026-12-07",
         "fields": [["From", "Harborview Kennels"], ["Reference", "BK-2209"],
                    ["Dates enquired", "12 to 19 February"],
-                   ["Description", "Asks whether twelve runs can be held; no booking made and "
-                                   "no deposit taken"],
+                   ["Description", "Asks whether twelve runs can be held for the dates below"],
                    ["Amount", "—"]],
         "lines": [],
     },
@@ -119,6 +122,14 @@ NO_ENTRY_DOCUMENTS = [
 # copied between students without being worked. Unearned Boarding Revenue differs in every
 # version and is the distinction the set is built to teach: money taken for work not yet done is
 # not a fee.
+# What the first two guided documents tell the student: which journal, and why, never which
+# accounts. The clinic has no sales; the paper books' own words are "Every line here is a fee
+# charged on account."
+GUIDANCE = {
+    1: "A payment by cheque belongs in the journal built for cash going out.",
+    2: "Fees charged on account are recorded in the journal built for them.",
+}
+
 CHECKPOINTS = [
     {"key": "cp1", "ordinal": 1, "stage": "posted",
      "prompt": "Accounts Receivable control balance at 7 December",
@@ -208,6 +219,22 @@ def extra_fields(txn, model, money, cents, *, stage):
     return fields
 
 
+_LABEL_SUFFIXES = (" Expense", " Dr", " Cr")
+
+
+def _bare(text: str) -> str:
+    """A column or payroll label with its trailing Dr/Cr/Expense qualifier removed, lower-cased.
+
+    The chart never carries that qualifier, so comparing the bare words is what tells a label
+    that genuinely names its account from a vague one ("Salaries") that would satisfy more than
+    one account by pure substring containment.
+    """
+    for suffix in _LABEL_SUFFIXES:
+        if text.endswith(suffix):
+            return text[: -len(suffix)].strip().lower()
+    return text.strip().lower()
+
+
 def check(model):
     """A special-cased number that no longer exists must fail, not quietly do nothing."""
     numbers = {t["no"] for t in model.build(sorted(model.VARIANTS)[0])}
@@ -215,12 +242,42 @@ def check(model):
     if missing:
         raise SystemExit(f"{COMPANY['slug']}: no transaction numbered {sorted(missing)}.")
 
+    # Every journal column that names an account must point at an account the chart actually
+    # has, and its label must not contradict the chart's own name for it.
+    for journal in JOURNALS:
+        for column in journal.get("columns", []):
+            account = column.get("account")
+            if account is None:
+                continue
+            number = int(account)
+            if number not in model.ACCT_NAME:
+                raise SystemExit(
+                    f"{COMPANY['slug']}: {journal['key']} column {column['key']!r} names "
+                    f"account {account}, which is not in the chart. Nothing was written."
+                )
+            chart = model.ACCT_NAME[number]
+            if _bare(column["label"]) != _bare(chart):
+                raise SystemExit(
+                    f"{COMPANY['slug']}: {journal['key']} column {column['key']!r} is labelled "
+                    f"{column['label']!r}, which does not match the chart's {chart!r} for "
+                    f"account {account}. Nothing was written."
+                )
+
+    # Every checkpoint must measure an account the chart actually has.
+    for cp in CHECKPOINTS:
+        account = cp["measure"]["account"]
+        if int(account) not in model.ACCT_NAME:
+            raise SystemExit(
+                f"{COMPANY['slug']}: checkpoint {cp['key']} measures account {account}, which "
+                f"is not in the chart. Nothing was written."
+            )
+
     # One account, one name. The packet once called 511 "Veterinary Salaries Expense" in the
     # chart, "Clinical salaries" on the reference page and "Sales salaries" on the document a
     # student reads. Nothing could see it: every figure was right.
     for number, label in PAYROLL_LABELS.items():
         chart = model.ACCT_NAME[number]
-        if label.lower() not in chart.lower():
+        if _bare(label) != _bare(chart):
             raise SystemExit(
                 f"{COMPANY['slug']}: the payroll document calls account {number} {label!r}, "
                 f"but the chart calls it {chart!r}. Nothing was written."

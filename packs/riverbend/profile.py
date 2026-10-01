@@ -29,6 +29,13 @@ FACE_ACCOUNTS = {"cash": "101", "receivable": "105", "payable": "201"}
 # history behind it. Defaults to [] for any company that has no such party.
 EXTRA_PARTIES = [{"code": "V-206", "kind": "supplier", "name": "Kestrel Office Supply"}]
 
+# These two disagree with the model, which calls them "Freight — prepaid and added (FOB
+# shipping point)" and "Assorted office supplies — see packing list". The translator invented
+# the short forms before it could read ITEM_DESC_EXTRA, and the pack built from them is in
+# front of students. Kept so their documents do not change mid-set; remove when the pack is
+# next revised and let the model's own words through.
+ITEM_DESCRIPTIONS = {"FRT": "Freight", "OFF": "Office supplies"}
+
 # The paper set's five cycles, and the journal each becomes here.
 JOURNAL_OF = {"Sales": "sales", "Purchases": "purchases", "Cash receipts": "cash_receipts",
               "Cash payments": "cash_payments", "General": "general"}
@@ -131,6 +138,14 @@ STATEMENT_SECTIONS = ["current_assets", "non_current_assets", "current_liabiliti
                       "operating_expenses"]
 
 # The paper set's own checkpoint answers table: the two control accounts and cash.
+# What the first two guided documents tell the student: which journal, and why, never which
+# accounts. Kept word for word from the translator's own former literals, so the pack's text does
+# not move.
+GUIDANCE = {
+    1: "A payment by cheque belongs in the journal built for cash going out.",
+    2: "Sales on account are recorded in the journal built for them.",
+}
+
 CHECKPOINTS = [
     {"key": "cp1", "ordinal": 1, "stage": "posted",
      "prompt": "Accounts Receivable control balance at 15 December",
@@ -258,9 +273,55 @@ def extra_fields(txn, model, money, cents, *, stage):
     return fields
 
 
+_LABEL_SUFFIXES = (" Expense", " Dr", " Cr")
+
+
+def _bare(text: str) -> str:
+    """A column or payroll label with its trailing Dr/Cr/Expense qualifier removed, lower-cased.
+
+    The chart never carries that qualifier, so comparing the bare words is what tells a label
+    that genuinely names its account from a vague one ("Salaries") that would satisfy more than
+    one account by pure substring containment.
+    """
+    for suffix in _LABEL_SUFFIXES:
+        if text.endswith(suffix):
+            return text[: -len(suffix)].strip().lower()
+    return text.strip().lower()
+
+
 def check(model):
     """A special-cased number that no longer exists must fail, not quietly do nothing."""
     numbers = {t["no"] for t in model.build(sorted(model.VARIANTS)[0])}
     missing = _SPECIAL_TRANSACTIONS - numbers
     if missing:
         raise SystemExit(f"{COMPANY['slug']}: no transaction numbered {sorted(missing)}.")
+
+    # Every journal column that names an account must point at an account the chart actually
+    # has, and its label must not contradict the chart's own name for it.
+    for journal in JOURNALS:
+        for column in journal.get("columns", []):
+            account = column.get("account")
+            if account is None:
+                continue
+            number = int(account)
+            if number not in model.ACCT_NAME:
+                raise SystemExit(
+                    f"{COMPANY['slug']}: {journal['key']} column {column['key']!r} names "
+                    f"account {account}, which is not in the chart. Nothing was written."
+                )
+            chart = model.ACCT_NAME[number]
+            if _bare(column["label"]) != _bare(chart):
+                raise SystemExit(
+                    f"{COMPANY['slug']}: {journal['key']} column {column['key']!r} is labelled "
+                    f"{column['label']!r}, which does not match the chart's {chart!r} for "
+                    f"account {account}. Nothing was written."
+                )
+
+    # Every checkpoint must measure an account the chart actually has.
+    for cp in CHECKPOINTS:
+        account = cp["measure"]["account"]
+        if int(account) not in model.ACCT_NAME:
+            raise SystemExit(
+                f"{COMPANY['slug']}: checkpoint {cp['key']} measures account {account}, which "
+                f"is not in the chart. Nothing was written."
+            )

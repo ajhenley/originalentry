@@ -187,10 +187,30 @@ def _text_alternative(txn, model, cheques: dict, profile) -> dict:
     lines = []
     for item in txn.get("items") or []:
         sku, qty, unit, total = item
-        desc = model.SKUS[sku][0] if sku in model.SKUS else (
-            "Freight" if sku == "FRT" else "Office supplies")
+        desc = _item_description(sku, model, profile, txn)
         lines.append([str(qty), desc, f"{unit:,.2f}", f"{total:,.2f}"])
     return {"fields": fields, "lines": lines}
+
+
+def _item_description(sku: str, model, profile, txn) -> str:
+    """What a document line says for a code that is not in the stock list.
+
+    The profile's own override comes first, because Riverbend's committed pack already shortened
+    two of the model's descriptions and that pack is in front of students; the model's own text
+    comes next, for a company (the clinic) with nothing to override. A code neither names is not
+    guessed at.
+    """
+    if sku in model.SKUS:
+        return model.SKUS[sku][0]
+    if sku in profile.ITEM_DESCRIPTIONS:
+        return profile.ITEM_DESCRIPTIONS[sku]
+    if sku in model.ITEM_DESC_EXTRA:
+        return model.ITEM_DESC_EXTRA[sku]
+    raise SystemExit(
+        f"{profile.COMPANY['slug']}: document {txn['no']} has an item coded {sku!r}, which is "
+        f"in none of SKUS, the profile's ITEM_DESCRIPTIONS or the model's ITEM_DESC_EXTRA. "
+        f"Nothing was written."
+    )
 
 
 def documents(model, profile) -> list[dict]:
@@ -217,12 +237,10 @@ def documents(model, profile) -> list[dict]:
             "date": _iso_date(txn["date"], profile),
             "received_seq": seq,
             # The first two documents are guided: which journal, and why. Never which accounts.
+            # What to say is the company's own, since "sales on account" is not true of a
+            # service practice with no sales.
             "guided": seq <= 2,
-            "guidance": (
-                "Sales on account are recorded in the journal built for them."
-                if seq == 2 else
-                "A payment by cheque belongs in the journal built for cash going out."
-            ) if seq <= 2 else None,
+            "guidance": profile.GUIDANCE.get(seq) if seq <= 2 else None,
             "variants": {},
         })
     for extra in profile.NO_ENTRY_DOCUMENTS:

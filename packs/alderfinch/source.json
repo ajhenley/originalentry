@@ -754,7 +754,7 @@
    "date": "2026-12-01",
    "received_seq": 2,
    "guided": true,
-   "guidance": "Sales on account are recorded in the journal built for them.",
+   "guidance": "Fees charged on account are recorded in the journal built for them.",
    "variants": {
     "A": {
      "text_alternative": {
@@ -926,7 +926,7 @@
       "lines": [
        [
         "1",
-        "Office supplies",
+        "Medication dispensed — see chart",
         "1,480.00",
         "1,480.00"
        ]
@@ -972,7 +972,7 @@
       "lines": [
        [
         "1",
-        "Office supplies",
+        "Medication dispensed — see chart",
         "1,480.00",
         "1,480.00"
        ]
@@ -1018,7 +1018,7 @@
       "lines": [
        [
         "1",
-        "Office supplies",
+        "Medication dispensed — see chart",
         "1,480.00",
         "1,480.00"
        ]
@@ -1830,7 +1830,7 @@
       "lines": [
        [
         "1",
-        "Office supplies",
+        "Medication dispensed — see chart",
         "960.00",
         "960.00"
        ]
@@ -1876,7 +1876,7 @@
       "lines": [
        [
         "1",
-        "Office supplies",
+        "Medication dispensed — see chart",
         "960.00",
         "960.00"
        ]
@@ -1922,7 +1922,7 @@
       "lines": [
        [
         "1",
-        "Office supplies",
+        "Medication dispensed — see chart",
         "960.00",
         "960.00"
        ]
@@ -2441,7 +2441,7 @@
        ],
        [
         "Terms",
-        "2/10, n/30"
+        "n/30"
        ],
        [
         "Description",
@@ -2487,7 +2487,7 @@
        ],
        [
         "Terms",
-        "2/10, n/30"
+        "n/30"
        ],
        [
         "Description",
@@ -2533,7 +2533,7 @@
        ],
        [
         "Terms",
-        "2/10, n/30"
+        "n/30"
        ],
        [
         "Description",
@@ -2590,7 +2590,7 @@
        ],
        [
         "Description",
-        "Asks whether twelve runs can be held; no booking made and no deposit taken"
+        "Asks whether twelve runs can be held for the dates below"
        ],
        [
         "Amount",
@@ -2625,7 +2625,7 @@
        ],
        [
         "Description",
-        "Asks whether twelve runs can be held; no booking made and no deposit taken"
+        "Asks whether twelve runs can be held for the dates below"
        ],
        [
         "Amount",
@@ -2660,7 +2660,7 @@
        ],
        [
         "Description",
-        "Asks whether twelve runs can be held; no booking made and no deposit taken"
+        "Asks whether twelve runs can be held for the dates below"
        ],
        [
         "Amount",

@@ -448,7 +448,8 @@ def build_source(company: str, practicesets: Path, slug: str | None = None) -> d
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Translate a paper practice set into a pack source.")
+    parser = argparse.ArgumentParser(
+        description="Translate a paper practice set into a pack source.")
     parser.add_argument("company", help="the practicesets company module, e.g. alderfinch")
     parser.add_argument("--practicesets", type=Path, default=DEFAULT_PRACTICESETS,
                         help="path to the practicesets checkout")

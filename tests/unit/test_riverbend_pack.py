@@ -1,6 +1,6 @@
 """The real company: Riverbend Bicycle Supply, 1-15 December.
 
-The paper practice set is the source of truth, and `scripts/build_riverbend.py` only translates
+The paper practice set is the source of truth, and `scripts/build_pack.py` only translates
 it. What this guards is that the translation stayed faithful: the figures the app derives by
 replaying the key through its own ledger engine must equal the figures printed in the
 instructor's solution set, to the cent, for all three versions.

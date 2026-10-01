@@ -75,6 +75,21 @@ def load_model(generators: Path, company: str):
     return out["model"], out["errors"]
 
 
+def load_profile(slug: str):
+    """The pack's own shape, which lives beside the pack it describes."""
+    path = Path(__file__).resolve().parents[1] / "packs" / slug / "profile.py"
+    if not path.is_file():
+        raise SystemExit(
+            f"No profile for {slug!r}.\n"
+            f"Expected {path}, which declares the journals, checkpoints and rubric.\n"
+            f"Nothing was written."
+        )
+    spec = importlib.util.spec_from_file_location(f"{slug}_profile", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def cents(amount) -> int:
     """Money is integer cents everywhere in this app (D1). The model works in dollars."""
     return int((Decimal(str(amount)) * 100).quantize(Decimal("1")))
@@ -91,61 +106,6 @@ SECTION = {
     "revenue": "sales_revenue", "contra_revenue": "sales_revenue",
     "expense": "operating_expenses",
 }
-NON_CURRENT = {"150", "151", "155", "156"}
-ROLES = {"302": ["retained_earnings"], "399": ["income_summary"],
-         "105": ["ar_control"], "201": ["ap_control"]}
-SUBSIDIARY = {"105": "customer", "201": "supplier"}
-
-# The paper set's five cycles, and the journal each becomes here.
-JOURNAL_OF = {"Sales": "sales", "Purchases": "purchases", "Cash receipts": "cash_receipts",
-              "Cash payments": "cash_payments", "General": "general"}
-
-
-def journals() -> list[dict]:
-    """Five journals with the columns the transactions actually use.
-
-    Each special journal carries an "Other accounts" column (``account: null``), which is how a
-    real special journal handles the entries that do not fit its named columns; without it V8
-    would refuse the rent cheque and the payroll.
-    """
-    def col(key, label, side, account, posts="total", subsidiary=None):
-        c = {"key": key, "label": label, "side": side, "posts": posts}
-        if account is not None:
-            c["account"] = account
-        if subsidiary:
-            c["subsidiary_kind"] = subsidiary
-        return c
-
-    return [
-        {"key": "sales", "name": "Sales Journal", "ref_prefix": "S", "kind": "special",
-         "columns": [
-             col("ar_dr", "Accounts Receivable Dr", "debit", "105", subsidiary="customer"),
-             col("sales_cr", "Sales Cr", "credit", "401"),
-             col("cogs_dr", "Cost of Goods Sold Dr", "debit", "501"),
-             col("inv_cr", "Merchandise Inventory Cr", "credit", "110")]},
-        {"key": "purchases", "name": "Purchases Journal", "ref_prefix": "P", "kind": "special",
-         "columns": [
-             col("inv_dr", "Merchandise Inventory Dr", "debit", "110"),
-             col("other_dr", "Other accounts Dr", "debit", None, posts="individual"),
-             col("ap_cr", "Accounts Payable Cr", "credit", "201", subsidiary="supplier")]},
-        {"key": "cash_receipts", "name": "Cash Receipts Journal", "ref_prefix": "CR",
-         "kind": "special", "columns": [
-             col("cash_dr", "Cash Dr", "debit", "101"),
-             col("disc_dr", "Sales Discounts Dr", "debit", "403"),
-             col("cogs_dr", "Cost of Goods Sold Dr", "debit", "501"),
-             col("ar_cr", "Accounts Receivable Cr", "credit", "105", subsidiary="customer"),
-             col("sales_cr", "Sales Cr", "credit", "401"),
-             col("inv_cr", "Merchandise Inventory Cr", "credit", "110"),
-             col("other_cr", "Other accounts Cr", "credit", None, posts="individual")]},
-        {"key": "cash_payments", "name": "Cash Payments Journal", "ref_prefix": "CP",
-         "kind": "special", "columns": [
-             col("ap_dr", "Accounts Payable Dr", "debit", "201", subsidiary="supplier"),
-             col("other_dr", "Other accounts Dr", "debit", None, posts="individual"),
-             col("cash_cr", "Cash Cr", "credit", "101"),
-             col("inv_cr", "Merchandise Inventory Cr", "credit", "110"),
-             col("other_cr", "Other accounts Cr", "credit", None, posts="individual")]},
-        {"key": "general", "name": "General Journal", "ref_prefix": "J", "kind": "general"},
-    ]
 
 
 def reference(model) -> list[dict]:
@@ -188,39 +148,6 @@ def reference(model) -> list[dict]:
             ]},
         ],
     }]
-
-
-# Documents that arrive and need nothing done with them. Triage is the first thing marked, and
-# without these every document in the set would need an entry, which would make it no exercise
-# at all. Taken from the paper set's own "documents requiring no entry".
-NO_ENTRY_DOCUMENTS = [
-    {
-        "ref": "N01", "display_ref": "Purchase order RV-2210", "date": "2026-12-15",
-        "fields": [["From", "Ridgeview Cycles"], ["Purchase order", "RV-2210"],
-                   ["Required delivery", "18 January"], ["Terms", "2/10, n/30"],
-                   ["Description", "Order for 6 mountain bikes, not to ship before 15 January"],
-                   ["Amount", "3,840.00"]],
-        "lines": [["6", "Cascade 29er mountain bike", "640.00", "3,840.00"]],
-    },
-    {
-        "ref": "N02", "display_ref": "Request for quotation RFQ-0041", "date": "2026-12-15",
-        "fields": [["From", "Halden & Coe Outfitters"], ["Reference", "RFQ-0041"],
-                   ["Description",
-                    "An enquiry about wholesale terms for 25 and 50 units. No order is placed "
-                    "and no goods are requested."],
-                   ["Amount", "None stated"]],
-        "lines": [],
-    },
-    {
-        "ref": "N03", "display_ref": "Price list from Ridgeline Tires", "date": "2026-12-15",
-        "fields": [["From", "Ridgeline Tires"], ["Effective", "1 January"],
-                   ["Description",
-                    "Notice of wholesale prices changing from 1 January. No goods have been "
-                    "ordered or shipped against this notice."],
-                   ["Amount", "None stated"]],
-        "lines": [["", "Commuter tire, pair", "32.00", "34.00 from 1 Jan"]],
-    },
-]
 
 
 def _ref(txn) -> str:
@@ -320,7 +247,7 @@ def _text_alternative(txn, model, cheques: dict) -> dict:
     return {"fields": fields, "lines": lines}
 
 
-def documents(model) -> list[dict]:
+def documents(model, profile) -> list[dict]:
     """One document per transaction, in the order they arrive on the desk.
 
     A label that repeats is no label at all: the three counter sales all say "Cash register
@@ -348,7 +275,7 @@ def documents(model) -> list[dict]:
             ) if seq <= 2 else None,
             "variants": {},
         })
-    for extra in NO_ENTRY_DOCUMENTS:
+    for extra in profile.NO_ENTRY_DOCUMENTS:
         docs.append({
             "ref": extra["ref"], "display_ref": extra["display_ref"],
             "type": "source_document", "date": extra["date"],
@@ -364,7 +291,7 @@ def _iso_date(label: str) -> str:
     return f"2026-12-{day:02d}"
 
 
-def expected_entries(model, variant: str) -> list[dict]:
+def expected_entries(model, variant: str, profile) -> list[dict]:
     """Each transaction as the entry the key says it is, in cents."""
     entries = []
     for txn in model.build(variant):
@@ -383,7 +310,7 @@ def expected_entries(model, variant: str) -> list[dict]:
             lines.append(line)
         entries.append({
             "document": _ref(txn),
-            "journal": JOURNAL_OF[txn["cycle"]],
+            "journal": profile.JOURNAL_OF[txn["cycle"]],
             "kind": "regular",
             "lines": lines,
         })
@@ -431,16 +358,17 @@ def error_signatures(model, errors_mod, variant: str) -> list[dict]:
     return signatures
 
 
-def build_source(company: str, practicesets: Path) -> dict:
+def build_source(company: str, practicesets: Path, slug: str | None = None) -> dict:
     generators = require_practicesets(practicesets)
     model, errors_mod = load_model(generators, company)
+    profile = load_profile(slug or company)
 
     accounts = []
     for order, (number, name, kind) in enumerate(model.ACCOUNTS, start=1):
         number = str(number)
         atype = TYPE[kind]
         section = SECTION[atype]
-        if number in NON_CURRENT:
+        if number in profile.NON_CURRENT:
             section = "non_current_assets"
         if atype == "liability" and number == "220":
             section = "non_current_liabilities"
@@ -449,10 +377,10 @@ def build_source(company: str, practicesets: Path) -> dict:
             "normal_balance": "debit" if atype in DEBIT_NORMAL else "credit",
             "statement_section": section, "sort_order": order,
         }
-        if number in ROLES:
-            account["roles"] = ROLES[number]
-        if number in SUBSIDIARY:
-            account["subsidiary_kind"] = SUBSIDIARY[number]
+        if number in profile.ROLES:
+            account["roles"] = profile.ROLES[number]
+        if number in profile.SUBSIDIARY:
+            account["subsidiary_kind"] = profile.SUBSIDIARY[number]
         accounts.append(account)
 
     parties = (
@@ -474,7 +402,7 @@ def build_source(company: str, practicesets: Path) -> dict:
                         | {"V-206": 0}),
         }
 
-    docs = documents(model)
+    docs = documents(model, profile)
     cheques = model.DOCS.get("cheques", {})
     answers = {}
     for code in sorted(model.VARIANTS):
@@ -482,7 +410,7 @@ def build_source(company: str, practicesets: Path) -> dict:
         # strict: one document per transaction, always. A mismatch is an authoring bug.
         for doc, txn in zip(docs[:len(txns)], txns, strict=True):
             doc["variants"][code] = {"text_alternative": _text_alternative(txn, model, cheques)}
-        for doc, extra in zip(docs[len(txns):], NO_ENTRY_DOCUMENTS, strict=True):
+        for doc, extra in zip(docs[len(txns):], profile.NO_ENTRY_DOCUMENTS, strict=True):
             doc["variants"][code] = {"text_alternative":
                                      {"fields": [["Date", "Dec 15"],
                                                  ["Document", extra["display_ref"]],
@@ -490,53 +418,31 @@ def build_source(company: str, practicesets: Path) -> dict:
                                       "lines": extra["lines"]}}
         answers[code] = {
             "triage": ({_ref(t): True for t in txns}
-                       | {e["ref"]: False for e in NO_ENTRY_DOCUMENTS}),
-            "designated_journal_documents": {_ref(t): JOURNAL_OF[t["cycle"]] for t in txns},
-            "expected_entries": expected_entries(model, code),
+                       | {e["ref"]: False for e in profile.NO_ENTRY_DOCUMENTS}),
+            "designated_journal_documents": {_ref(t): profile.JOURNAL_OF[t["cycle"]]
+                                              for t in txns},
+            "expected_entries": expected_entries(model, code, profile),
             "adjustments": [],
             "error_signatures": error_signatures(model, errors_mod, code),
         }
 
     return {
         "format_version": 1,
-        "company": {
-            "slug": "riverbend", "name": "Riverbend Bicycle Supply",
-            "accent_hex": "#1F7A6E", "monogram": "RB",
-            "course_tags": ["ACCT1010"],
-            "scope_tags": ["merchandising", "special journals", "subsidiary ledgers"],
-        },
+        "company": profile.COMPANY,
         "version": 1,
-        "period": {"start": "2026-12-01", "end": "2026-12-15",
-                   "fiscal_year_end": "2026-12-31"},
-        "statement_sections": ["current_assets", "non_current_assets", "current_liabilities",
-                               "non_current_liabilities", "equity", "sales_revenue",
-                               "operating_expenses"],
+        "period": profile.PERIOD,
+        "statement_sections": profile.STATEMENT_SECTIONS,
         "accounts": accounts,
         "parties": parties,
         "variants": variants,
         "opening_balances": opening,
-        "journals": journals(),
+        "journals": profile.JOURNALS,
         "documents": docs,
         "reference": reference(model),
         # The paper set's own checkpoint answers table: the two control accounts and cash.
-        "checkpoints": [
-            {"key": "cp1", "ordinal": 1, "stage": "posted",
-             "prompt": "Accounts Receivable control balance at 15 December",
-             "measure": {"account": "105"}},
-            {"key": "cp2", "ordinal": 2, "stage": "posted",
-             "prompt": "Cash balance at 15 December", "measure": {"account": "101"}},
-            {"key": "cp3", "ordinal": 3, "stage": "posted",
-             "prompt": "Accounts Payable control balance at 15 December",
-             "measure": {"account": "201"}},
-        ],
+        "checkpoints": profile.CHECKPOINTS,
         "statements": [],
-        "rubric": {"components": [
-            {"key": "triage", "points": 10},
-            {"key": "journal_selection", "points": 20},
-            {"key": "entry_accuracy", "points": 40},
-            {"key": "posting_completeness", "points": 20},
-            {"key": "subsidiary_agreement", "points": 10},
-        ]},
+        "rubric": {"components": profile.RUBRIC},
         "answers": answers,
     }
 
@@ -546,7 +452,9 @@ if __name__ == "__main__":
     parser.add_argument("company", help="the practicesets company module, e.g. alderfinch")
     parser.add_argument("--practicesets", type=Path, default=DEFAULT_PRACTICESETS,
                         help="path to the practicesets checkout")
+    parser.add_argument("--slug", default=None,
+                        help="the pack slug, if different from COMPANY (default: COMPANY)")
     args = parser.parse_args()
-    json.dump(build_source(args.company, args.practicesets), sys.stdout,
+    json.dump(build_source(args.company, args.practicesets, args.slug), sys.stdout,
               indent=1, ensure_ascii=False)
     print()

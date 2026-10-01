@@ -1,0 +1,3732 @@
+{
+ "format_version": 1,
+ "company": {
+  "slug": "alderfinch",
+  "name": "Alder & Finch Veterinary Clinic",
+  "accent_hex": "#2F6F4E",
+  "monogram": "AF",
+  "course_tags": [
+   "ACCT1010"
+  ],
+  "scope_tags": [
+   "service business",
+   "special journals",
+   "subsidiary ledgers"
+  ]
+ },
+ "version": 1,
+ "period": {
+  "start": "2026-12-01",
+  "end": "2026-12-07",
+  "fiscal_year_end": "2026-12-31"
+ },
+ "statement_sections": [
+  "current_assets",
+  "non_current_assets",
+  "current_liabilities",
+  "non_current_liabilities",
+  "equity",
+  "sales_revenue",
+  "operating_expenses"
+ ],
+ "accounts": [
+  {
+   "number": "101",
+   "name": "Cash",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 1
+  },
+  {
+   "number": "102",
+   "name": "Petty Cash",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 2
+  },
+  {
+   "number": "105",
+   "name": "Accounts Receivable",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 3,
+   "roles": [
+    "ar_control"
+   ],
+   "subsidiary_kind": "customer"
+  },
+  {
+   "number": "106",
+   "name": "Allowance for Doubtful Accounts",
+   "type": "contra_asset",
+   "normal_balance": "credit",
+   "statement_section": "non_current_assets",
+   "sort_order": 4
+  },
+  {
+   "number": "115",
+   "name": "Clinic Supplies",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 5
+  },
+  {
+   "number": "116",
+   "name": "Prepaid Insurance",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "current_assets",
+   "sort_order": 6
+  },
+  {
+   "number": "150",
+   "name": "Clinic Equipment",
+   "type": "asset",
+   "normal_balance": "debit",
+   "statement_section": "non_current_assets",
+   "sort_order": 7
+  },
+  {
+   "number": "151",
+   "name": "Accum. Depreciation - Clinic Equipment",
+   "type": "contra_asset",
+   "normal_balance": "credit",
+   "statement_section": "non_current_assets",
+   "sort_order": 8
+  },
+  {
+   "number": "201",
+   "name": "Accounts Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 9,
+   "roles": [
+    "ap_control"
+   ],
+   "subsidiary_kind": "supplier"
+  },
+  {
+   "number": "203",
+   "name": "Salaries Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 10
+  },
+  {
+   "number": "204",
+   "name": "FICA Taxes Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 11
+  },
+  {
+   "number": "205",
+   "name": "Federal Income Tax Withheld Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 12
+  },
+  {
+   "number": "206",
+   "name": "State Income Tax Withheld Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 13
+  },
+  {
+   "number": "210",
+   "name": "Interest Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 14
+  },
+  {
+   "number": "215",
+   "name": "Unearned Boarding Revenue",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "current_liabilities",
+   "sort_order": 15
+  },
+  {
+   "number": "220",
+   "name": "Notes Payable",
+   "type": "liability",
+   "normal_balance": "credit",
+   "statement_section": "non_current_liabilities",
+   "sort_order": 16
+  },
+  {
+   "number": "301",
+   "name": "Common Stock",
+   "type": "equity",
+   "normal_balance": "credit",
+   "statement_section": "equity",
+   "sort_order": 17
+  },
+  {
+   "number": "302",
+   "name": "Retained Earnings",
+   "type": "equity",
+   "normal_balance": "credit",
+   "statement_section": "equity",
+   "sort_order": 18,
+   "roles": [
+    "retained_earnings"
+   ]
+  },
+  {
+   "number": "303",
+   "name": "Dividends",
+   "type": "equity",
+   "normal_balance": "credit",
+   "statement_section": "equity",
+   "sort_order": 19
+  },
+  {
+   "number": "399",
+   "name": "Income Summary",
+   "type": "equity",
+   "normal_balance": "credit",
+   "statement_section": "equity",
+   "sort_order": 20,
+   "roles": [
+    "income_summary"
+   ]
+  },
+  {
+   "number": "401",
+   "name": "Fees Earned",
+   "type": "revenue",
+   "normal_balance": "credit",
+   "statement_section": "sales_revenue",
+   "sort_order": 21
+  },
+  {
+   "number": "402",
+   "name": "Fee Refunds and Allowances",
+   "type": "contra_revenue",
+   "normal_balance": "debit",
+   "statement_section": "sales_revenue",
+   "sort_order": 22
+  },
+  {
+   "number": "403",
+   "name": "Fee Discounts",
+   "type": "contra_revenue",
+   "normal_balance": "debit",
+   "statement_section": "sales_revenue",
+   "sort_order": 23
+  },
+  {
+   "number": "511",
+   "name": "Veterinary Salaries Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 24
+  },
+  {
+   "number": "512",
+   "name": "Office Salaries Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 25
+  },
+  {
+   "number": "513",
+   "name": "Payroll Tax Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 26
+  },
+  {
+   "number": "514",
+   "name": "Rent Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 27
+  },
+  {
+   "number": "515",
+   "name": "Advertising Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 28
+  },
+  {
+   "number": "517",
+   "name": "Clinic Supplies Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 29
+  },
+  {
+   "number": "518",
+   "name": "Insurance Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 30
+  },
+  {
+   "number": "519",
+   "name": "Depreciation Expense - Clinic Equipment",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 31
+  },
+  {
+   "number": "521",
+   "name": "Bad Debts Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 32
+  },
+  {
+   "number": "522",
+   "name": "Utilities Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 33
+  },
+  {
+   "number": "523",
+   "name": "Bank Service Charge Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 34
+  },
+  {
+   "number": "590",
+   "name": "Interest Expense",
+   "type": "expense",
+   "normal_balance": "debit",
+   "statement_section": "operating_expenses",
+   "sort_order": 35
+  }
+ ],
+ "parties": [
+  {
+   "code": "C-101",
+   "kind": "customer",
+   "name": "Marisol Okonkwo"
+  },
+  {
+   "code": "C-102",
+   "kind": "customer",
+   "name": "Harborview Kennels"
+  },
+  {
+   "code": "C-103",
+   "kind": "customer",
+   "name": "Bramble Farm"
+  },
+  {
+   "code": "C-104",
+   "kind": "customer",
+   "name": "Delacroix Stables"
+  },
+  {
+   "code": "C-105",
+   "kind": "customer",
+   "name": "Wren Vance"
+  },
+  {
+   "code": "V-201",
+   "kind": "supplier",
+   "name": "Cedarline Veterinary Supply"
+  },
+  {
+   "code": "V-202",
+   "kind": "supplier",
+   "name": "Kestrel Office Supply"
+  },
+  {
+   "code": "V-203",
+   "kind": "supplier",
+   "name": "Thornfield Pharmaceuticals"
+  }
+ ],
+ "variants": [
+  {
+   "code": "A",
+   "label": "Version A",
+   "drivers": {
+    "P1": 85,
+    "QTY": 18
+   }
+  },
+  {
+   "code": "B",
+   "label": "Version B",
+   "drivers": {
+    "P1": 90,
+    "QTY": 20
+   }
+  },
+  {
+   "code": "C",
+   "label": "Version C",
+   "drivers": {
+    "P1": 95,
+    "QTY": 22
+   }
+  }
+ ],
+ "opening_balances": {
+  "A": {
+   "accounts": {
+    "101": 3660000,
+    "102": 15000,
+    "105": 1265000,
+    "106": -90000,
+    "115": 320000,
+    "116": 240000,
+    "150": 9200000,
+    "151": -1440000,
+    "201": -680000,
+    "204": -98000,
+    "205": -146000,
+    "206": -42000,
+    "215": -240000,
+    "220": -1200000,
+    "301": -3000000,
+    "302": -3500000,
+    "303": 600000,
+    "401": -28600000,
+    "402": 240000,
+    "403": 180000,
+    "511": 11800000,
+    "512": 4600000,
+    "513": 1260000,
+    "514": 2200000,
+    "515": 540000,
+    "517": 980000,
+    "518": 440000,
+    "519": 440000,
+    "521": 190000,
+    "522": 720000,
+    "523": 36000,
+    "590": 110000
+   },
+   "parties": {
+    "C-101": 340000,
+    "C-102": 425000,
+    "C-103": 210000,
+    "C-104": 180000,
+    "C-105": 110000,
+    "V-201": -320000,
+    "V-202": -115000,
+    "V-203": -245000
+   }
+  },
+  "B": {
+   "accounts": {
+    "101": 3660000,
+    "102": 15000,
+    "105": 1265000,
+    "106": -90000,
+    "115": 320000,
+    "116": 240000,
+    "150": 9200000,
+    "151": -1440000,
+    "201": -680000,
+    "204": -98000,
+    "205": -146000,
+    "206": -42000,
+    "215": -240000,
+    "220": -1200000,
+    "301": -3000000,
+    "302": -3500000,
+    "303": 600000,
+    "401": -28600000,
+    "402": 240000,
+    "403": 180000,
+    "511": 11800000,
+    "512": 4600000,
+    "513": 1260000,
+    "514": 2200000,
+    "515": 540000,
+    "517": 980000,
+    "518": 440000,
+    "519": 440000,
+    "521": 190000,
+    "522": 720000,
+    "523": 36000,
+    "590": 110000
+   },
+   "parties": {
+    "C-101": 340000,
+    "C-102": 425000,
+    "C-103": 210000,
+    "C-104": 180000,
+    "C-105": 110000,
+    "V-201": -320000,
+    "V-202": -115000,
+    "V-203": -245000
+   }
+  },
+  "C": {
+   "accounts": {
+    "101": 3660000,
+    "102": 15000,
+    "105": 1265000,
+    "106": -90000,
+    "115": 320000,
+    "116": 240000,
+    "150": 9200000,
+    "151": -1440000,
+    "201": -680000,
+    "204": -98000,
+    "205": -146000,
+    "206": -42000,
+    "215": -240000,
+    "220": -1200000,
+    "301": -3000000,
+    "302": -3500000,
+    "303": 600000,
+    "401": -28600000,
+    "402": 240000,
+    "403": 180000,
+    "511": 11800000,
+    "512": 4600000,
+    "513": 1260000,
+    "514": 2200000,
+    "515": 540000,
+    "517": 980000,
+    "518": 440000,
+    "519": 440000,
+    "521": 190000,
+    "522": 720000,
+    "523": 36000,
+    "590": 110000
+   },
+   "parties": {
+    "C-101": 340000,
+    "C-102": 425000,
+    "C-103": 210000,
+    "C-104": 180000,
+    "C-105": 110000,
+    "V-201": -320000,
+    "V-202": -115000,
+    "V-203": -245000
+   }
+  }
+ },
+ "journals": [
+  {
+   "key": "fees",
+   "name": "Fees Journal",
+   "ref_prefix": "F",
+   "kind": "special",
+   "columns": [
+    {
+     "key": "ar_dr",
+     "label": "Accounts Receivable Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "105",
+     "subsidiary_kind": "customer"
+    },
+    {
+     "key": "fees_cr",
+     "label": "Fees Earned Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "401"
+    }
+   ]
+  },
+  {
+   "key": "cash_receipts",
+   "name": "Cash Receipts Journal",
+   "ref_prefix": "CR",
+   "kind": "special",
+   "columns": [
+    {
+     "key": "cash_dr",
+     "label": "Cash Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "101"
+    },
+    {
+     "key": "disc_dr",
+     "label": "Fee Discounts Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "403"
+    },
+    {
+     "key": "ar_cr",
+     "label": "Accounts Receivable Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "105",
+     "subsidiary_kind": "customer"
+    },
+    {
+     "key": "fees_cr",
+     "label": "Fees Earned Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "401"
+    },
+    {
+     "key": "other_cr",
+     "label": "Other accounts Cr",
+     "side": "credit",
+     "posts": "individual"
+    }
+   ]
+  },
+  {
+   "key": "cash_payments",
+   "name": "Cash Payments Journal",
+   "ref_prefix": "CP",
+   "kind": "special",
+   "columns": [
+    {
+     "key": "ap_dr",
+     "label": "Accounts Payable Dr",
+     "side": "debit",
+     "posts": "total",
+     "account": "201",
+     "subsidiary_kind": "supplier"
+    },
+    {
+     "key": "other_dr",
+     "label": "Other accounts Dr",
+     "side": "debit",
+     "posts": "individual"
+    },
+    {
+     "key": "cash_cr",
+     "label": "Cash Cr",
+     "side": "credit",
+     "posts": "total",
+     "account": "101"
+    }
+   ]
+  },
+  {
+   "key": "general",
+   "name": "General Journal",
+   "ref_prefix": "J",
+   "kind": "general"
+  }
+ ],
+ "documents": [
+  {
+   "ref": "D01",
+   "display_ref": "Check 4101",
+   "type": "source_document",
+   "date": "2026-12-01",
+   "received_seq": 1,
+   "guided": true,
+   "guidance": "A payment by cheque belongs in the journal built for cash going out.",
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Check 4101"
+       ],
+       [
+        "Payee",
+        "Marchmont Property Trust"
+       ],
+       [
+        "For",
+        "December rent"
+       ],
+       [
+        "Description",
+        "Paid December rent"
+       ],
+       [
+        "Amount",
+        "2,200.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Check 4101"
+       ],
+       [
+        "Payee",
+        "Marchmont Property Trust"
+       ],
+       [
+        "For",
+        "December rent"
+       ],
+       [
+        "Description",
+        "Paid December rent"
+       ],
+       [
+        "Amount",
+        "2,200.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Check 4101"
+       ],
+       [
+        "Payee",
+        "Marchmont Property Trust"
+       ],
+       [
+        "For",
+        "December rent"
+       ],
+       [
+        "Description",
+        "Paid December rent"
+       ],
+       [
+        "Amount",
+        "2,200.00"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D02",
+   "display_ref": "Invoice 7101",
+   "type": "source_document",
+   "date": "2026-12-01",
+   "received_seq": 2,
+   "guided": true,
+   "guidance": "Sales on account are recorded in the journal built for them.",
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Invoice 7101"
+       ],
+       [
+        "Customer",
+        "Marisol Okonkwo"
+       ],
+       [
+        "Description",
+        "Fees charged - Marisol Okonkwo"
+       ],
+       [
+        "Amount",
+        "290.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Consultation, standard",
+        "85.00",
+        "170.00"
+       ],
+       [
+        "1",
+        "Vaccination course",
+        "120.00",
+        "120.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Invoice 7101"
+       ],
+       [
+        "Customer",
+        "Marisol Okonkwo"
+       ],
+       [
+        "Description",
+        "Fees charged - Marisol Okonkwo"
+       ],
+       [
+        "Amount",
+        "300.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Consultation, standard",
+        "90.00",
+        "180.00"
+       ],
+       [
+        "1",
+        "Vaccination course",
+        "120.00",
+        "120.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 1"
+       ],
+       [
+        "Document",
+        "Invoice 7101"
+       ],
+       [
+        "Customer",
+        "Marisol Okonkwo"
+       ],
+       [
+        "Description",
+        "Fees charged - Marisol Okonkwo"
+       ],
+       [
+        "Amount",
+        "310.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Consultation, standard",
+        "95.00",
+        "190.00"
+       ],
+       [
+        "1",
+        "Vaccination course",
+        "120.00",
+        "120.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D03",
+   "display_ref": "Vendor inv CV-3310",
+   "type": "source_document",
+   "date": "2026-12-02",
+   "received_seq": 3,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Vendor inv CV-3310"
+       ],
+       [
+        "Vendor invoice",
+        "CV-3310"
+       ],
+       [
+        "Purchase order",
+        "AF-0440"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Description",
+        "Clinic supplies on account, Cedarline"
+       ],
+       [
+        "Amount",
+        "1,480.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "1,480.00",
+        "1,480.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Vendor inv CV-3310"
+       ],
+       [
+        "Vendor invoice",
+        "CV-3310"
+       ],
+       [
+        "Purchase order",
+        "AF-0440"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Description",
+        "Clinic supplies on account, Cedarline"
+       ],
+       [
+        "Amount",
+        "1,480.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "1,480.00",
+        "1,480.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Vendor inv CV-3310"
+       ],
+       [
+        "Vendor invoice",
+        "CV-3310"
+       ],
+       [
+        "Purchase order",
+        "AF-0440"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Description",
+        "Clinic supplies on account, Cedarline"
+       ],
+       [
+        "Amount",
+        "1,480.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "1,480.00",
+        "1,480.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D04",
+   "display_ref": "Remittance 7091",
+   "type": "source_document",
+   "date": "2026-12-02",
+   "received_seq": 4,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Remittance 7091"
+       ],
+       [
+        "Customer",
+        "Harborview Kennels"
+       ],
+       [
+        "Description",
+        "Harborview Kennels pays Nov 26 invoice in full"
+       ],
+       [
+        "Amount",
+        "4,250.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Remittance 7091"
+       ],
+       [
+        "Customer",
+        "Harborview Kennels"
+       ],
+       [
+        "Description",
+        "Harborview Kennels pays Nov 26 invoice in full"
+       ],
+       [
+        "Amount",
+        "4,250.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 2"
+       ],
+       [
+        "Document",
+        "Remittance 7091"
+       ],
+       [
+        "Customer",
+        "Harborview Kennels"
+       ],
+       [
+        "Description",
+        "Harborview Kennels pays Nov 26 invoice in full"
+       ],
+       [
+        "Amount",
+        "4,250.00"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D05",
+   "display_ref": "Invoice 7102",
+   "type": "source_document",
+   "date": "2026-12-03",
+   "received_seq": 5,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Invoice 7102"
+       ],
+       [
+        "Customer",
+        "Bramble Farm"
+       ],
+       [
+        "Description",
+        "Fees charged - Bramble Farm"
+       ],
+       [
+        "Amount",
+        "870.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Routine surgery, day case",
+        "680.00",
+        "680.00"
+       ],
+       [
+        "2",
+        "Laboratory panel",
+        "95.00",
+        "190.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Invoice 7102"
+       ],
+       [
+        "Customer",
+        "Bramble Farm"
+       ],
+       [
+        "Description",
+        "Fees charged - Bramble Farm"
+       ],
+       [
+        "Amount",
+        "870.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Routine surgery, day case",
+        "680.00",
+        "680.00"
+       ],
+       [
+        "2",
+        "Laboratory panel",
+        "95.00",
+        "190.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Invoice 7102"
+       ],
+       [
+        "Customer",
+        "Bramble Farm"
+       ],
+       [
+        "Description",
+        "Fees charged - Bramble Farm"
+       ],
+       [
+        "Amount",
+        "870.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Routine surgery, day case",
+        "680.00",
+        "680.00"
+       ],
+       [
+        "2",
+        "Laboratory panel",
+        "95.00",
+        "190.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D06",
+   "display_ref": "Check 4102",
+   "type": "source_document",
+   "date": "2026-12-03",
+   "received_seq": 6,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Check 4102"
+       ],
+       [
+        "Payee",
+        "Kettle Springs Municipal Utilities"
+       ],
+       [
+        "For",
+        "Utilities — November service"
+       ],
+       [
+        "Description",
+        "Paid utilities"
+       ],
+       [
+        "Amount",
+        "385.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Check 4102"
+       ],
+       [
+        "Payee",
+        "Kettle Springs Municipal Utilities"
+       ],
+       [
+        "For",
+        "Utilities — November service"
+       ],
+       [
+        "Description",
+        "Paid utilities"
+       ],
+       [
+        "Amount",
+        "385.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 3"
+       ],
+       [
+        "Document",
+        "Check 4102"
+       ],
+       [
+        "Payee",
+        "Kettle Springs Municipal Utilities"
+       ],
+       [
+        "For",
+        "Utilities — November service"
+       ],
+       [
+        "Description",
+        "Paid utilities"
+       ],
+       [
+        "Amount",
+        "385.00"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D07",
+   "display_ref": "Reception tape",
+   "type": "source_document",
+   "date": "2026-12-04",
+   "received_seq": 7,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Reception tape"
+       ],
+       [
+        "Register",
+        "RECEPTION 1"
+       ],
+       [
+        "Clerk",
+        "02"
+       ],
+       [
+        "Description",
+        "Fees settled at the desk"
+       ],
+       [
+        "Amount",
+        "265.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Consultation, standard",
+        "85.00",
+        "170.00"
+       ],
+       [
+        "1",
+        "Laboratory panel",
+        "95.00",
+        "95.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Reception tape"
+       ],
+       [
+        "Register",
+        "RECEPTION 1"
+       ],
+       [
+        "Clerk",
+        "02"
+       ],
+       [
+        "Description",
+        "Fees settled at the desk"
+       ],
+       [
+        "Amount",
+        "275.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Consultation, standard",
+        "90.00",
+        "180.00"
+       ],
+       [
+        "1",
+        "Laboratory panel",
+        "95.00",
+        "95.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Reception tape"
+       ],
+       [
+        "Register",
+        "RECEPTION 1"
+       ],
+       [
+        "Clerk",
+        "02"
+       ],
+       [
+        "Description",
+        "Fees settled at the desk"
+       ],
+       [
+        "Amount",
+        "285.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Consultation, standard",
+        "95.00",
+        "190.00"
+       ],
+       [
+        "1",
+        "Laboratory panel",
+        "95.00",
+        "95.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D08",
+   "display_ref": "Invoice 7103",
+   "type": "source_document",
+   "date": "2026-12-04",
+   "received_seq": 8,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Invoice 7103"
+       ],
+       [
+        "Customer",
+        "Delacroix Stables"
+       ],
+       [
+        "Description",
+        "Fees charged - Delacroix Stables"
+       ],
+       [
+        "Amount",
+        "480.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Dental scale and polish",
+        "240.00",
+        "480.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Invoice 7103"
+       ],
+       [
+        "Customer",
+        "Delacroix Stables"
+       ],
+       [
+        "Description",
+        "Fees charged - Delacroix Stables"
+       ],
+       [
+        "Amount",
+        "480.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Dental scale and polish",
+        "240.00",
+        "480.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 4"
+       ],
+       [
+        "Document",
+        "Invoice 7103"
+       ],
+       [
+        "Customer",
+        "Delacroix Stables"
+       ],
+       [
+        "Description",
+        "Fees charged - Delacroix Stables"
+       ],
+       [
+        "Amount",
+        "480.00"
+       ]
+      ],
+      "lines": [
+       [
+        "2",
+        "Dental scale and polish",
+        "240.00",
+        "480.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D09",
+   "display_ref": "Receipt 5512",
+   "type": "source_document",
+   "date": "2026-12-05",
+   "received_seq": 9,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Receipt 5512"
+       ],
+       [
+        "Description",
+        "Harborview Kennels pays 810 in advance for 18 nights' boarding in January"
+       ],
+       [
+        "Amount",
+        "810.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Receipt 5512"
+       ],
+       [
+        "Description",
+        "Harborview Kennels pays 900 in advance for 20 nights' boarding in January"
+       ],
+       [
+        "Amount",
+        "900.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Receipt 5512"
+       ],
+       [
+        "Description",
+        "Harborview Kennels pays 990 in advance for 22 nights' boarding in January"
+       ],
+       [
+        "Amount",
+        "990.00"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D10",
+   "display_ref": "Remittance 7093",
+   "type": "source_document",
+   "date": "2026-12-05",
+   "received_seq": 10,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Remittance 7093"
+       ],
+       [
+        "Customer",
+        "Bramble Farm"
+       ],
+       [
+        "Description",
+        "Bramble Farm pays Nov 28 invoice"
+       ],
+       [
+        "Amount",
+        "2,100.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Remittance 7093"
+       ],
+       [
+        "Customer",
+        "Bramble Farm"
+       ],
+       [
+        "Description",
+        "Bramble Farm pays Nov 28 invoice"
+       ],
+       [
+        "Amount",
+        "2,100.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 5"
+       ],
+       [
+        "Document",
+        "Remittance 7093"
+       ],
+       [
+        "Customer",
+        "Bramble Farm"
+       ],
+       [
+        "Description",
+        "Bramble Farm pays Nov 28 invoice"
+       ],
+       [
+        "Amount",
+        "2,100.00"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D11",
+   "display_ref": "Vendor inv TP-8802",
+   "type": "source_document",
+   "date": "2026-12-06",
+   "received_seq": 11,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 6"
+       ],
+       [
+        "Document",
+        "Vendor inv TP-8802"
+       ],
+       [
+        "Vendor invoice",
+        "TP-8802"
+       ],
+       [
+        "Purchase order",
+        "AF-0441"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Thornfield Pharmaceuticals"
+       ],
+       [
+        "Description",
+        "Medication on account, Thornfield"
+       ],
+       [
+        "Amount",
+        "960.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "960.00",
+        "960.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 6"
+       ],
+       [
+        "Document",
+        "Vendor inv TP-8802"
+       ],
+       [
+        "Vendor invoice",
+        "TP-8802"
+       ],
+       [
+        "Purchase order",
+        "AF-0441"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Thornfield Pharmaceuticals"
+       ],
+       [
+        "Description",
+        "Medication on account, Thornfield"
+       ],
+       [
+        "Amount",
+        "960.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "960.00",
+        "960.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 6"
+       ],
+       [
+        "Document",
+        "Vendor inv TP-8802"
+       ],
+       [
+        "Vendor invoice",
+        "TP-8802"
+       ],
+       [
+        "Purchase order",
+        "AF-0441"
+       ],
+       [
+        "Terms",
+        "n/30"
+       ],
+       [
+        "Supplier",
+        "Thornfield Pharmaceuticals"
+       ],
+       [
+        "Description",
+        "Medication on account, Thornfield"
+       ],
+       [
+        "Amount",
+        "960.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Office supplies",
+        "960.00",
+        "960.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "D12",
+   "display_ref": "Check 4103",
+   "type": "source_document",
+   "date": "2026-12-06",
+   "received_seq": 12,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 6"
+       ],
+       [
+        "Document",
+        "Check 4103"
+       ],
+       [
+        "Supplier",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Payee",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "For",
+        "On account — November balance"
+       ],
+       [
+        "Description",
+        "Paid Cedarline November balance"
+       ],
+       [
+        "Amount",
+        "3,200.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 6"
+       ],
+       [
+        "Document",
+        "Check 4103"
+       ],
+       [
+        "Supplier",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Payee",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "For",
+        "On account — November balance"
+       ],
+       [
+        "Description",
+        "Paid Cedarline November balance"
+       ],
+       [
+        "Amount",
+        "3,200.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 6"
+       ],
+       [
+        "Document",
+        "Check 4103"
+       ],
+       [
+        "Supplier",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Payee",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "For",
+        "On account — November balance"
+       ],
+       [
+        "Description",
+        "Paid Cedarline November balance"
+       ],
+       [
+        "Amount",
+        "3,200.00"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D13",
+   "display_ref": "Check 4105 / payroll register",
+   "type": "source_document",
+   "date": "2026-12-07",
+   "received_seq": 13,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Check 4105 / payroll register"
+       ],
+       [
+        "Payee",
+        "Payroll account"
+       ],
+       [
+        "For",
+        "Weekly payroll 1–7 December"
+       ],
+       [
+        "Description",
+        "Weekly payroll, Dec 1-7"
+       ],
+       [
+        "Gross pay",
+        "5,500.00"
+       ],
+       [
+        "Sales salaries",
+        "3,600.00"
+       ],
+       [
+        "Office salaries",
+        "1,900.00"
+       ],
+       [
+        "FICA withheld",
+        "420.75"
+       ],
+       [
+        "Federal income tax withheld",
+        "602.00"
+       ],
+       [
+        "State income tax withheld",
+        "181.00"
+       ],
+       [
+        "Amount",
+        "4,296.25"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Check 4105 / payroll register"
+       ],
+       [
+        "Payee",
+        "Payroll account"
+       ],
+       [
+        "For",
+        "Weekly payroll 1–7 December"
+       ],
+       [
+        "Description",
+        "Weekly payroll, Dec 1-7"
+       ],
+       [
+        "Gross pay",
+        "5,500.00"
+       ],
+       [
+        "Sales salaries",
+        "3,600.00"
+       ],
+       [
+        "Office salaries",
+        "1,900.00"
+       ],
+       [
+        "FICA withheld",
+        "420.75"
+       ],
+       [
+        "Federal income tax withheld",
+        "602.00"
+       ],
+       [
+        "State income tax withheld",
+        "181.00"
+       ],
+       [
+        "Amount",
+        "4,296.25"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Check 4105 / payroll register"
+       ],
+       [
+        "Payee",
+        "Payroll account"
+       ],
+       [
+        "For",
+        "Weekly payroll 1–7 December"
+       ],
+       [
+        "Description",
+        "Weekly payroll, Dec 1-7"
+       ],
+       [
+        "Gross pay",
+        "5,500.00"
+       ],
+       [
+        "Sales salaries",
+        "3,600.00"
+       ],
+       [
+        "Office salaries",
+        "1,900.00"
+       ],
+       [
+        "FICA withheld",
+        "420.75"
+       ],
+       [
+        "Federal income tax withheld",
+        "602.00"
+       ],
+       [
+        "State income tax withheld",
+        "181.00"
+       ],
+       [
+        "Amount",
+        "4,296.25"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D14",
+   "display_ref": "Credit memo CM-041",
+   "type": "source_document",
+   "date": "2026-12-07",
+   "received_seq": 14,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Credit memo CM-041"
+       ],
+       [
+        "Customer",
+        "Delacroix Stables"
+       ],
+       [
+        "Description",
+        "Delacroix Stables - one dental redone at no charge"
+       ],
+       [
+        "Amount",
+        "240.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Credit memo CM-041"
+       ],
+       [
+        "Customer",
+        "Delacroix Stables"
+       ],
+       [
+        "Description",
+        "Delacroix Stables - one dental redone at no charge"
+       ],
+       [
+        "Amount",
+        "240.00"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Credit memo CM-041"
+       ],
+       [
+        "Customer",
+        "Delacroix Stables"
+       ],
+       [
+        "Description",
+        "Delacroix Stables - one dental redone at no charge"
+       ],
+       [
+        "Amount",
+        "240.00"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "D15",
+   "display_ref": "Payroll register",
+   "type": "source_document",
+   "date": "2026-12-07",
+   "received_seq": 15,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Payroll register"
+       ],
+       [
+        "Description",
+        "Employer FICA on the Dec 7 payroll"
+       ],
+       [
+        "Employer FICA",
+        "420.75"
+       ],
+       [
+        "Amount",
+        "420.75"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Payroll register"
+       ],
+       [
+        "Description",
+        "Employer FICA on the Dec 7 payroll"
+       ],
+       [
+        "Employer FICA",
+        "420.75"
+       ],
+       [
+        "Amount",
+        "420.75"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Payroll register"
+       ],
+       [
+        "Description",
+        "Employer FICA on the Dec 7 payroll"
+       ],
+       [
+        "Employer FICA",
+        "420.75"
+       ],
+       [
+        "Amount",
+        "420.75"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  },
+  {
+   "ref": "N01",
+   "display_ref": "Quotation CV-Q-0118",
+   "type": "source_document",
+   "date": "2026-12-07",
+   "received_seq": 16,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Quotation CV-Q-0118"
+       ],
+       [
+        "From",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Quotation",
+        "CV-Q-0118"
+       ],
+       [
+        "Valid until",
+        "31 January"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "Description",
+        "Price held for a digital dental radiography unit, no order placed"
+       ],
+       [
+        "Amount",
+        "6,400.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Digital dental radiography unit",
+        "6,400.00",
+        "6,400.00"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Quotation CV-Q-0118"
+       ],
+       [
+        "From",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Quotation",
+        "CV-Q-0118"
+       ],
+       [
+        "Valid until",
+        "31 January"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "Description",
+        "Price held for a digital dental radiography unit, no order placed"
+       ],
+       [
+        "Amount",
+        "6,400.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Digital dental radiography unit",
+        "6,400.00",
+        "6,400.00"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Quotation CV-Q-0118"
+       ],
+       [
+        "From",
+        "Cedarline Veterinary Supply"
+       ],
+       [
+        "Quotation",
+        "CV-Q-0118"
+       ],
+       [
+        "Valid until",
+        "31 January"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "Description",
+        "Price held for a digital dental radiography unit, no order placed"
+       ],
+       [
+        "Amount",
+        "6,400.00"
+       ]
+      ],
+      "lines": [
+       [
+        "1",
+        "Digital dental radiography unit",
+        "6,400.00",
+        "6,400.00"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "N02",
+   "display_ref": "Boarding enquiry BK-2209",
+   "type": "source_document",
+   "date": "2026-12-07",
+   "received_seq": 17,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Boarding enquiry BK-2209"
+       ],
+       [
+        "From",
+        "Harborview Kennels"
+       ],
+       [
+        "Reference",
+        "BK-2209"
+       ],
+       [
+        "Dates enquired",
+        "12 to 19 February"
+       ],
+       [
+        "Description",
+        "Asks whether twelve runs can be held; no booking made and no deposit taken"
+       ],
+       [
+        "Amount",
+        "—"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Boarding enquiry BK-2209"
+       ],
+       [
+        "From",
+        "Harborview Kennels"
+       ],
+       [
+        "Reference",
+        "BK-2209"
+       ],
+       [
+        "Dates enquired",
+        "12 to 19 February"
+       ],
+       [
+        "Description",
+        "Asks whether twelve runs can be held; no booking made and no deposit taken"
+       ],
+       [
+        "Amount",
+        "—"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "Date",
+        "Dec 7"
+       ],
+       [
+        "Document",
+        "Boarding enquiry BK-2209"
+       ],
+       [
+        "From",
+        "Harborview Kennels"
+       ],
+       [
+        "Reference",
+        "BK-2209"
+       ],
+       [
+        "Dates enquired",
+        "12 to 19 February"
+       ],
+       [
+        "Description",
+        "Asks whether twelve runs can be held; no booking made and no deposit taken"
+       ],
+       [
+        "Amount",
+        "—"
+       ]
+      ],
+      "lines": []
+     }
+    }
+   }
+  }
+ ],
+ "reference": [
+  {
+   "key": "payroll",
+   "title": "Payroll",
+   "blocks": [
+    {
+     "type": "p",
+     "text": "Staff are paid weekly. The employer owes the same FICA as the employee, which is a separate entry from the wages."
+    },
+    {
+     "type": "table",
+     "rows": [
+      [
+       "Clinical salaries",
+       "3,600.00"
+      ],
+      [
+       "Office salaries",
+       "1,900.00"
+      ],
+      [
+       "FICA rate",
+       "7.65%"
+      ],
+      [
+       "Federal withholding",
+       "602.00"
+      ],
+      [
+       "State withholding",
+       "181.00"
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "checkpoints": [
+  {
+   "key": "cp1",
+   "ordinal": 1,
+   "stage": "posted",
+   "prompt": "Accounts Receivable control balance at 7 December",
+   "measure": {
+    "account": "105"
+   }
+  },
+  {
+   "key": "cp2",
+   "ordinal": 2,
+   "stage": "posted",
+   "prompt": "Cash balance at 7 December",
+   "measure": {
+    "account": "101"
+   }
+  },
+  {
+   "key": "cp3",
+   "ordinal": 3,
+   "stage": "posted",
+   "prompt": "Unearned Boarding Revenue balance at 7 December",
+   "measure": {
+    "account": "215"
+   }
+  }
+ ],
+ "statements": [],
+ "rubric": {
+  "components": [
+   {
+    "key": "triage",
+    "points": 10
+   },
+   {
+    "key": "journal_selection",
+    "points": 20
+   },
+   {
+    "key": "entry_accuracy",
+    "points": 40
+   },
+   {
+    "key": "posting_completeness",
+    "points": 20
+   },
+   {
+    "key": "subsidiary_agreement",
+    "points": 10
+   }
+  ]
+ },
+ "answers": {
+  "A": {
+   "triage": {
+    "D01": true,
+    "D02": true,
+    "D03": true,
+    "D04": true,
+    "D05": true,
+    "D06": true,
+    "D07": true,
+    "D08": true,
+    "D09": true,
+    "D10": true,
+    "D11": true,
+    "D12": true,
+    "D13": true,
+    "D14": true,
+    "D15": true,
+    "N01": false,
+    "N02": false
+   },
+   "designated_journal_documents": {
+    "D01": "cash_payments",
+    "D02": "fees",
+    "D03": "general",
+    "D04": "cash_receipts",
+    "D05": "fees",
+    "D06": "cash_payments",
+    "D07": "cash_receipts",
+    "D08": "fees",
+    "D09": "cash_receipts",
+    "D10": "cash_receipts",
+    "D11": "general",
+    "D12": "cash_payments",
+    "D13": "cash_payments",
+    "D14": "general",
+    "D15": "general"
+   },
+   "expected_entries": [
+    {
+     "document": "D01",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "514",
+       "debit": 220000
+      },
+      {
+       "account": "101",
+       "credit": 220000
+      }
+     ]
+    },
+    {
+     "document": "D02",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 29000,
+       "party": "C-101"
+      },
+      {
+       "account": "401",
+       "credit": 29000
+      }
+     ]
+    },
+    {
+     "document": "D03",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 148000
+      },
+      {
+       "account": "201",
+       "credit": 148000,
+       "party": "V-201"
+      }
+     ]
+    },
+    {
+     "document": "D04",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 425000
+      },
+      {
+       "account": "105",
+       "credit": 425000,
+       "party": "C-102"
+      }
+     ]
+    },
+    {
+     "document": "D05",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 87000,
+       "party": "C-103"
+      },
+      {
+       "account": "401",
+       "credit": 87000
+      }
+     ]
+    },
+    {
+     "document": "D06",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "522",
+       "debit": 38500
+      },
+      {
+       "account": "101",
+       "credit": 38500
+      }
+     ]
+    },
+    {
+     "document": "D07",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 26500
+      },
+      {
+       "account": "401",
+       "credit": 26500
+      }
+     ]
+    },
+    {
+     "document": "D08",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 48000,
+       "party": "C-104"
+      },
+      {
+       "account": "401",
+       "credit": 48000
+      }
+     ]
+    },
+    {
+     "document": "D09",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 81000
+      },
+      {
+       "account": "215",
+       "credit": 81000
+      }
+     ]
+    },
+    {
+     "document": "D10",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 210000
+      },
+      {
+       "account": "105",
+       "credit": 210000,
+       "party": "C-103"
+      }
+     ]
+    },
+    {
+     "document": "D11",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 96000
+      },
+      {
+       "account": "201",
+       "credit": 96000,
+       "party": "V-203"
+      }
+     ]
+    },
+    {
+     "document": "D12",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 320000,
+       "party": "V-201"
+      },
+      {
+       "account": "101",
+       "credit": 320000
+      }
+     ]
+    },
+    {
+     "document": "D13",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "511",
+       "debit": 360000
+      },
+      {
+       "account": "512",
+       "debit": 190000
+      },
+      {
+       "account": "204",
+       "credit": 42075
+      },
+      {
+       "account": "205",
+       "credit": 60200
+      },
+      {
+       "account": "206",
+       "credit": 18100
+      },
+      {
+       "account": "101",
+       "credit": 429625
+      }
+     ]
+    },
+    {
+     "document": "D14",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "402",
+       "debit": 24000
+      },
+      {
+       "account": "105",
+       "credit": 24000,
+       "party": "C-104"
+      }
+     ]
+    },
+    {
+     "document": "D15",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "513",
+       "debit": 42075
+      },
+      {
+       "account": "204",
+       "credit": 42075
+      }
+     ]
+    }
+   ],
+   "adjustments": [],
+   "error_signatures": [
+    {
+     "key": "deposit",
+     "label": "A boarding deposit taken as a fee earned before the animal had stayed a night",
+     "detect": {
+      "type": "entry_line",
+      "document": "D09",
+      "account": "401",
+      "side": "credit"
+     }
+    },
+    {
+     "key": "earlydisc",
+     "label": "Allowed a discount on an invoice already past its discount period",
+     "detect": {
+      "type": "entry_line",
+      "document": "D10",
+      "account": "403",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "refund",
+     "label": "A refund of fees netted against revenue instead of shown as an allowance",
+     "detect": {
+      "type": "entry_line",
+      "document": "D14",
+      "account": "401",
+      "side": "debit"
+     }
+    }
+   ]
+  },
+  "B": {
+   "triage": {
+    "D01": true,
+    "D02": true,
+    "D03": true,
+    "D04": true,
+    "D05": true,
+    "D06": true,
+    "D07": true,
+    "D08": true,
+    "D09": true,
+    "D10": true,
+    "D11": true,
+    "D12": true,
+    "D13": true,
+    "D14": true,
+    "D15": true,
+    "N01": false,
+    "N02": false
+   },
+   "designated_journal_documents": {
+    "D01": "cash_payments",
+    "D02": "fees",
+    "D03": "general",
+    "D04": "cash_receipts",
+    "D05": "fees",
+    "D06": "cash_payments",
+    "D07": "cash_receipts",
+    "D08": "fees",
+    "D09": "cash_receipts",
+    "D10": "cash_receipts",
+    "D11": "general",
+    "D12": "cash_payments",
+    "D13": "cash_payments",
+    "D14": "general",
+    "D15": "general"
+   },
+   "expected_entries": [
+    {
+     "document": "D01",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "514",
+       "debit": 220000
+      },
+      {
+       "account": "101",
+       "credit": 220000
+      }
+     ]
+    },
+    {
+     "document": "D02",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 30000,
+       "party": "C-101"
+      },
+      {
+       "account": "401",
+       "credit": 30000
+      }
+     ]
+    },
+    {
+     "document": "D03",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 148000
+      },
+      {
+       "account": "201",
+       "credit": 148000,
+       "party": "V-201"
+      }
+     ]
+    },
+    {
+     "document": "D04",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 425000
+      },
+      {
+       "account": "105",
+       "credit": 425000,
+       "party": "C-102"
+      }
+     ]
+    },
+    {
+     "document": "D05",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 87000,
+       "party": "C-103"
+      },
+      {
+       "account": "401",
+       "credit": 87000
+      }
+     ]
+    },
+    {
+     "document": "D06",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "522",
+       "debit": 38500
+      },
+      {
+       "account": "101",
+       "credit": 38500
+      }
+     ]
+    },
+    {
+     "document": "D07",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 27500
+      },
+      {
+       "account": "401",
+       "credit": 27500
+      }
+     ]
+    },
+    {
+     "document": "D08",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 48000,
+       "party": "C-104"
+      },
+      {
+       "account": "401",
+       "credit": 48000
+      }
+     ]
+    },
+    {
+     "document": "D09",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 90000
+      },
+      {
+       "account": "215",
+       "credit": 90000
+      }
+     ]
+    },
+    {
+     "document": "D10",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 210000
+      },
+      {
+       "account": "105",
+       "credit": 210000,
+       "party": "C-103"
+      }
+     ]
+    },
+    {
+     "document": "D11",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 96000
+      },
+      {
+       "account": "201",
+       "credit": 96000,
+       "party": "V-203"
+      }
+     ]
+    },
+    {
+     "document": "D12",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 320000,
+       "party": "V-201"
+      },
+      {
+       "account": "101",
+       "credit": 320000
+      }
+     ]
+    },
+    {
+     "document": "D13",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "511",
+       "debit": 360000
+      },
+      {
+       "account": "512",
+       "debit": 190000
+      },
+      {
+       "account": "204",
+       "credit": 42075
+      },
+      {
+       "account": "205",
+       "credit": 60200
+      },
+      {
+       "account": "206",
+       "credit": 18100
+      },
+      {
+       "account": "101",
+       "credit": 429625
+      }
+     ]
+    },
+    {
+     "document": "D14",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "402",
+       "debit": 24000
+      },
+      {
+       "account": "105",
+       "credit": 24000,
+       "party": "C-104"
+      }
+     ]
+    },
+    {
+     "document": "D15",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "513",
+       "debit": 42075
+      },
+      {
+       "account": "204",
+       "credit": 42075
+      }
+     ]
+    }
+   ],
+   "adjustments": [],
+   "error_signatures": [
+    {
+     "key": "deposit",
+     "label": "A boarding deposit taken as a fee earned before the animal had stayed a night",
+     "detect": {
+      "type": "entry_line",
+      "document": "D09",
+      "account": "401",
+      "side": "credit"
+     }
+    },
+    {
+     "key": "earlydisc",
+     "label": "Allowed a discount on an invoice already past its discount period",
+     "detect": {
+      "type": "entry_line",
+      "document": "D10",
+      "account": "403",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "refund",
+     "label": "A refund of fees netted against revenue instead of shown as an allowance",
+     "detect": {
+      "type": "entry_line",
+      "document": "D14",
+      "account": "401",
+      "side": "debit"
+     }
+    }
+   ]
+  },
+  "C": {
+   "triage": {
+    "D01": true,
+    "D02": true,
+    "D03": true,
+    "D04": true,
+    "D05": true,
+    "D06": true,
+    "D07": true,
+    "D08": true,
+    "D09": true,
+    "D10": true,
+    "D11": true,
+    "D12": true,
+    "D13": true,
+    "D14": true,
+    "D15": true,
+    "N01": false,
+    "N02": false
+   },
+   "designated_journal_documents": {
+    "D01": "cash_payments",
+    "D02": "fees",
+    "D03": "general",
+    "D04": "cash_receipts",
+    "D05": "fees",
+    "D06": "cash_payments",
+    "D07": "cash_receipts",
+    "D08": "fees",
+    "D09": "cash_receipts",
+    "D10": "cash_receipts",
+    "D11": "general",
+    "D12": "cash_payments",
+    "D13": "cash_payments",
+    "D14": "general",
+    "D15": "general"
+   },
+   "expected_entries": [
+    {
+     "document": "D01",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "514",
+       "debit": 220000
+      },
+      {
+       "account": "101",
+       "credit": 220000
+      }
+     ]
+    },
+    {
+     "document": "D02",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 31000,
+       "party": "C-101"
+      },
+      {
+       "account": "401",
+       "credit": 31000
+      }
+     ]
+    },
+    {
+     "document": "D03",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 148000
+      },
+      {
+       "account": "201",
+       "credit": 148000,
+       "party": "V-201"
+      }
+     ]
+    },
+    {
+     "document": "D04",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 425000
+      },
+      {
+       "account": "105",
+       "credit": 425000,
+       "party": "C-102"
+      }
+     ]
+    },
+    {
+     "document": "D05",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 87000,
+       "party": "C-103"
+      },
+      {
+       "account": "401",
+       "credit": 87000
+      }
+     ]
+    },
+    {
+     "document": "D06",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "522",
+       "debit": 38500
+      },
+      {
+       "account": "101",
+       "credit": 38500
+      }
+     ]
+    },
+    {
+     "document": "D07",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 28500
+      },
+      {
+       "account": "401",
+       "credit": 28500
+      }
+     ]
+    },
+    {
+     "document": "D08",
+     "journal": "fees",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "105",
+       "debit": 48000,
+       "party": "C-104"
+      },
+      {
+       "account": "401",
+       "credit": 48000
+      }
+     ]
+    },
+    {
+     "document": "D09",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 99000
+      },
+      {
+       "account": "215",
+       "credit": 99000
+      }
+     ]
+    },
+    {
+     "document": "D10",
+     "journal": "cash_receipts",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "101",
+       "debit": 210000
+      },
+      {
+       "account": "105",
+       "credit": 210000,
+       "party": "C-103"
+      }
+     ]
+    },
+    {
+     "document": "D11",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "115",
+       "debit": 96000
+      },
+      {
+       "account": "201",
+       "credit": 96000,
+       "party": "V-203"
+      }
+     ]
+    },
+    {
+     "document": "D12",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "201",
+       "debit": 320000,
+       "party": "V-201"
+      },
+      {
+       "account": "101",
+       "credit": 320000
+      }
+     ]
+    },
+    {
+     "document": "D13",
+     "journal": "cash_payments",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "511",
+       "debit": 360000
+      },
+      {
+       "account": "512",
+       "debit": 190000
+      },
+      {
+       "account": "204",
+       "credit": 42075
+      },
+      {
+       "account": "205",
+       "credit": 60200
+      },
+      {
+       "account": "206",
+       "credit": 18100
+      },
+      {
+       "account": "101",
+       "credit": 429625
+      }
+     ]
+    },
+    {
+     "document": "D14",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "402",
+       "debit": 24000
+      },
+      {
+       "account": "105",
+       "credit": 24000,
+       "party": "C-104"
+      }
+     ]
+    },
+    {
+     "document": "D15",
+     "journal": "general",
+     "kind": "regular",
+     "lines": [
+      {
+       "account": "513",
+       "debit": 42075
+      },
+      {
+       "account": "204",
+       "credit": 42075
+      }
+     ]
+    }
+   ],
+   "adjustments": [],
+   "error_signatures": [
+    {
+     "key": "deposit",
+     "label": "A boarding deposit taken as a fee earned before the animal had stayed a night",
+     "detect": {
+      "type": "entry_line",
+      "document": "D09",
+      "account": "401",
+      "side": "credit"
+     }
+    },
+    {
+     "key": "earlydisc",
+     "label": "Allowed a discount on an invoice already past its discount period",
+     "detect": {
+      "type": "entry_line",
+      "document": "D10",
+      "account": "403",
+      "side": "debit"
+     }
+    },
+    {
+     "key": "refund",
+     "label": "A refund of fees netted against revenue instead of shown as an allowance",
+     "detect": {
+      "type": "entry_line",
+      "document": "D14",
+      "account": "401",
+      "side": "debit"
+     }
+    }
+   ]
+  }
+ }
+}

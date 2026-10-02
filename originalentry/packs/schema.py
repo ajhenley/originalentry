@@ -104,6 +104,10 @@ class Document(_Model):
     ref: str
     display_ref: str
     type: str
+    # What the artefact is, e.g. "sales_invoice" or "void_cheque" — read from the envelope's own
+    # manifest once a pack takes its document list from it (Alder & Finch); absent for a pack
+    # still built one document per transaction (Riverbend), which has nothing else to put here.
+    kind: str | None = None
     date: date
     received_seq: int
     guided: bool = False

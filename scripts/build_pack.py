@@ -18,6 +18,7 @@ so this pack carries no adjustments, no statements and no closing entries.
 from __future__ import annotations
 
 import argparse
+import base64
 import contextlib
 import importlib.util
 import io
@@ -213,13 +214,18 @@ def _item_description(sku: str, model, profile, txn) -> str:
     )
 
 
-def documents(model, profile) -> list[dict]:
-    """One document per transaction, in the order they arrive on the desk.
+def _documents_by_transaction(model, profile) -> list[dict]:
+    """One document per transaction, in the order they arrive on the desk, plus the profile's
+    own invented distractors.
 
     A label that repeats is no label at all: the three counter sales all say "Cash register
     tape", and in a list of thirty-one they cannot be told apart. The paper tape identifies
     itself by its date, so that is what is added, and it is added to anything that repeats
     rather than to the tapes by name.
+
+    This is Riverbend's own path, kept exactly as it was: one document per transaction, found by
+    replaying the model, with no printed envelope to take an inventory from. The clinic has moved
+    to ``documents()`` below, which takes its list from the envelope's own manifest instead.
     """
     # Descriptions and metadata do not vary by version; which version is "base" does not matter,
     # so the lowest-sorting one stands in rather than a letter this profile might not have.
@@ -254,6 +260,35 @@ def documents(model, profile) -> list[dict]:
     return docs
 
 
+def documents(model, profile, manifest) -> list[dict]:
+    """One document per printed artefact, in the order the envelope holds them.
+
+    It was one per transaction plus distractors the profile invented, which is how the paper
+    student came to triage a void cheque and four time cards while the screen student triaged a
+    quotation that exists nowhere in the envelope. ``model`` is unused here — the manifest alone
+    says what was printed — but kept in the signature so the two document-list builders share a
+    shape.
+    """
+    docs = []
+    for seq, entry in enumerate(manifest, start=1):
+        label = entry["printed_ref"] or entry["kind"].replace("_", " ").capitalize()
+        docs.append({
+            "ref": entry["ref"],
+            "display_ref": f'{label}, {entry["date"]}' if entry["date"] else label,
+            "type": "source_document",
+            "kind": entry["kind"],
+            "date": _iso_date(entry["date"], profile) if entry["date"] else profile.PERIOD["end"],
+            "received_seq": seq,
+            # Guidance is keyed by ref rather than received_seq, so adding a document to the
+            # envelope cannot silently move the guidance onto a different one. check() has
+            # already proven every guided ref is a real manifest entry.
+            "guided": entry["ref"] in profile.GUIDANCE,
+            "guidance": profile.GUIDANCE.get(entry["ref"]),
+            "variants": {},
+        })
+    return docs
+
+
 def _iso_date(label: str, profile) -> str:
     """"Dec 4" in the model; the pack wants a real date in the period.
 
@@ -265,8 +300,20 @@ def _iso_date(label: str, profile) -> str:
     return f"{year}-{month}-{day:02d}"
 
 
-def expected_entries(model, variant: str, profile) -> list[dict]:
-    """Each transaction as the entry the key says it is, in cents."""
+def expected_entries(model, variant: str, profile, manifest=None) -> list[dict]:
+    """Each transaction as the entry the key says it is, in cents.
+
+    ``document`` names the artefact that is the *evidence* for the entry. Without a manifest
+    that is simply the transaction's own ref (Riverbend's path: one document per transaction,
+    so the two can never disagree). With one, a transaction can print two artefacts — a purchase
+    prints both a purchase order and a vendor invoice, and both carry the transaction — so the
+    document is found by the manifest entry whose ``entry_for`` matches, never by ``txn``, which
+    would also match the purchase order and tell a student to journalise it a second time.
+    """
+    doc_for_txn = None
+    if manifest is not None:
+        doc_for_txn = {entry["entry_for"]: entry["ref"]
+                       for entry in manifest if entry["entry_for"] is not None}
     entries = []
     for txn in model.build(variant):
         lines = []
@@ -283,8 +330,9 @@ def expected_entries(model, variant: str, profile) -> list[dict]:
             if kind == "supplier" and txn.get("ap"):
                 line["party"] = txn["ap"][0]
             lines.append(line)
+        document = doc_for_txn[txn["no"]] if doc_for_txn is not None else _ref(txn)
         entries.append({
-            "document": _ref(txn),
+            "document": document,
             "journal": profile.JOURNAL_OF[txn["cycle"]],
             "kind": "regular",
             "lines": lines,
@@ -303,19 +351,27 @@ def _amount_lines(lines):
     return out
 
 
-def error_signatures(model, errors_mod, variant: str) -> list[dict]:
+def error_signatures(model, errors_mod, variant: str, manifest=None) -> list[dict]:
     """The five designed errors, each detected on the one document that produces it.
 
     Detection is document-first (T8.5): the trap changes a named line on a named document, so the
-    signature names that line rather than hunting a balance difference.
+    signature names that line rather than hunting a balance difference. With a manifest, that
+    document is the one whose ``entry_for`` names the transaction — the same reasoning as
+    ``expected_entries``, and for the same reason: a purchase's vendor invoice is where the trap
+    is detected, never its purchase order.
     """
     txn_of = {t["no"]: t for t in model.build(variant)}
+    doc_for_txn = None
+    if manifest is not None:
+        doc_for_txn = {entry["entry_for"]: entry["ref"]
+                       for entry in manifest if entry["entry_for"] is not None}
     signatures = []
     for kind, _date, label in errors_mod.TRAPS:
         mutated = {t["no"]: t for t in errors_mod.mutate(variant, kind)}
         for no, txn in txn_of.items():
             if mutated[no]["lines"] == txn["lines"]:
                 continue
+            document = doc_for_txn[no] if doc_for_txn is not None else _ref(txn)
             # The account and side that appear only in the mistaken version.
             right = {(str(a), "debit" if d else "credit") for a, d, _c in txn["lines"] if d} | \
                     {(str(a), "credit") for a, _d, c in txn["lines"] if c}
@@ -326,7 +382,7 @@ def error_signatures(model, errors_mod, variant: str) -> list[dict]:
                 account, side = tell[0]
                 signatures.append({
                     "key": kind, "label": label,
-                    "detect": {"type": "entry_line", "document": _ref(txn),
+                    "detect": {"type": "entry_line", "document": document,
                                "account": account, "side": side},
                 })
             else:
@@ -343,18 +399,44 @@ def error_signatures(model, errors_mod, variant: str) -> list[dict]:
                     account, side, amount = changed[0]
                     signatures.append({
                         "key": kind, "label": label,
-                        "detect": {"type": "entry_amount", "document": _ref(txn),
+                        "detect": {"type": "entry_amount", "document": document,
                                    "account": account, "side": side, "amount": amount},
                     })
             break
     return signatures
 
 
-def build_source(company: str, practicesets: Path, slug: str | None = None) -> dict:
+def _render_manifest_images(set_dir: Path) -> dict[str, bytes]:
+    """``scripts/render_documents.py``'s ``render_manifest``, loaded by path.
+
+    ``scripts`` is not a package, so this cannot be a plain ``import``: ``build_pack.py`` is
+    itself loaded by path in several tests (``load_profile`` and ``load_model`` do the same
+    thing, for the same reason). Loaded lazily, and only when a documents directory is given, so
+    a company with no envelope to photograph (Riverbend) never needs WeasyPrint or poppler
+    installed at all.
+    """
+    path = Path(__file__).resolve().parent / "render_documents.py"
+    spec = importlib.util.spec_from_file_location("render_documents", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.render_manifest(set_dir)
+
+
+def build_source(company: str, practicesets: Path, slug: str | None = None,
+                  documents_dir: Path | None = None) -> dict:
     generators = require_practicesets(practicesets)
     model, errors_mod = load_model(generators, company)
     profile = load_profile(slug or company)
-    profile.check(model)
+
+    manifest = None
+    if documents_dir is not None:
+        manifest = json.loads((documents_dir / "manifest.json").read_text())
+    # Riverbend's own check(model) takes no manifest; only a company that has moved to the
+    # manifest path passes one, and only its profile's check() accepts the extra argument.
+    if manifest is not None:
+        profile.check(model, manifest)
+    else:
+        profile.check(model)
 
     accounts = []
     for order, (number, name, kind) in enumerate(model.ACCOUNTS, start=1):
@@ -395,34 +477,71 @@ def build_source(company: str, practicesets: Path, slug: str | None = None) -> d
                         | {p["code"]: 0 for p in profile.EXTRA_PARTIES}),
         }
 
-    docs = documents(model, profile)
     cheques = model.DOCS.get("cheques", {})
-    # No-entry documents all land on the period's last day; formatted like the model's own
-    # dates ("Dec 4"), which _iso_date then turns into a real one.
-    period_end = date.fromisoformat(profile.PERIOD["end"])
-    no_entry_date = f"{period_end:%b} {period_end.day}"
     answers = {}
-    for code in sorted(model.VARIANTS):
-        txns = model.build(code)
-        # strict: one document per transaction, always. A mismatch is an authoring bug.
-        for doc, txn in zip(docs[:len(txns)], txns, strict=True):
-            doc["variants"][code] = {
-                "text_alternative": _text_alternative(txn, model, cheques, profile)}
-        for doc, extra in zip(docs[len(txns):], profile.NO_ENTRY_DOCUMENTS, strict=True):
-            doc["variants"][code] = {"text_alternative":
-                                     {"fields": [["Date", no_entry_date],
-                                                 ["Document", extra["display_ref"]],
-                                                 *extra["fields"]],
-                                      "lines": extra["lines"]}}
-        answers[code] = {
-            "triage": ({_ref(t): True for t in txns}
-                       | {e["ref"]: False for e in profile.NO_ENTRY_DOCUMENTS}),
-            "designated_journal_documents": {_ref(t): profile.JOURNAL_OF[t["cycle"]]
-                                              for t in txns},
-            "expected_entries": expected_entries(model, code, profile),
-            "adjustments": [],
-            "error_signatures": error_signatures(model, errors_mod, code),
-        }
+
+    if manifest is not None:
+        # The clinic's path: the document list, the pictures and the triage all come from what
+        # was actually printed, not from replaying the model a second time.
+        docs = documents(model, profile, manifest)
+        images = _render_manifest_images(documents_dir)
+        for code in sorted(model.VARIANTS):
+            txns_by_no = {t["no"]: t for t in model.build(code)}
+            for doc, entry in zip(docs, manifest, strict=True):
+                variant: dict = {}
+                # txn: the transaction this artefact belongs to (a purchase order carries one
+                # even though it is filed, not entered). entry_for, read below for triage, is
+                # deliberately not used here — a document still shows what it is about.
+                if entry["txn"] is not None:
+                    variant["text_alternative"] = _text_alternative(
+                        txns_by_no[entry["txn"]], model, cheques, profile)
+                picture = images.get(entry["ref"])
+                if picture is not None:
+                    variant["image"] = (
+                        f"data:image/png;base64,{base64.b64encode(picture).decode('ascii')}")
+                    variant["alt"] = f"{doc['display_ref']} for {profile.COMPANY['name']}"
+                doc["variants"][code] = variant
+            answers[code] = {
+                # entry_for, not txn: a purchase order and its vendor invoice share a txn, and
+                # only the invoice is the evidence a student journalises from.
+                "triage": {entry["ref"]: entry["entry_for"] is not None for entry in manifest},
+                "designated_journal_documents": {
+                    entry["ref"]: profile.JOURNAL_OF[txns_by_no[entry["entry_for"]]["cycle"]]
+                    for entry in manifest if entry["entry_for"] is not None
+                },
+                "expected_entries": expected_entries(model, code, profile, manifest),
+                "adjustments": [],
+                "error_signatures": error_signatures(model, errors_mod, code, manifest),
+            }
+    else:
+        # Riverbend's path, untouched: one document per transaction plus the profile's own
+        # invented distractors.
+        docs = _documents_by_transaction(model, profile)
+        # No-entry documents all land on the period's last day; formatted like the model's own
+        # dates ("Dec 4"), which _iso_date then turns into a real one.
+        period_end = date.fromisoformat(profile.PERIOD["end"])
+        no_entry_date = f"{period_end:%b} {period_end.day}"
+        for code in sorted(model.VARIANTS):
+            txns = model.build(code)
+            # strict: one document per transaction, always. A mismatch is an authoring bug.
+            for doc, txn in zip(docs[:len(txns)], txns, strict=True):
+                doc["variants"][code] = {
+                    "text_alternative": _text_alternative(txn, model, cheques, profile)}
+            for doc, extra in zip(docs[len(txns):], profile.NO_ENTRY_DOCUMENTS, strict=True):
+                doc["variants"][code] = {"text_alternative":
+                                         {"fields": [["Date", no_entry_date],
+                                                     ["Document", extra["display_ref"]],
+                                                     *extra["fields"]],
+                                          "lines": extra["lines"]}}
+            answers[code] = {
+                "triage": ({_ref(t): True for t in txns}
+                           | {e["ref"]: False for e in profile.NO_ENTRY_DOCUMENTS}),
+                "designated_journal_documents": {_ref(t): profile.JOURNAL_OF[t["cycle"]]
+                                                  for t in txns},
+                "expected_entries": expected_entries(model, code, profile),
+                "adjustments": [],
+                "error_signatures": error_signatures(model, errors_mod, code),
+            }
 
     return {
         "format_version": 1,
@@ -453,7 +572,11 @@ if __name__ == "__main__":
                         help="path to the practicesets checkout")
     parser.add_argument("--slug", default=None,
                         help="the pack slug, if different from COMPANY (default: COMPANY)")
+    parser.add_argument("--documents", type=Path, default=None, dest="documents_dir",
+                        help="the directory gendocs.py wrote (manifest.json plus documents/); "
+                             "when given, the document list and pictures come from it rather "
+                             "than from one document per transaction")
     args = parser.parse_args()
-    json.dump(build_source(args.company, args.practicesets, args.slug), sys.stdout,
-              indent=1, ensure_ascii=False)
+    json.dump(build_source(args.company, args.practicesets, args.slug, args.documents_dir),
+              sys.stdout, indent=1, ensure_ascii=False)
     print()

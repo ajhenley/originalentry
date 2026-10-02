@@ -92,31 +92,6 @@ def _journals() -> list[dict]:
 
 JOURNALS = _journals()
 
-# Documents that arrive and need nothing done with them. Dated inside 1-7 December, the clinic's
-# own period, not Riverbend's 15 December. The second is deliberately close to transaction 9,
-# where Harborview Kennels *does* pay in advance for boarding and that deposit is a real entry: a
-# student who records the enquiry has not distinguished a booking from an enquiry, which is the
-# judgement the triage marks are for.
-NO_ENTRY_DOCUMENTS = [
-    {
-        "ref": "N01", "display_ref": "Quotation CV-Q-0118", "date": "2026-12-07",
-        "fields": [["From", "Cedarline Veterinary Supply"], ["Quotation", "CV-Q-0118"],
-                   ["Valid until", "31 January"], ["Terms", "n/30"],
-                   ["Description", "Price held for a digital dental radiography unit, "
-                                   "no order placed"],
-                   ["Amount", "6,400.00"]],
-        "lines": [["1", "Digital dental radiography unit", "6,400.00", "6,400.00"]],
-    },
-    {
-        "ref": "N02", "display_ref": "Boarding enquiry BK-2209", "date": "2026-12-07",
-        "fields": [["From", "Harborview Kennels"], ["Reference", "BK-2209"],
-                   ["Dates enquired", "12 to 19 February"],
-                   ["Description", "Asks whether twelve runs can be held for the dates below"],
-                   ["Amount", "—"]],
-        "lines": [],
-    },
-]
-
 # The paper set's own checkpoint answers table. Checkpoint 3 is deliberately not the Accounts
 # Payable control: the clinic's A/P closes at 6,040.00 in all three versions, so it could be
 # copied between students without being worked. Unearned Boarding Revenue differs in every
@@ -124,10 +99,11 @@ NO_ENTRY_DOCUMENTS = [
 # not a fee.
 # What the first two guided documents tell the student: which journal, and why, never which
 # accounts. The clinic has no sales; the paper books' own words are "Every line here is a fee
-# charged on account."
+# charged on account." Keyed by the manifest's own ref rather than received_seq, so adding a
+# document to the envelope cannot silently move the guidance onto a different one.
 GUIDANCE = {
-    1: "A payment by cheque belongs in the journal built for cash going out.",
-    2: "Fees charged on account are recorded in the journal built for them.",
+    "D01": "A payment by cheque belongs in the journal built for cash going out.",
+    "D02": "Fees charged on account are recorded in the journal built for them.",
 }
 
 CHECKPOINTS = [
@@ -235,15 +211,21 @@ def _bare(text: str) -> str:
     return text.strip().lower()
 
 
-# The translator guides these two sequence numbers (``documents()`` in build_pack.py) and no
-# others; defined once here so the two checks below do not each repeat the literal.
-GUIDED_SEQUENCES = {1, 2}
+# The translator guides these two refs (``documents()`` in build_pack.py) and no others; defined
+# once here so the two checks below do not each repeat the literal.
+GUIDED_SEQUENCES = set(GUIDANCE)
 
 
-def check(model):
+def check(model, manifest=None):
     """Special-cased transaction numbers, journal column accounts, checkpoint accounts, payroll
     labels and guidance coverage — everything this profile asserts about itself before it is
-    trusted."""
+    trusted.
+
+    ``manifest`` is the envelope's own inventory (Task 1's ``manifest.json``, loaded by
+    ``build_pack.py``). When it is given, every guided ref must actually be a document the
+    envelope contains — the check GUIDANCE/GUIDED_SEQUENCES agreeing with each other cannot
+    provide, since both would agree just as happily on a ref nothing prints.
+    """
     numbers = {t["no"] for t in model.build(sorted(model.VARIANTS)[0])}
     missing = _SPECIAL_TRANSACTIONS - numbers
     if missing:
@@ -307,3 +289,16 @@ def check(model):
             f"{COMPANY['slug']}: GUIDANCE has text for document {sorted(stray)}, which is never "
             f"guided, so nobody would read it. Nothing was written."
         )
+
+    # Every guided ref must be a document the envelope actually contains. Without this, renaming
+    # or dropping a printed artefact leaves GUIDANCE pointing at a ref nothing prints, and
+    # GUIDANCE/GUIDED_SEQUENCES agreeing with each other would not catch it — they would just
+    # agree on the wrong thing.
+    if manifest is not None:
+        manifest_refs = {entry["ref"] for entry in manifest}
+        unprinted = set(GUIDED_SEQUENCES) - manifest_refs
+        if unprinted:
+            raise SystemExit(
+                f"{COMPANY['slug']}: GUIDANCE guides {sorted(unprinted)}, which the envelope's "
+                f"manifest does not contain. Nothing was written."
+            )

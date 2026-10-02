@@ -444,6 +444,14 @@ def reference(section):
 def documents():
     docs = _documents(g.pack_version.id)
     current = current_dispositions(db.session, g.workspace)
+    # What each artefact *is* — "void cheque", "time card", "petty cash voucher" — read from the
+    # envelope's own manifest, where a pack that takes its document list from the printed set
+    # records it. The SourceDocument row carries only doc_type, which is the constant
+    # "source_document" for all 26 of the clinic's documents, so the Type column said "source
+    # document" twenty-six times. Presentational: the column falls back to doc_type for a pack
+    # with no kind (Riverbend, which has no printed envelope behind it).
+    kinds = {d["ref"]: d.get("kind")
+             for d in (g.pack_version.manifest or {}).get("documents", [])}
     rows = []
     for d in docs:
         disp = current.get(d.id)
@@ -451,6 +459,7 @@ def documents():
             "ref": d.ref,
             "display_ref": d.display_ref,
             "doc_type": d.doc_type,
+            "kind": kinds.get(d.ref),
             "date": d.doc_date,
             "guided": d.guided,
             "status": disp.choice if disp else None,

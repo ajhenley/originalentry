@@ -28,7 +28,9 @@
                               company_slug=company.slug, ref=d.ref) }}">{{ d.display_ref }}</a>
           {% if d.guided %}<span class="ml-1 rounded bg-cloud px-1 text-xs">guided</span>{% endif %}
         </td>
-        <td>{{ d.doc_type.replace('_', ' ') }}</td>
+        {# The artefact's own kind where the envelope recorded one; doc_type is the constant
+           "source document" for every row of a manifest-built pack. #}
+        <td>{{ (d.kind or d.doc_type).replace('_', ' ') }}</td>
         <td>{{ d.date.strftime('%b %-d') }}</td>
         <td>
           {% if d.status == 'record' %}Recorded

@@ -11,6 +11,7 @@ import re
 import struct
 import zipfile
 import zlib
+from html.parser import HTMLParser
 
 import pytest
 from originalentry.models import (
@@ -76,6 +77,10 @@ def _screen_pack() -> dict:
     their own checkpoints are not asking for.
     """
     pack = json.loads(json.dumps(testco_alpha.PACK))
+    # What the artefact is, as a manifest-built pack records it — deliberately not the same as
+    # `type`, so the Type column cannot pass by reading the wrong field.
+    for document in pack["documents"]:
+        document["kind"] = "void_cheque"
     pack["variants"] = [{"code": code, "label": f"Variant {code}", "drivers": {}}
                         for code in sorted(COLOURS)]
     base = pack["opening_balances"]["A"]
@@ -279,20 +284,33 @@ def test_screen_mode_shows_the_image_and_still_offers_the_text(session, client, 
     assert "View as text" in body            # and the reading that does not need the image
 
 
-DISCLOSURE = re.compile(r"<details([^>]*)data-pack-content", re.I)
+class _Disclosures(HTMLParser):
+    """Every <details data-pack-content> on the page, as attribute dicts."""
+
+    def __init__(self):
+        super().__init__()
+        self.found: list[dict] = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "details" and any(name == "data-pack-content" for name, _ in attrs):
+            self.found.append(dict(attrs))
 
 
 def _text_disclosure(body):
-    """The disclosure holding the document's text, not the account menu.
+    """The attributes of the disclosure holding the document's text, not the account menu.
 
     Every workspace page carries an unrelated <details>, so an unscoped check passes even with
-    this one deleted — which is how this test came to assert nothing. Matching the attributes of
-    the tag that carries data-pack-content also stops the assertion depending on whether `open`
-    happens to be written before or after the class.
+    this one deleted — which is how this test came to assert nothing. Scoping it by
+    data-pack-content was right; doing it with `<details([^>]*)data-pack-content` was not,
+    because that captures only what *precedes* the attribute, so moving `open` after it gave a
+    false failure and a class containing the substring "open" would have too. The whole tag is
+    parsed and the attributes are looked up by name, so neither their order nor any other
+    attribute's value can reach the assertion.
     """
-    found = DISCLOSURE.search(body)
-    assert found, "the document's text is not inside a disclosure at all"
-    return found.group(1)
+    parser = _Disclosures()
+    parser.feed(body)
+    assert parser.found, "the document's text is not inside a disclosure at all"
+    return parser.found[0]
 
 
 def test_the_text_is_behind_a_disclosure_when_there_is_a_picture(session, client, instructor):
@@ -369,3 +387,36 @@ def test_a_row_that_really_has_a_label_is_still_a_definition_row(session, client
 
     assert "<dt class=\"font-medium\">Customer</dt><dd>Firstborn Supply</dd>" in body
     assert body.index("TESTCO ALPHA") < body.index("Firstborn Supply") < body.index("CUSTOMER COPY")
+
+
+def test_a_document_is_typed_as_what_it_is_in_the_list(session, client, instructor):
+    """`kind` was written into the pack and read by nothing but tests, while the list's Type
+    column printed the constant "source document" for all 26 rows — the one column where what
+    the artefact *is* would earn its place. A void cheque, a time card and a petty cash voucher
+    are the judgements this branch added, and the list was the place a student met them.
+
+    The fixture's `type` is sales_invoice and its `kind` is void_cheque, so the column cannot
+    pass by reading the wrong field. Presentational only: the schema is unchanged and a pack with
+    no kind (Riverbend, which has no printed envelope) still falls back to `type`.
+    """
+    version = import_pack_zip(session, _zip(), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="kinds@example.edu")
+
+    body = client.get(f"/w/{workspace.public_id}/testco-alpha/documents").get_data(as_text=True)
+
+    assert "void cheque" in body
+    assert "sales invoice" not in body
+
+
+def test_a_pack_with_no_kind_still_says_what_its_documents_are(session, client, instructor):
+    """Riverbend is live and keeps building one document per transaction, so its documents carry
+    no kind at all. The column must not go blank for them."""
+    pack = _screen_pack()
+    for document in pack["documents"]:
+        del document["kind"]
+    version = import_pack_zip(session, _zip(pack=pack), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="nokind@example.edu")
+
+    body = client.get(f"/w/{workspace.public_id}/testco-alpha/documents").get_data(as_text=True)
+
+    assert "sales invoice" in body

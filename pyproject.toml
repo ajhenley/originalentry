@@ -26,9 +26,16 @@ dev = [
     "ruff>=0.6",
     "Pillow>=10,<12",   # generator image rendering (used in tests)
 ]
-# Laptop-only: the pack generator's image renderer (T16 allows a generator-only dependency).
+# Laptop-only: the pack generator's image renderers (T16 allows a generator-only dependency).
+# Pillow draws a document for a pack with no printed artefact behind it; WeasyPrint photographs
+# the real one, by rendering the paper set's own html through the paper set's own stylesheet.
+# WeasyPrint has had no write_png since v53, so that path goes html -> pdf -> raster, and the
+# rasteriser is poppler's `pdftoppm` (`brew install poppler`) — not a Python package, so it
+# cannot be declared here. scripts/render_documents.py refuses with that sentence when either is
+# missing. Neither is needed to run the app or to import a pack.
 generator = [
     "Pillow>=10,<12",
+    "WeasyPrint>=60",
 ]
 
 [build-system]

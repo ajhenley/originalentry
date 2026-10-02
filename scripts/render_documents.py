@@ -10,6 +10,10 @@ then trimmed, because a half-sheet artefact rendered onto a full page is mostly 
 Pack building is laptop-only, same as Pillow, but needs one more thing on the path: poppler's
 `pdftoppm` (`brew install poppler`) does the PDF-to-PNG rasterising, because this machine's Python
 cannot install a wheel to do it instead.
+
+Both prerequisites are stated in the README's "Building a pack" section. WeasyPrint is declared
+under the `generator` extra in pyproject.toml; pdftoppm cannot be, so `render_manifest` refuses
+with the command that installs it.
 """
 
 from __future__ import annotations
@@ -22,9 +26,27 @@ import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageChops
-from weasyprint import HTML
 
 PAD = 18             # white margin left around the trimmed document
+
+
+def _weasyprint() -> type:
+    """WeasyPrint's ``HTML``, or a sentence saying how to get it.
+
+    Imported here rather than at module scope. WeasyPrint is a laptop-only generator dependency,
+    and at module scope a machine without it got an ImportError from inside a module that
+    ``build_pack.py`` loads by path — so ``test_document_render.py`` and
+    ``test_document_manifest.py`` **errored on import** instead of saying what was missing. This
+    is the care ``render_manifest`` already takes over ``pdftoppm``, which cannot be declared as a
+    Python dependency at all.
+    """
+    try:
+        from weasyprint import HTML
+    except ImportError as missing:          # pragma: no cover - depends on the machine
+        raise SystemExit(
+            "WeasyPrint is not installed, so a document cannot be rendered. It is a pack-generator "
+            'dependency: pip install -e ".[generator]". Nothing was written.') from missing
+    return HTML
 
 
 # A printed sheet is a fixed height because paper is, so .pg, .half and .third are sized for
@@ -45,7 +67,7 @@ def render_png(fragment: str, css: str) -> bytes:
 
     with tempfile.TemporaryDirectory() as tmp:
         pdf_path = Path(tmp) / "doc.pdf"
-        HTML(string=document).write_pdf(pdf_path)
+        _weasyprint()(string=document).write_pdf(pdf_path)
         # WeasyPrint dropped PNG output at v53, so the raster comes from poppler. -r is dots per
         # inch against a 72dpi PDF, so 160 renders a 750pt-wide invoice at about 1650px: legible
         # when a student zooms, and still well inside the 2 MB a pack image may weigh.
@@ -71,6 +93,9 @@ def render_manifest(set_dir: Path) -> dict[str, bytes]:
         raise SystemExit(
             "pdftoppm is not on the path, so a document cannot be rendered. It comes with poppler: "
             "brew install poppler. Nothing was written.")
+    # Both prerequisites, before the first render rather than on the first document: a build that
+    # is going to refuse should refuse having written nothing.
+    _weasyprint()
 
     manifest = json.loads((set_dir / "manifest.json").read_text())
     css = _stylesheet(set_dir)

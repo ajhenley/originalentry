@@ -282,7 +282,7 @@ filed rather than entered. The sheet itself is unchanged in all nine company-ver
 - Consumes: the manifest and per-artefact HTML from Task 1.
 - Produces: `render_png(fragment: str, css: str) -> bytes` and `render_manifest(set_dir: Path) -> dict[str, bytes]` keyed by manifest ref. `render_png` takes the html *string*, not a path, so Task 3 can render a fragment it already holds.
 
-WeasyPrint 70 has no `write_png`, so the path is HTML → PDF → raster → trim. `pypdfium2` is a pure wheel and keeps this reproducible across machines; `tools/topdf.py` already depends on WeasyPrint and pypdf, so this is one more laptop-only dependency in the same family as Pillow.
+WeasyPrint 70 has no `write_png`, so the path is HTML → PDF → raster → trim. This specified `pypdfium2`, "a pure wheel [that] keeps this reproducible across machines". **What was built shells out to poppler's `pdftoppm` instead**, because this machine's Python could not install a wheel to do the rasterising; the reason is recorded in `scripts/render_documents.py`'s own docstring. The cost is a prerequisite that is not a Python package and so cannot be declared in `pyproject.toml` — `brew install poppler`, stated in the README's "Building a pack" section, and refused with that sentence by `render_manifest` when it is missing. WeasyPrint itself is declared under the `generator` extra, alongside Pillow.
 
 - [ ] **Step 1: Write the failing test**
 

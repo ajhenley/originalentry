@@ -60,6 +60,37 @@ pytest -m "not db"     # explicitly skip database-backed tests
 The ledger engine and its tests deliberately import **no Flask and no SQLAlchemy** — a guard test
 enforces that boundary (T3.1).
 
+### Building a pack
+
+Pack building is laptop-only and needs more than the app does, because it photographs the paper
+set's printed artefacts rather than drawing them:
+
+```bash
+pip install -e ".[generator]"   # Pillow (drawn documents) + WeasyPrint (photographed ones)
+brew install poppler            # pdftoppm, which rasterises the PDF WeasyPrint writes
+```
+
+`pdftoppm` cannot be a Python dependency, so it is not in `pyproject.toml`; without it — or
+without WeasyPrint — `scripts/render_documents.py` refuses with the command that installs it and
+writes nothing. WeasyPrint has had no `write_png` since v53, which is why the path is
+HTML → PDF → raster → trim.
+
+The clinic's pack takes its document list from the printed envelope, so the envelope is generated
+first, one directory per version:
+
+```bash
+for code in A B C; do
+  PRACTICESET_COMPANY=alderfinch PRACTICESET_OUT=/tmp/env/$code \
+    python ../practicesets/generators/gendocs.py $code
+done
+python scripts/build_pack.py alderfinch --documents /tmp/env > packs/alderfinch/source.json
+python scripts/generate_pack.py packs/alderfinch/source.json /tmp/alderfinch.zip
+flask packs validate /tmp/alderfinch.zip
+```
+
+Riverbend has no printed envelope to photograph and is built without `--documents`, so it needs
+neither WeasyPrint nor poppler.
+
 ## Deploy (Heroku, T13)
 
 Stack `heroku-24`, buildpack `heroku/python`; Python from `.python-version`. Processes come from

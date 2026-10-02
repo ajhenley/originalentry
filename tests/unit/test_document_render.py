@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -25,6 +27,24 @@ def _require_sets():
                 f"PACK_TRANSLATOR_ALLOW_NO_SETS=1 to accept the gap knowingly.")
 
 
+def _require_renderer():
+    """A sentence rather than an ImportError from inside a module loaded by path.
+
+    The renderer needs WeasyPrint, which is a laptop-only generator dependency, and poppler's
+    `pdftoppm`, which is not a Python package at all. Unlike the practice sets these are tooling
+    rather than content — a machine without them cannot photograph a document however the suite
+    is invoked — so this skips and names what to install, instead of erroring on import, which is
+    what it did.
+    """
+    missing = []
+    if importlib.util.find_spec("weasyprint") is None:
+        missing.append('WeasyPrint (pip install -e ".[generator]")')
+    if shutil.which("pdftoppm") is None:
+        missing.append("poppler's pdftoppm (brew install poppler)")
+    if missing:
+        pytest.skip("the document renderer needs " + " and ".join(missing))
+
+
 def _clinic_documents(tmp):
     env = dict(os.environ, PRACTICESET_COMPANY="alderfinch", PRACTICESET_OUT=str(tmp))
     subprocess.run([sys.executable, "generators/gendocs.py", "B"],
@@ -34,6 +54,7 @@ def _clinic_documents(tmp):
 
 def test_a_rendered_document_is_a_png_a_student_can_read():
     _require_sets()
+    _require_renderer()
     from scripts.render_documents import render_manifest
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -85,6 +106,7 @@ def test_the_trim_is_tight_against_the_artefact():
     test_the_document_is_not_mostly_blank_paper_inside_its_own_box.
     """
     _require_sets()
+    _require_renderer()
     import io
 
     from PIL import Image
@@ -123,6 +145,7 @@ def test_the_document_is_not_mostly_blank_paper_inside_its_own_box():
     at its foot, and is a ratio rather than a pixel count, so it does not assume 160 dpi.
     """
     _require_sets()
+    _require_renderer()
     import io
 
     from PIL import Image
@@ -143,10 +166,51 @@ def test_the_document_is_not_mostly_blank_paper_inside_its_own_box():
 
 def test_a_missing_pdftoppm_fails_loudly_rather_than_confusingly(monkeypatch):
     """A guard that can't actually fail isn't a guard. Prove this one fires."""
-    import shutil
-
     from scripts.render_documents import render_manifest
 
     monkeypatch.setattr(shutil, "which", lambda name: None)
     with pytest.raises(SystemExit, match="poppler"):
         render_manifest(Path("/nonexistent"))
+
+
+def test_a_missing_weasyprint_fails_loudly_rather_than_confusingly(monkeypatch):
+    """The other prerequisite, and the one that was undeclared.
+
+    `from weasyprint import HTML` sat at module scope while WeasyPrint appeared nowhere in
+    requirements.txt or pyproject.toml, so a clean checkout that installed the declared
+    dependencies could not rebuild the clinic's pack — and the two test modules that render a
+    real document errored on *import*, from inside a module build_pack.py loads by path, rather
+    than saying what was missing. It is declared under the `generator` extra now, and refused
+    here the way pdftoppm already was.
+    """
+    import builtins
+
+    from scripts.render_documents import render_manifest
+
+    real_import = builtins.__import__
+
+    def refuse(name, *args, **kwargs):
+        if name == "weasyprint":
+            raise ImportError("No module named 'weasyprint'")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.delitem(sys.modules, "weasyprint", raising=False)
+    monkeypatch.setattr(builtins, "__import__", refuse)
+    with pytest.raises(SystemExit, match="WeasyPrint is not installed") as refused:
+        render_manifest(Path("/nonexistent"))
+
+    assert 'pip install -e ".[generator]"' in str(refused.value), "say how to get it"
+    assert "Nothing was written" in str(refused.value)
+
+
+def test_the_renderer_is_skipped_with_a_sentence_rather_than_an_import_error(monkeypatch):
+    """_require_renderer is what turns a missing prerequisite into a skip that names it. Prove
+    it fires, and names both halves — WeasyPrint is a pip install, pdftoppm is not."""
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+
+    with pytest.raises(pytest.skip.Exception) as skipped:
+        _require_renderer()
+
+    assert "WeasyPrint" in str(skipped.value)
+    assert "brew install poppler" in str(skipped.value)

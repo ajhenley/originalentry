@@ -16,6 +16,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -53,6 +54,24 @@ def _require_sets():
     )
 
 
+def _require_renderer():
+    """A sentence rather than an ImportError from inside a module loaded by path.
+
+    The renderer needs WeasyPrint, which is a laptop-only generator dependency, and poppler's
+    `pdftoppm`, which is not a Python package at all. Unlike the practice sets these are tooling
+    rather than content — a machine without them cannot photograph a document however the suite
+    is invoked — so this skips and names what to install, instead of erroring on import, which is
+    what it did.
+    """
+    missing = []
+    if importlib.util.find_spec("weasyprint") is None:
+        missing.append('WeasyPrint (pip install -e ".[generator]")')
+    if shutil.which("pdftoppm") is None:
+        missing.append("poppler's pdftoppm (brew install poppler)")
+    if missing:
+        pytest.skip("the document renderer needs " + " and ".join(missing))
+
+
 def _script():
     """scripts/ is not a package, so the module is loaded by path."""
     spec = importlib.util.spec_from_file_location(
@@ -80,6 +99,7 @@ def envelope(tmp_path_factory):
 def built(envelope, tmp_path_factory):
     """The translator's own output for that envelope, pictures and all. Built once: rendering
     seventy-eight documents through WeasyPrint and poppler is the slow part of this module."""
+    _require_renderer()
     pictures = tmp_path_factory.mktemp("photographs")
     source = _script().build_source("alderfinch", PRACTICESETS,
                                     documents_dir=envelope, images_dir=pictures)

@@ -18,7 +18,6 @@ so this pack carries no adjustments, no statements and no closing entries.
 from __future__ import annotations
 
 import argparse
-import base64
 import contextlib
 import importlib.util
 import io
@@ -423,7 +422,7 @@ def _render_manifest_images(set_dir: Path) -> dict[str, bytes]:
 
 
 def build_source(company: str, practicesets: Path, slug: str | None = None,
-                  documents_dir: Path | None = None) -> dict:
+                  documents_dir: Path | None = None, images_dir: Path | None = None) -> dict:
     generators = require_practicesets(practicesets)
     model, errors_mod = load_model(generators, company)
     profile = load_profile(slug or company)
@@ -485,6 +484,17 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
         # was actually printed, not from replaying the model a second time.
         docs = documents(model, profile, manifest)
         images = _render_manifest_images(documents_dir)
+        if images_dir is not None:
+            # One file per ref, not per variant: the printed artefact does not differ by
+            # version except in the figures it already carries, and generate_pack.py loads
+            # these by ref to hand to every variant code. Images are not embedded in
+            # source.json — that is not where this pack format keeps them (PackAsset and V12
+            # expect them in the zip), and embedding 78 renders as base64 once took this file
+            # from 64 KB to 7.5 MB.
+            images_dir.mkdir(parents=True, exist_ok=True)
+            for ref, picture in images.items():
+                (images_dir / f"{ref}.png").write_bytes(picture)
+            print(f"Wrote {len(images)} photograph(s) to {images_dir}", file=sys.stderr)
         for code in sorted(model.VARIANTS):
             txns_by_no = {t["no"]: t for t in model.build(code)}
             for doc, entry in zip(docs, manifest, strict=True):
@@ -492,14 +502,11 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
                 # txn: the transaction this artefact belongs to (a purchase order carries one
                 # even though it is filed, not entered). entry_for, read below for triage, is
                 # deliberately not used here — a document still shows what it is about.
+                # image/alt are left unset: generator.build()'s _attach_images fills them in,
+                # using the photograph supplied from images_dir where there is one.
                 if entry["txn"] is not None:
                     variant["text_alternative"] = _text_alternative(
                         txns_by_no[entry["txn"]], model, cheques, profile)
-                picture = images.get(entry["ref"])
-                if picture is not None:
-                    variant["image"] = (
-                        f"data:image/png;base64,{base64.b64encode(picture).decode('ascii')}")
-                    variant["alt"] = f"{doc['display_ref']} for {profile.COMPANY['name']}"
                 doc["variants"][code] = variant
             answers[code] = {
                 # entry_for, not txn: a purchase order and its vendor invoice share a txn, and
@@ -576,7 +583,16 @@ if __name__ == "__main__":
                         help="the directory gendocs.py wrote (manifest.json plus documents/); "
                              "when given, the document list and pictures come from it rather "
                              "than from one document per transaction")
+    parser.add_argument("--images", type=Path, default=None, dest="images_dir",
+                        help="directory to write the photographed PNGs into, one per document "
+                             "ref (default packs/<slug>/documents); used only alongside "
+                             "--documents")
     args = parser.parse_args()
-    json.dump(build_source(args.company, args.practicesets, args.slug, args.documents_dir),
+    images_dir = args.images_dir
+    if images_dir is None and args.documents_dir is not None:
+        images_dir = (Path(__file__).resolve().parents[1] / "packs"
+                     / (args.slug or args.company) / "documents")
+    json.dump(build_source(args.company, args.practicesets, args.slug, args.documents_dir,
+                           images_dir),
               sys.stdout, indent=1, ensure_ascii=False)
     print()

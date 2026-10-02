@@ -39,11 +39,14 @@ def test_the_invented_distractors_are_gone(pack):
 
 
 def test_every_document_carries_a_picture(pack):
+    """The picture is not embedded in source.json — that is not where this pack format keeps
+    images (PackAsset and V12 expect them in the zip, attached by generator.build()) — but a
+    photograph of every ref sits on disk beside the source, one file for all three variants."""
+    documents_dir = SOURCE.parent / "documents"
     for doc in pack["documents"]:
-        for code in ("A", "B", "C"):
-            variant = doc["variants"][code]
-            assert variant.get("image"), f'{doc["ref"]} {code} has no image'
-            assert variant.get("alt", "").strip(), f'{doc["ref"]} {code} has no alt text'
+        photo = documents_dir / f'{doc["ref"]}.png'
+        assert photo.is_file(), f'{doc["ref"]} has no photograph at {photo}'
+        assert photo.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n", f'{doc["ref"]} is not a PNG'
 
 
 def test_triage_follows_the_manifest(pack):

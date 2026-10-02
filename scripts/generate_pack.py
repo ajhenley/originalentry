@@ -40,6 +40,19 @@ def _load_source(path: Path) -> dict:
     raise SystemExit(f"Unsupported source type: {path.suffix} (use .py or .json).")
 
 
+def _load_photographs(source_path: Path) -> dict[str, bytes]:
+    """Real photographs of printed artefacts, if the translator left any beside the source.
+
+    ``scripts/build_pack.py`` writes one PNG per document ref (not per variant — the printed
+    artefact does not differ by version except in the figures it already carries) to a
+    ``documents/`` directory beside ``source.json``. Keyed by filename stem, which is the ref.
+    """
+    photos_dir = source_path.parent / "documents"
+    if not photos_dir.is_dir():
+        return {}
+    return {png.stem: png.read_bytes() for png in sorted(photos_dir.glob("*.png"))}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate an Original Entry pack zip.")
     parser.add_argument("source", type=Path, help="authoring source (.py with SOURCE, or .json)")
@@ -48,8 +61,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     source = _load_source(args.source)
+    photographs = _load_photographs(args.source)
     try:
-        generated = build(source, render_images=not args.paper)
+        generated = build(source, render_images=not args.paper, images=photographs or None)
     except GeneratorError as error:
         print("This pack was not generated. Fix these and try again:", file=sys.stderr)
         for problem in error.problems:
@@ -61,6 +75,14 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Wrote {args.out} ({len(data) // 1024} KB, sha256 {digest[:12]}…)")
     print(f"  {company.get('name')} v{generated.pack.get('version')} · "
           f"{len(generated.keys)} variant(s) · {len(generated.images)} image(s)")
+    if not args.paper:
+        # Silence here is exactly how a drawn image once shipped in place of a photograph with
+        # nothing to show for it; said every time so an operator can tell which this pack got.
+        if photographs:
+            print(f"  {len(photographs)} photograph(s) loaded from "
+                  f"{args.source.parent / 'documents'}")
+        else:
+            print(f"  no photographs at {args.source.parent / 'documents'}; every image is drawn")
     return 0
 
 

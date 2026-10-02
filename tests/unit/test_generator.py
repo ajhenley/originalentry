@@ -5,14 +5,25 @@ figures must equal the hand-written finished pack, and a broken source is refuse
 
 import copy
 import io
+import json
+from pathlib import Path
 
 import pytest
 from originalentry.generator import GeneratorError, build, write_zip
 from originalentry.packs.zip_reader import read_pack_zip
+from PIL import Image
 
 from tests.packs import testco_alpha, testco_alpha_source
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
+ALDERFINCH_SOURCE = Path(__file__).resolve().parents[2] / "packs" / "alderfinch" / "source.json"
+
+
+def _a_tiny_png() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (1, 1), (255, 0, 0)).save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def test_computes_the_same_figures_as_the_finished_pack():
@@ -65,6 +76,20 @@ def test_refuses_openings_that_do_not_balance():
     with pytest.raises(GeneratorError) as exc:
         build(bad)
     assert any(p.rule == "V6" for p in exc.value.problems)
+
+
+def test_a_supplied_photograph_is_not_drawn_over():
+    """The drawn renderer is for packs with no printed artefact. A pack that ships photographs
+    of the real documents had them overwritten at zip time, and validated and shipped looking
+    exactly as it did before."""
+    source = json.loads(ALDERFINCH_SOURCE.read_text())
+    ref = source["documents"][0]["ref"]
+    sentinel = _a_tiny_png()
+
+    generated = build(source, render_images=True, images={ref: sentinel})
+
+    for code in ("A", "B", "C"):
+        assert generated.images[f"documents/{code}/{ref}.png"] == sentinel
 
 
 def test_refuses_missing_triage():

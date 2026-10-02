@@ -54,7 +54,13 @@ def _safe_ref(ref: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]", "_", ref)
 
 
-def build(source: dict, *, render_images: bool = False) -> GeneratedPack:
+def build(source: dict, *, render_images: bool = False,
+          images: dict[str, bytes] | None = None) -> GeneratedPack:
+    """``images``, when given, is a photograph of the real printed artefact per document ref —
+    the envelope's own picture, supplied by the translator rather than drawn here. It is keyed by
+    document ref because one photograph serves every variant: the printed artefact does not
+    differ by version except in the figures it already carries.
+    """
     src = copy.deepcopy(source)
     answers: dict[str, dict] = src.pop("answers", {})
 
@@ -65,9 +71,9 @@ def build(source: dict, *, render_images: bool = False) -> GeneratedPack:
         if measure:
             measures[checkpoint["key"]] = measure
 
-    images: dict[str, bytes] = {}
+    attached_images: dict[str, bytes] = {}
     if render_images:
-        _attach_images(src, images)
+        _attach_images(src, attached_images, images)
 
     # Validate the pack shape early (clear pydantic errors, not a later mystery).
     try:
@@ -87,7 +93,7 @@ def build(source: dict, *, render_images: bool = False) -> GeneratedPack:
     if problems:
         raise GeneratorError(problems)
 
-    return GeneratedPack(pack=src, keys=keys, images=images)
+    return GeneratedPack(pack=src, keys=keys, images=attached_images)
 
 
 def _checkpoint_value(signed_cents: int, normal_balance: str) -> int:
@@ -141,7 +147,15 @@ def _build_key(
     return key_dict
 
 
-def _attach_images(src: dict, images: dict[str, bytes]) -> None:
+def _attach_images(src: dict, images: dict[str, bytes],
+                   supplied: dict[str, bytes] | None = None) -> None:
+    """Give every document its picture: the photographed one where there is one, otherwise the
+    drawn one.
+
+    The drawn renderer is deliberately plain and exists for packs with no printed artefact
+    behind them. A pack that ships photographs of the real documents must not have them drawn
+    over, which is what happened while this attached unconditionally.
+    """
     from . import render  # imported lazily so the core works without Pillow
 
     company = src.get("company", {})
@@ -151,4 +165,6 @@ def _attach_images(src: dict, images: dict[str, bytes]) -> None:
             variant["image"] = path
             if not (variant.get("alt") or "").strip():
                 variant["alt"] = f"{document['display_ref']} for {company.get('name', '')}".strip()
-            images[path] = render.render_document_png(document, code, company)
+            photograph = (supplied or {}).get(document["ref"])
+            images[path] = photograph if photograph else render.render_document_png(
+                document, code, company)

@@ -34,9 +34,19 @@ PROFILES = ("riverbend", "alderfinch")
 # test_only_these_profiles_declare_payroll_labels keeps that gap visible rather than silent.
 PAYROLL_PROFILES = ("alderfinch",)
 
+# Only the clinic takes its document list from the envelope's manifest, so only its check()
+# accepts one and only it can cross-check GUIDANCE against what was printed. Riverbend is
+# deliberately still one document per transaction (it is live, and out of scope by the spec).
+# test_only_these_profiles_check_against_a_manifest keeps that gap visible too.
+MANIFEST_PROFILES = ("alderfinch",)
+
 # A number no chart in this repository uses, and a sequence number no pack has a document for.
 ABSENT_ACCOUNT = "997"
 ABSENT_SEQUENCE = 997
+# The same, for a profile whose guidance is keyed by the manifest's own ref rather than by
+# received_seq. A sentinel of the wrong type works until a check sorts the two kinds of key
+# together, which `stray` does — and then the refusal comes out as a TypeError.
+ABSENT_REF = "ZZ-not-printed"
 
 _counter = itertools.count()
 
@@ -98,6 +108,15 @@ def _refusal(profile, model) -> str:
     message = str(caught.value)
     assert profile.COMPANY["slug"] in message, message
     return message
+
+
+def _absent_guidance_key(profile):
+    """A key no document has, of the kind this profile keys guidance by.
+
+    Riverbend keys by received_seq (ints); the clinic by the manifest's own ref (strings).
+    """
+    keys = set(profile.GUIDANCE) | set(profile.GUIDED_SEQUENCES)
+    return ABSENT_REF if all(isinstance(key, str) for key in keys) else ABSENT_SEQUENCE
 
 
 def _first_column_with_an_account(journals):
@@ -215,11 +234,12 @@ def test_a_guided_document_with_no_guidance_is_refused(slug):
     """A guided document with no guidance is worse than an unguided one: the student is told to
     expect help and shown an empty space."""
     profile, model = _loaded(slug)
-    profile.GUIDED_SEQUENCES = set(profile.GUIDED_SEQUENCES) | {ABSENT_SEQUENCE}
+    absent = _absent_guidance_key(profile)
+    profile.GUIDED_SEQUENCES = set(profile.GUIDED_SEQUENCES) | {absent}
 
     message = _refusal(profile, model)
 
-    assert f"document [{ABSENT_SEQUENCE}] is guided" in message, message
+    assert f"document [{absent!r}]".replace("'", "") in message.replace("'", ""), message
     assert "GUIDANCE says nothing" in message, message
     assert "Nothing was written" in message, message
 
@@ -229,10 +249,76 @@ def test_guidance_for_a_document_that_is_never_guided_is_refused(slug):
     """The other direction. Words nobody reads mean the guidance was written for a document
     that has since stopped being guided, and the guided ones may now be bare."""
     profile, model = _loaded(slug)
-    profile.GUIDANCE = dict(profile.GUIDANCE) | {ABSENT_SEQUENCE: "Words nobody will read."}
+    absent = _absent_guidance_key(profile)
+    profile.GUIDANCE = dict(profile.GUIDANCE) | {absent: "Words nobody will read."}
 
     message = _refusal(profile, model)
 
-    assert f"GUIDANCE has text for document [{ABSENT_SEQUENCE}]" in message, message
+    assert f"GUIDANCE has text for document [{absent!r}]".replace("'", "") \
+        in message.replace("'", ""), message
     assert "never guided" in message, message
     assert "Nothing was written" in message, message
+
+
+def _manifest_of(profile, guided=None):
+    """A manifest shaped the way ``build_pack.py`` loads it, holding the guided refs it names.
+
+    ``check(model, manifest)`` reads nothing but ``entry["ref"]``, so this is all a manifest
+    needs to be for the coverage check; building a real one would need the practice set's
+    gendocs.py and a renderer and would say nothing more.
+    """
+    refs = sorted(profile.GUIDANCE) if guided is None else guided
+    return [{"ref": ref} for ref in refs]
+
+
+@pytest.mark.parametrize("slug", MANIFEST_PROFILES)
+def test_the_profile_as_shipped_is_accepted_against_the_envelope(slug):
+    """The control for the case below: GUIDANCE as shipped names documents the envelope prints."""
+    profile, model = _loaded(slug)
+
+    assert profile.check(model, _manifest_of(profile)) is None
+
+
+@pytest.mark.parametrize("slug", MANIFEST_PROFILES)
+def test_guidance_for_a_document_the_envelope_does_not_print_is_refused(slug):
+    """The check that replaced the two GUIDANCE/GUIDED_SEQUENCES ones, and had no test at all.
+
+    GUIDANCE is keyed by the manifest's own refs so that adding a document to the envelope cannot
+    move the guidance onto a different one. The cost is that renaming or dropping a printed
+    artefact leaves GUIDANCE pointing at a ref nothing prints — and the two constants agreeing
+    with each other cannot see that, because they would simply agree on the wrong thing.
+    """
+    profile, model = _loaded(slug)
+    manifest = _manifest_of(profile)
+    dropped = manifest.pop()["ref"]          # the envelope stops printing one guided document
+
+    with pytest.raises(SystemExit) as caught:
+        profile.check(model, manifest)
+
+    message = str(caught.value)
+    assert profile.COMPANY["slug"] in message, message
+    assert f"GUIDANCE guides ['{dropped}']" in message, message
+    assert "manifest does not contain" in message, message
+    assert "Nothing was written" in message, message
+
+
+def test_only_these_profiles_check_against_a_manifest():
+    """A profile that moves to the envelope's manifest needs the coverage check, and this file
+    needs the case for it. Checked by behaviour rather than by signature: a check() that ignores
+    the manifest it is handed would pass a signature test."""
+    _require_sets()
+    accepting = []
+    for slug in PROFILES:
+        profile, model = _loaded(slug)
+        try:
+            profile.check(model, [{"ref": "nothing-is-guided-by-this"}])
+        except TypeError:
+            continue                          # check(model) only — no manifest path at all
+        except SystemExit:
+            accepting.append(slug)            # refused a manifest covering none of GUIDANCE
+            continue
+        accepting.append(slug)
+    assert tuple(accepting) == MANIFEST_PROFILES, (
+        f"{tuple(accepting)} accept a manifest but only {MANIFEST_PROFILES} are checked here. "
+        f"Add the profile once its check() cross-checks GUIDANCE against what was printed."
+    )

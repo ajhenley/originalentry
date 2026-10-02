@@ -211,9 +211,16 @@ def _bare(text: str) -> str:
     return text.strip().lower()
 
 
-# The translator guides these two refs (``documents()`` in build_pack.py) and no others; defined
-# once here so the two checks below do not each repeat the literal.
-GUIDED_SEQUENCES = set(GUIDANCE)
+# The translator guides these two refs (``documents()`` in build_pack.py) and no others.
+#
+# An independent literal, deliberately, not ``set(GUIDANCE)``. Derived from GUIDANCE, the two
+# checks below could not fail: ``stray = set(GUIDANCE) - GUIDED_SEQUENCES`` was provably always
+# empty and ``missing`` degraded to "no GUIDANCE value is an empty string". Two parametrised
+# tests passed anyway, because they mutate ``profile.GUIDANCE`` after import while
+# GUIDED_SEQUENCES holds a stale snapshot — a disagreement that cannot occur in production. That
+# is this branch's own named defect class, in the profile's own self-check. Stated twice, the two
+# can genuinely disagree, and the check is the thing that notices.
+GUIDED_SEQUENCES = {"D01", "D02"}
 
 
 def check(model, manifest=None):

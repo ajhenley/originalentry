@@ -35,7 +35,7 @@
 {# The document is the page when there is one. The text is not a fallback — a screen reader
    given only the alt attribute learns the document's name and none of its figures — so it stays
    on the page, one disclosure away, and open when there is no picture to disclose it from. #}
-<details {% if not has_image %}open{% endif %} class="mb-6" data-pack-content>
+<details class="mb-6" {% if not has_image %}open{% endif %} data-pack-content>
   <summary class="mb-2 text-sm font-semibold cursor-pointer">View as text</summary>
   {% if alt_text %}<p class="mb-2 text-sm text-muted">{{ alt_text }}</p>{% endif %}
   {% if text_alt.fields %}

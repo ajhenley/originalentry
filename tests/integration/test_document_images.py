@@ -7,6 +7,7 @@ route is inside the workspace, and the bytes live in Postgres rather than a publ
 
 import io
 import json
+import re
 import struct
 import zipfile
 import zlib
@@ -200,6 +201,22 @@ def test_screen_mode_shows_the_image_and_still_offers_the_text(session, client, 
     assert "View as text" in body            # and the reading that does not need the image
 
 
+DISCLOSURE = re.compile(r"<details([^>]*)data-pack-content", re.I)
+
+
+def _text_disclosure(body):
+    """The disclosure holding the document's text, not the account menu.
+
+    Every workspace page carries an unrelated <details>, so an unscoped check passes even with
+    this one deleted — which is how this test came to assert nothing. Matching the attributes of
+    the tag that carries data-pack-content also stops the assertion depending on whether `open`
+    happens to be written before or after the class.
+    """
+    found = DISCLOSURE.search(body)
+    assert found, "the document's text is not inside a disclosure at all"
+    return found.group(1)
+
+
 def test_the_text_is_behind_a_disclosure_when_there_is_a_picture(session, client, instructor):
     """The document should be the page. The text stays reachable, because an alt attribute
     naming the document tells a screen reader nothing about its figures."""
@@ -210,9 +227,8 @@ def test_the_text_is_behind_a_disclosure_when_there_is_a_picture(session, client
         f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
     ).get_data(as_text=True)
 
-    assert "<details" in body
+    assert "open" not in _text_disclosure(body)
     assert "View as text" in body
-    assert "<details open" not in body
 
 
 def test_the_text_is_open_when_there_is_no_picture(session, client, instructor):
@@ -225,7 +241,7 @@ def test_the_text_is_open_when_there_is_no_picture(session, client, instructor):
         f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
     ).get_data(as_text=True)
 
-    assert "<details open" in body or "<details" not in body
+    assert "open" in _text_disclosure(body)
 
 
 def test_a_paper_pack_keeps_loading_as_one(session, instructor):

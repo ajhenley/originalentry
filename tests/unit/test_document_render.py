@@ -45,12 +45,45 @@ def test_a_rendered_document_is_a_png_a_student_can_read():
         assert 2_000 < len(data) < 2 * 1024 * 1024, f"{ref} is {len(data)} bytes"
 
 
-def test_the_picture_is_trimmed_rather_than_a_sheet_of_paper():
-    """A height cutoff can't tell a tall document from a padded one — a third-sheet voucher on
-    coloured stock passed one at 778px while two thirds of it was dead space inside its own box.
-    What actually says the trim is tight is that content reaches every edge of the trimmed area:
-    the first and last row and column just inside the white margin must carry ink or stock
-    colour, never blank padding. That can't be satisfied by dead space."""
+# Darker than this is ink — type, rules and the printed box outline — rather than stock. The
+# artefacts print on tinted stock, so "not white" is not a usable test for content.
+INK = 160
+
+# The tallest band of blank rows a trimmed document may carry, as a share of its own height.
+# Measured on all 26 of the clinic's artefacts: with the {FIT} override the worst is 0.206
+# (N06 and N07, the third-sheet vouchers, whose own box padding is most of it), and without it
+# twenty of the twenty-six land between 0.393 (D01) and 0.719 (N09). So this sits with 46% of
+# headroom under the real renders and 31% of margin over the defect.
+MAX_BLANK_BAND = 0.30
+
+
+def _blank_bands(image) -> list[int]:
+    """The runs of rows carrying no ink at all, in pixels, top to bottom."""
+    width, height = image.size
+    ink = image.convert("L").point(lambda p: 255 if p < INK else 0).tobytes()
+    runs, current = [], 0
+    for y in range(height):
+        if b"\xff" in ink[y * width:(y + 1) * width]:
+            if current:
+                runs.append(current)
+            current = 0
+        else:
+            current += 1
+    if current:
+        runs.append(current)
+    return runs
+
+
+def test_the_trim_is_tight_against_the_artefact():
+    """The crop reaches the artefact's own box on all four sides.
+
+    This is all it says. It was written claiming it "can't be satisfied by dead space", and it
+    can: the dead space is *inside* the artefact's coloured box, so the trimmed edges carry stock
+    colour and this passes. Removing the {FIT} override — the exact change it was written to
+    catch — passed it 3/3 while five documents shipped at more than double their height, mostly
+    empty coloured paper. What sees that is
+    test_the_document_is_not_mostly_blank_paper_inside_its_own_box.
+    """
     _require_sets()
     import io
 
@@ -75,6 +108,37 @@ def test_the_picture_is_trimmed_rather_than_a_sheet_of_paper():
         for name, strip in edges.items():
             assert any(p != padding for p in strip.getdata()), \
                 f"{ref}: {name} edge is blank padding, not content"
+
+
+def test_the_document_is_not_mostly_blank_paper_inside_its_own_box():
+    """A printed sheet is a fixed height because paper is, so .pg, .half and .third are sized for
+    the page rather than for the document; on screen there is no sheet and those heights become
+    dead space that no trim can take off, because the box really does occupy it. The {FIT}
+    override is what relaxes them, and nothing could see it go: a height cutoff cannot tell a tall
+    document from a padded one, and an edge check cannot either, because the dead space is inside
+    the artefact's own coloured box and the trimmed edges carry stock colour.
+
+    What does see it is ink. No band of rows carrying no ink may be taller than MAX_BLANK_BAND of
+    the document's own height — which catches dead space in the middle of a document as well as
+    at its foot, and is a ratio rather than a pixel count, so it does not assume 160 dpi.
+    """
+    _require_sets()
+    import io
+
+    from PIL import Image
+    from scripts.render_documents import render_manifest
+
+    with tempfile.TemporaryDirectory() as tmp:
+        images = render_manifest(_clinic_documents(tmp))
+
+    assert len(images) == 26, "the clinic prints twenty-six artefacts"
+    for ref, data in images.items():
+        im = Image.open(io.BytesIO(data))
+        widest = max(_blank_bands(im))
+        share = widest / im.height
+        assert share <= MAX_BLANK_BAND, (
+            f"{ref} is {im.height}px tall and carries a {widest}px band with no ink in it "
+            f"({share:.0%} of the document). That is a sheet of paper, not a document.")
 
 
 def test_a_missing_pdftoppm_fails_loudly_rather_than_confusingly(monkeypatch):

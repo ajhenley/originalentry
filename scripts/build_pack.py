@@ -643,7 +643,8 @@ def expected_entries(model, variant: str, profile, manifest=None) -> list[dict]:
             if kind == "supplier" and txn.get("ap"):
                 line["party"] = txn["ap"][0]
             lines.append(line)
-        document = doc_for_txn[txn["no"]] if doc_for_txn is not None else _ref(txn)
+        document = (_evidence_document(doc_for_txn, txn["no"], "its expected entry")
+                    if doc_for_txn is not None else _ref(txn))
         entries.append({
             "document": document,
             "journal": profile.JOURNAL_OF[txn["cycle"]],
@@ -651,6 +652,24 @@ def expected_entries(model, variant: str, profile, manifest=None) -> list[dict]:
             "lines": lines,
         })
     return entries
+
+
+def _evidence_document(doc_for_txn: dict[int, str], no: int, where: str) -> str:
+    """The artefact the manifest names as the evidence for one transaction.
+
+    ``doc_for_txn[no]`` died with a bare ``KeyError: 2`` raised out of a dict comprehension when
+    the envelope named no artefact as the evidence for a transaction — loud, but unhelpfully so,
+    and every other refusal in this file ends with a sentence. ``require_practicesets``'s own
+    docstring complains about exactly this failure mode.
+    """
+    if no not in doc_for_txn:
+        raise SystemExit(
+            f"The envelope names no artefact as the evidence for transaction {no}: no manifest "
+            f"entry has entry_for = {no}, so {where} has no document to attach it to. Either the "
+            f"transaction is not printed or its artefact's entry_for is wrong.\n"
+            f"Nothing was written."
+        )
+    return doc_for_txn[no]
 
 
 def _amount_lines(lines):
@@ -684,7 +703,8 @@ def error_signatures(model, errors_mod, variant: str, manifest=None) -> list[dic
         for no, txn in txn_of.items():
             if mutated[no]["lines"] == txn["lines"]:
                 continue
-            document = doc_for_txn[no] if doc_for_txn is not None else _ref(txn)
+            document = (_evidence_document(doc_for_txn, no, f"the {kind} trap's signature")
+                        if doc_for_txn is not None else _ref(txn))
             # The account and side that appear only in the mistaken version.
             right = {(str(a), "debit" if d else "credit") for a, d, _c in txn["lines"] if d} | \
                     {(str(a), "credit") for a, _d, c in txn["lines"] if c}
@@ -717,6 +737,29 @@ def error_signatures(model, errors_mod, variant: str, manifest=None) -> list[dic
                     })
             break
     return signatures
+
+
+def _designated_journals(manifest, txns_by_no: dict, profile, code: str) -> dict[str, str]:
+    """Which journal each artefact's own entry belongs in.
+
+    ``txns_by_no[entry["entry_for"]]`` died with a bare ``KeyError: 2`` raised out of a dict
+    comprehension when the envelope named an ``entry_for`` this version's model has no
+    transaction for — which is what a renumbered transaction looks like from here.
+    """
+    designated = {}
+    for entry in manifest:
+        no = entry["entry_for"]
+        if no is None:
+            continue
+        txn = txns_by_no.get(no)
+        if txn is None:
+            raise SystemExit(
+                f"{profile.COMPANY['slug']}: the envelope says {entry['ref']} is the evidence for "
+                f"transaction {no}, which version {code} has no transaction numbered.\n"
+                f"Nothing was written."
+            )
+        designated[entry["ref"]] = profile.JOURNAL_OF[txn["cycle"]]
+    return designated
 
 
 def _render_manifest_images(set_dir: Path) -> dict[str, bytes]:
@@ -875,7 +918,6 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
                         | {p["code"]: 0 for p in profile.EXTRA_PARTIES}),
         }
 
-    cheques = model.DOCS.get("cheques", {})
     answers = {}
 
     if manifest is not None:
@@ -915,10 +957,8 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
                 # entry_for, not txn: a purchase order and its vendor invoice share a txn, and
                 # only the invoice is the evidence a student journalises from.
                 "triage": {entry["ref"]: entry["entry_for"] is not None for entry in manifest},
-                "designated_journal_documents": {
-                    entry["ref"]: profile.JOURNAL_OF[txns_by_no[entry["entry_for"]]["cycle"]]
-                    for entry in manifest if entry["entry_for"] is not None
-                },
+                "designated_journal_documents": _designated_journals(
+                    manifest, txns_by_no, profile, code),
                 "expected_entries": expected_entries(model, code, profile, manifest),
                 "adjustments": [],
                 "error_signatures": error_signatures(model, errors_mod, code, manifest),
@@ -926,6 +966,9 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
     else:
         # Riverbend's path, untouched: one document per transaction plus the profile's own
         # invented distractors.
+        # Only this arm reads the cheque stubs: the clinic's text comes off the artefact's own
+        # html, which already carries them.
+        cheques = model.DOCS.get("cheques", {})
         docs = _documents_by_transaction(model, profile)
         # No-entry documents all land on the period's last day; formatted like the model's own
         # dates ("Dec 4"), which _iso_date then turns into a real one.

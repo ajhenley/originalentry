@@ -77,3 +77,80 @@ def test_two_companies_in_one_process_do_not_return_the_same_figures():
     assert alderfinch.SLUG == "Alder-and-Finch"
     assert len(riverbend.JOURNALS) == 4
     assert len(alderfinch.JOURNALS) == 3
+
+
+# ── Refusals from the manifest path ──────────────────────────────────────────
+#
+# Each of these three lookups died with a bare `KeyError: 2` raised out of a dict comprehension,
+# which is loud but unhelpful: it names neither the artefact nor the transaction nor what was
+# written, and every other refusal in this file ends "Nothing was written." They fire where the
+# envelope and the model disagree about which artefact is the evidence for which transaction,
+# which is precisely the disagreement the whole manifest path exists to resolve.
+
+def _clinic():
+    """The clinic's model, errors and profile, plus a minimal manifest of its own shape."""
+    _require_sets()
+    script = _script()
+    model, errors_mod = script.load_model(script.require_practicesets(PRACTICESETS), "alderfinch")
+    profile = script.load_profile("alderfinch")
+    return script, model, errors_mod, profile
+
+
+def _inventory(model, drop=None):
+    """One manifest entry per transaction, as the envelope's own manifest.json is shaped."""
+    return [{"ref": f"D{t['no']:02d}", "kind": "sales_invoice", "printed_ref": str(t["no"]),
+             "date": t["date"], "entry_for": None if t["no"] == drop else t["no"]}
+            for t in model.build("B")]
+
+
+def test_a_transaction_no_artefact_is_evidence_for_is_named():
+    """The envelope prints nothing that is the evidence for transaction 2 — so the key would have
+    an entry with no document to attach it to."""
+    script, model, _errors, profile = _clinic()
+    orphaned = model.build("B")[1]["no"]
+
+    with pytest.raises(SystemExit) as caught:
+        script.expected_entries(model, "B", profile, _inventory(model, drop=orphaned))
+
+    message = str(caught.value)
+    assert f"no artefact as the evidence for transaction {orphaned}" in message, message
+    assert "Nothing was written" in message, message
+
+
+def test_the_same_transaction_is_named_when_a_trap_cannot_be_detected():
+    """error_signatures resolves the same document the same way: a trap has to be detected on the
+    artefact a student journalises from, and there has to be one.
+
+    The transaction has to be one a trap actually moves, or the lookup is never reached — which
+    is why this reads it out of TRAPS rather than naming a number.
+    """
+    script, model, errors_mod, _profile = _clinic()
+    base = {t["no"]: t["lines"] for t in model.build("B")}
+    orphaned = next(no for kind, _date, _label in errors_mod.TRAPS
+                    for no, txn in ((t["no"], t) for t in errors_mod.mutate("B", kind))
+                    if txn["lines"] != base[no])
+
+    with pytest.raises(SystemExit) as caught:
+        script.error_signatures(model, errors_mod, "B", _inventory(model, drop=orphaned))
+
+    message = str(caught.value)
+    assert f"no artefact as the evidence for transaction {orphaned}" in message, message
+    assert "Nothing was written" in message, message
+
+
+def test_an_entry_for_the_model_has_no_transaction_for_is_named():
+    """The other direction: the envelope names a transaction number this version does not have,
+    which is what a renumbered transaction looks like from here."""
+    script, model, _errors, profile = _clinic()
+    manifest = _inventory(model)
+    manifest[0] = {**manifest[0], "entry_for": 997}
+    txns_by_no = {t["no"]: t for t in model.build("B")}
+
+    with pytest.raises(SystemExit) as caught:
+        script._designated_journals(manifest, txns_by_no, profile, "B")
+
+    message = str(caught.value)
+    assert profile.COMPANY["slug"] in message, message
+    assert f"{manifest[0]['ref']} is the evidence for transaction 997" in message, message
+    assert "no transaction numbered" in message, message
+    assert "Nothing was written" in message, message

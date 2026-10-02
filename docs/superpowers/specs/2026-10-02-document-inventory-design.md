@@ -80,8 +80,11 @@ behind it — the transaction cannot distinguish the order from the invoice, and
 that belong to none would carry no text at all. The HTML is also what the photograph shows, so the
 picture and the text cannot disagree.
 
-`NO_ENTRY_DOCUMENTS` then disappears from both profiles. The distractors stop being authored and
-start being the ones in the envelope.
+`NO_ENTRY_DOCUMENTS` then disappears from the clinic's profile. The distractors stop being
+authored and start being the ones in the envelope. It stays in Riverbend's, which this spec puts
+out of scope: Riverbend is live, has no printed envelope to photograph, and keeps building one
+document per transaction plus its own authored distractors. (This line said "both profiles",
+which sent a later reader looking for dead code that is correctly still live.)
 
 ### The generator ships the pictures
 

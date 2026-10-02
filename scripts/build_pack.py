@@ -543,7 +543,7 @@ def _display_ref(entry: dict, profile) -> str:
 
 
 def documents(model, profile, manifest, stated: dict[str, str | None]) -> list[dict]:
-    """One document per printed artefact, in the order the envelope holds them.
+    """One document per printed artefact, in the order a student meets them: by date, then ref.
 
     It was one per transaction plus distractors the profile invented, which is how the paper
     student came to triage a void cheque and four time cards while the screen student triaged a
@@ -554,12 +554,22 @@ def documents(model, profile, manifest, stated: dict[str, str | None]) -> list[d
     ``stated`` is the date each artefact prints, per :func:`_stated_date`, used where the manifest
     has none: nine artefacts belong to no transaction, and the period's last day stood in for all
     of them, which listed the void cheque as Dec 7 while its own stub says Dec 6.
+
+    ``received_seq`` is assigned by ``(date, ref)``, not in manifest order. The manifest's order
+    is ``gendocs.py``'s print grouping — by kind, so that three vouchers fit one third-sheet page
+    — and it is not an order any student experiences, because a paper student spreads the envelope
+    out rather than working down the sheets. Numbered that way, the student's list sat under a
+    caption reading "Source documents, in the order received" beside a Date column running Dec 1,
+    3, 4, 7, 2, 5, 5, 4, 2, 2, 6, 6, 1 — and it put the two *guided* documents at positions 1 and
+    13 although both are dated Dec 1. Scaffolding that exists to support a student's first
+    encounters has to be on their first encounters. Refs are not assigned in this order, so
+    nothing keyed by ref — the whole answer key — moves with it.
     """
     labels = [_display_ref(entry, profile) for entry in manifest]
     # A label that repeats is no label at all, so anything that repeats says its date too.
     repeated = {label for label, count in Counter(labels).items() if count > 1}
     docs = []
-    for seq, (entry, label) in enumerate(zip(manifest, labels, strict=True), start=1):
+    for entry, label in zip(manifest, labels, strict=True):
         when = (_iso_date(entry["date"], profile) if entry["date"]
                 else stated.get(entry["ref"]) or profile.PERIOD["end"])
         docs.append({
@@ -568,7 +578,9 @@ def documents(model, profile, manifest, stated: dict[str, str | None]) -> list[d
             "type": "source_document",
             "kind": entry["kind"],
             "date": when,
-            "received_seq": seq,
+            # Filled in below, once the list is in the order a student meets it. Written here so
+            # the field keeps its place in the pack's own document shape.
+            "received_seq": None,
             # Guidance is keyed by ref rather than received_seq, so adding a document to the
             # envelope cannot silently move the guidance onto a different one. check() has
             # already proven every guided ref is a real manifest entry.
@@ -576,6 +588,11 @@ def documents(model, profile, manifest, stated: dict[str, str | None]) -> list[d
             "guidance": profile.GUIDANCE.get(entry["ref"]),
             "variants": {},
         })
+    # Ref second, so a day with several documents on it is still ordered the same way every time
+    # a pack is built — and so a purchase order comes before the vendor invoice it precedes.
+    docs.sort(key=lambda doc: (doc["date"], doc["ref"]))
+    for seq, doc in enumerate(docs, start=1):
+        doc["received_seq"] = seq
     return docs
 
 
@@ -888,10 +905,12 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
                       file=sys.stderr)
         for code in sorted(model.VARIANTS):
             txns_by_no = {t["no"]: t for t in model.build(code)}
-            for doc, entry in zip(docs, manifest, strict=True):
+            for doc in docs:
+                # Looked up by ref, not by position: documents() orders the list by date and the
+                # manifest is in the envelope's print order, so the two no longer line up.
                 # image/alt are left unset: generator.build()'s _attach_images fills them in,
                 # using the photograph of this version supplied from images_dir.
-                doc["variants"][code] = {"text_alternative": readings[code][entry["ref"]]}
+                doc["variants"][code] = {"text_alternative": readings[code][doc["ref"]]}
             answers[code] = {
                 # entry_for, not txn: a purchase order and its vendor invoice share a txn, and
                 # only the invoice is the evidence a student journalises from.

@@ -112,9 +112,53 @@ def _printed_money(markup: str) -> set[str]:
 
 
 def test_the_pack_has_as_many_documents_as_the_envelope(pack, envelope):
-    """26 printed artefacts, 26 online documents. It was 17."""
+    """26 printed artefacts, 26 online documents. It was 17.
+
+    The *set* of refs, not the sequence: the pack is ordered by date and the manifest is in the
+    envelope's print order (by kind, for sheet packing), so the two deliberately disagree. This
+    once asserted the sequences were equal, which locked an undecided order in as correct —
+    test_the_documents_are_in_the_order_a_student_meets_them is where the order is stated.
+    """
     assert len(pack["documents"]) == 26
-    assert [d["ref"] for d in pack["documents"]] == [e["ref"] for e in _manifest(envelope)]
+    assert {d["ref"] for d in pack["documents"]} == {e["ref"] for e in _manifest(envelope)}
+
+
+def test_the_documents_are_in_the_order_a_student_meets_them(pack):
+    """By date, and the guided pair first.
+
+    The manifest's order is gendocs.py's print grouping — by kind, so three vouchers fit one
+    third-sheet page — which is not an order any student experiences: a paper student spreads the
+    envelope out rather than working down the sheets. Numbered that way, the list sat under
+    "Source documents, in the order received" beside a Date column running Dec 1, 3, 4, 7, 2, 5,
+    5, 4, 2, 2, 6, 6, 1, and it put both *guided* documents at positions 1 and 13 although both
+    are dated Dec 1. Scaffolding for a student's first encounters has to be on their first
+    encounters.
+    """
+    docs = pack["documents"]
+
+    assert [d["received_seq"] for d in docs] == list(range(1, 27)), \
+        "received_seq is the list's own order, 1 to 26"
+    assert [d["date"] for d in docs] == sorted(d["date"] for d in docs), \
+        "the Date column must not contradict the caption above it"
+    # Ref breaks a tie, so a rebuild is reproducible and a purchase order precedes its invoice.
+    assert [(d["date"], d["ref"]) for d in docs] == sorted((d["date"], d["ref"]) for d in docs)
+    assert [d["ref"] for d in docs if d["guided"]] == ["D01", "D02"]
+    assert [d["received_seq"] for d in docs if d["guided"]] == [1, 2]
+
+
+def test_reordering_the_list_moved_no_ref_and_no_answer(pack, envelope):
+    """Refs are not assigned in list order, so nothing keyed by a ref may move with it — and the
+    answer key is keyed by ref throughout. If ordering could reach the key, a student's marks
+    would depend on the order their documents happen to be listed in."""
+    manifest = {e["ref"]: e for e in _manifest(envelope)}
+    for doc in pack["documents"]:
+        entry = manifest[doc["ref"]]
+        assert doc["kind"] == entry["kind"], doc["ref"]
+    for code in CODES:
+        answers = pack["answers"][code]
+        assert set(answers["triage"]) == set(manifest)
+        assert {e["document"] for e in answers["expected_entries"]} <= set(manifest)
+        assert set(answers["designated_journal_documents"]) <= set(manifest)
 
 
 def test_the_documents_a_student_files_are_in_there(pack):

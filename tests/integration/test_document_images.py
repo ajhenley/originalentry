@@ -30,7 +30,13 @@ from tests.packs import testco_alpha
 pytestmark = pytest.mark.db
 
 
-def _png(width: int = 4, height: int = 4) -> bytes:
+# A different colour per version, so the bytes say which version's document was served. Before
+# this the fixture had one variant, so the route could have ignored the student's variant
+# altogether — or taken it from the URL — and the whole suite would still have passed.
+COLOURS = {"A": (0xFF, 0x00, 0x00), "B": (0x00, 0x00, 0xFF)}
+
+
+def _png(width: int = 4, height: int = 4, colour: tuple[int, int, int] = (255, 255, 255)) -> bytes:
     """A real, tiny PNG — the validator checks the bytes, not the file name."""
 
     def chunk(kind: bytes, payload: bytes) -> bytes:
@@ -38,9 +44,13 @@ def _png(width: int = 4, height: int = 4) -> bytes:
                 + struct.pack(">I", zlib.crc32(kind + payload) & 0xFFFFFFFF))
 
     header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    raw = b"".join(b"\x00" + b"\xff\xff\xff" * width for _ in range(height))
+    raw = b"".join(b"\x00" + bytes(colour) * width for _ in range(height))
     return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
             + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+def _variant_png(code: str) -> bytes:
+    return _png(colour=COLOURS[code])
 
 
 # The shape the artefact reader really produces: most printed lines carry no label of their own,
@@ -58,15 +68,26 @@ TEXT_ALTERNATIVE = {
 
 
 def _screen_pack() -> dict:
-    """The paper fixture with an image, alt text and a text alternative per variant."""
+    """The paper fixture with an image, alt text and a text alternative per variant.
+
+    Two versions, because one cannot show that a student is served their *own* version's
+    document. That is the pack's anti-copying mechanism: three versions exist so that copying is
+    visible, and a student who could fetch another version's photographs would have the figures
+    their own checkpoints are not asking for.
+    """
     pack = json.loads(json.dumps(testco_alpha.PACK))
+    pack["variants"] = [{"code": code, "label": f"Variant {code}", "drivers": {}}
+                        for code in sorted(COLOURS)]
+    base = pack["opening_balances"]["A"]
+    pack["opening_balances"] = {code: json.loads(json.dumps(base)) for code in sorted(COLOURS)}
     for document in pack["documents"]:
         document["variants"] = {
-            "A": {
-                "image": f"documents/A/{document['ref']}.png",
+            code: {
+                "image": f"documents/{code}/{document['ref']}.png",
                 "alt": f"{document['display_ref']} to a customer",
                 "text_alternative": json.loads(json.dumps(TEXT_ALTERNATIVE)),
             }
+            for code in sorted(COLOURS)
         }
     return pack
 
@@ -75,9 +96,9 @@ def _zip(pack=None, images=None, keys=None) -> io.BytesIO:
     pack = pack or _screen_pack()
     if images is None:
         images = {
-            variant["image"]: _png()
+            variant["image"]: _variant_png(code)
             for document in pack["documents"]
-            for variant in document.get("variants", {}).values()
+            for code, variant in document.get("variants", {}).items()
             if variant.get("image")
         }
     buffer = io.BytesIO()
@@ -99,10 +120,11 @@ def instructor(session):
     return user
 
 
-def _workspace_on(session, client, pack_version, mode="screen", email="reader@example.edu"):
+def _workspace_on(session, client, pack_version, mode="screen", email="reader@example.edu",
+                  code="A"):
     variant_id = session.scalars(
         select(Variant.id).where(Variant.pack_version_id == pack_version.id,
-                                 Variant.code == "A")
+                                 Variant.code == code)
     ).one()
     section = Section(name="Sec", join_code=f"img-{email[:4]}")
     student = User(email=email, given_name="Ivo", family_name="Marin")
@@ -128,7 +150,10 @@ def test_a_screen_pack_brings_its_images_with_it(session, instructor):
     assets = session.scalars(
         select(PackAsset).where(PackAsset.pack_version_id == version.id)
     ).all()
-    assert {asset.path for asset in assets} == {"documents/A/INV-1.png", "documents/A/INV-2.png"}
+    assert {asset.path for asset in assets} == {
+        "documents/A/INV-1.png", "documents/A/INV-2.png",
+        "documents/B/INV-1.png", "documents/B/INV-2.png",
+    }
     assert all(asset.content_type == "image/png" for asset in assets)
     assert all(asset.byte_size > 0 for asset in assets)
 
@@ -142,8 +167,10 @@ def test_a_pack_whose_image_is_missing_from_the_archive_is_refused(session, inst
 
 
 def test_a_file_that_is_not_a_png_is_refused(session, instructor):
-    images = {"documents/A/INV-1.png": b"not a png at all",
-              "documents/A/INV-2.png": _png()}
+    images = {path: _variant_png(path.split("/")[1]) for path in (
+        "documents/A/INV-1.png", "documents/A/INV-2.png",
+        "documents/B/INV-1.png", "documents/B/INV-2.png")}
+    images["documents/A/INV-1.png"] = b"not a png at all"
 
     with pytest.raises(PackImportRefused) as refused:
         import_pack_zip(session, _zip(images=images), actor=instructor)
@@ -155,8 +182,10 @@ def test_a_file_that_is_not_a_png_is_refused(session, instructor):
 def test_an_image_larger_than_the_limit_is_refused(session, instructor):
     from originalentry.packs.importing import MAX_IMAGE_BYTES
 
-    images = {"documents/A/INV-1.png": _png() + b"\x00" * (MAX_IMAGE_BYTES + 1),
-              "documents/A/INV-2.png": _png()}
+    images = {path: _variant_png(path.split("/")[1]) for path in (
+        "documents/A/INV-1.png", "documents/A/INV-2.png",
+        "documents/B/INV-1.png", "documents/B/INV-2.png")}
+    images["documents/A/INV-1.png"] += b"\x00" * (MAX_IMAGE_BYTES + 1)
 
     with pytest.raises(PackImportRefused) as refused:
         import_pack_zip(session, _zip(images=images), actor=instructor)
@@ -174,6 +203,42 @@ def test_the_student_is_served_their_own_documents_image(session, client, instru
     assert response.headers["Content-Type"] == "image/png"
     assert response.data.startswith(b"\x89PNG")
     assert "private" in response.headers["Cache-Control"]
+
+
+def test_a_student_is_served_their_own_version_s_document_and_not_another_s(
+        session, client, instructor):
+    """The pack's anti-copying mechanism, at the serving layer.
+
+    Three versions exist so that copying is visible: the figures printed on the artefact are the
+    whole difference between them. The route resolves the asset path through the workspace's own
+    _variant_code() and never through anything in the URL — but the module had one variant in its
+    fixture and _workspace_on hard-coded "A", so no test ever observed a second version and
+    .get("A", {}), or taking the code from a query parameter, would have passed the whole suite.
+    """
+    version = import_pack_zip(session, _zip(), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="onb@example.edu", code="B")
+
+    response = client.get(f"/w/{workspace.public_id}/testco-alpha/documents/INV-1/image")
+
+    assert response.status_code == 200
+    assert response.data == _variant_png("B"), "a version-B student was not served B's document"
+    assert response.data != _variant_png("A"), "a version-B student was served version A's"
+
+
+def test_the_page_points_at_the_image_route_not_at_a_variant_path(session, client, instructor):
+    """A version is never named in anything a student can edit. The <img> src carries the
+    document ref and the workspace, and the variant is resolved server-side from the workspace,
+    so there is no path for a student to change to another version's photograph."""
+    version = import_pack_zip(session, _zip(), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="nopath@example.edu", code="B")
+
+    body = client.get(
+        f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
+    ).get_data(as_text=True)
+
+    assert "/documents/INV-1/image" in body
+    assert "documents/A/INV-1.png" not in body
+    assert "documents/B/INV-1.png" not in body
 
 
 def test_another_student_cannot_read_that_image(session, client, instructor):

@@ -32,8 +32,6 @@ PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 # "810.00", "1,480.00". Two decimal places, so an hour count ("8.0") and a time ("12:01") are not
 # money and a discount ("2/10, n/30") is not either.
 MONEY = re.compile(r"\d{1,3}(?:,\d{3})*\.\d{2}")
-# The printed footer, which names the version. The text alternative drops it on purpose.
-FOOTER = re.compile(r'<div class="foot">.*?</div>', re.S)
 TAGS = re.compile(r"<[^>]+>")
 
 
@@ -104,10 +102,13 @@ def _manifest(envelope, code="B"):
 
 def _printed_money(markup: str) -> set[str]:
     """Every money figure on the document, read off the raw html rather than through the
-    translator's own reader, so the two cannot agree by sharing a bug. The footer is removed
-    because the text alternative drops it, deliberately, to keep the version marker off the page.
+    translator's own reader, so the two cannot agree by sharing a bug.
+
+    The whole document, with no part of it excused. The footer used to be cut out of both sides,
+    because the text alternative dropped it; that was an exception the invariant had to carry to
+    tolerate the text saying less than the picture.
     """
-    return set(MONEY.findall(TAGS.sub(" ", FOOTER.sub("", markup))))
+    return set(MONEY.findall(TAGS.sub(" ", markup)))
 
 
 def test_the_pack_has_as_many_documents_as_the_envelope(pack, envelope):
@@ -177,6 +178,9 @@ def test_the_text_a_student_reads_is_the_document_they_are_shown(pack, envelope)
     version's document, and each money figure on the document is in the text. Built from the
     transaction instead, D03's text carried its vendor invoice's 1,480.00 while its own photograph
     showed a purchase order, and nine documents carried no figures at all.
+
+    The whole document, footer included. The footer was cut out of both sides while the text
+    dropped it, and an invariant with an exception in it only holds where the exception is not.
     """
     file_of = {e["ref"]: e["file"] for e in _manifest(envelope)}
     for doc in pack["documents"]:
@@ -212,16 +216,6 @@ def test_a_purchase_order_does_not_read_as_its_vendor_invoice(pack):
     assert "PURCHASE ORDER" in json.dumps(order)
     assert "CV-3310" not in json.dumps(order), "the order is not the invoice"
     assert "CV-3310" in json.dumps(invoice)
-
-
-def test_the_text_does_not_say_which_version_a_student_holds(pack):
-    """The printed footer says "… · version B". Read off the document, the text would leak it, and
-    a student who can name their version can find someone holding the same one."""
-    for doc in pack["documents"]:
-        for code in CODES:
-            text = json.dumps(doc["variants"][code]["text_alternative"])
-            for leak in ("version A", "version B", "version C"):
-                assert leak not in text, f'{doc["ref"]} {code} says "{leak}"'
 
 
 def test_a_document_is_listed_as_what_it_is(pack):

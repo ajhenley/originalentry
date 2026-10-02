@@ -156,7 +156,11 @@ def _money(value: int) -> str:
 #
 # The html is also exactly what the photograph shows, so deriving the text from it is the only way
 # the picture and the text cannot disagree — which is the accessibility property this codebase
-# states as a commitment rather than an aspiration.
+# states as a commitment rather than an aspiration. That includes the printed footer, which names
+# the version ("… · invoice 7101 · version B"). It was dropped here for a while, to keep a student
+# from reading their version off their own document — but the paper carries it, that is deliberate
+# (staff tell packets apart by it, and your own version's label gives you nobody else's figures),
+# and dropping it online only made the text omit a line the photograph plainly shows.
 #
 # html.parser is the standard library's. A pack has to build on a machine carrying nothing but
 # this repository's own dependencies, so this adds none.
@@ -288,7 +292,7 @@ def _flat(node: _Node) -> str:
                 parts.append(child)
             elif child.tag == "br":
                 parts.append(" ")
-            elif "foot" not in child.classes:
+            else:
                 walk(child)
 
     walk(node)
@@ -322,11 +326,6 @@ def _read(node: _Node, out: _Reading) -> None:
     for child in node.children:
         if isinstance(child, str):
             out.text(child)
-        elif "foot" in child.classes:
-            # The printed footer names the version ("… · version B"). A student must not be able
-            # to read which version they hold off their own document, and the photograph carries
-            # the same marker, so neither may show it.
-            continue
         elif child.tag == "br":
             out.line_break()
         elif child.tag in _VOID_TAGS:

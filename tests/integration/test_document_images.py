@@ -43,6 +43,20 @@ def _png(width: int = 4, height: int = 4) -> bytes:
             + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
+# The shape the artefact reader really produces: most printed lines carry no label of their own,
+# so they arrive as ["", value]. 210 of the clinic's 246 rows are like this. A labelled row sits
+# between two runs of them so the page has to keep the document's own order.
+TEXT_ALTERNATIVE = {
+    "fields": [
+        ["", "TESTCO ALPHA"],
+        ["", "18 Larkspur Lane, Kettle Springs"],
+        ["Customer", "Firstborn Supply"],
+        ["", "CUSTOMER COPY"],
+    ],
+    "lines": [["1", "Kayak rack", "1,200.00", "1,200.00"]],
+}
+
+
 def _screen_pack() -> dict:
     """The paper fixture with an image, alt text and a text alternative per variant."""
     pack = json.loads(json.dumps(testco_alpha.PACK))
@@ -51,8 +65,7 @@ def _screen_pack() -> dict:
             "A": {
                 "image": f"documents/A/{document['ref']}.png",
                 "alt": f"{document['display_ref']} to a customer",
-                "text_alternative": {"fields": [["Customer", "Firstborn Supply"]],
-                                     "lines": [["1", "Kayak rack", "1,200.00", "1,200.00"]]},
+                "text_alternative": json.loads(json.dumps(TEXT_ALTERNATIVE)),
             }
         }
     return pack
@@ -252,3 +265,42 @@ def test_a_paper_pack_keeps_loading_as_one(session, instructor):
         select(PackAsset).where(PackAsset.pack_version_id == version.id)
     ).first() is None
     assert session.get(PackVersion, version.id).has_images is False
+
+
+EMPTY_TERM = re.compile(r"<dt[^>]*>\s*</dt>", re.I)
+
+
+def test_a_line_with_no_label_is_not_an_empty_definition_term(session, client, instructor):
+    """The text alternative is read off the printed artefact's own html, and most printed lines
+    carry no label — 210 of the clinic's 246 rows, with D07 and all five of N02-N09 at 100%. Every
+    row went through <dt>{{ row[0] }}</dt>, so 85% of the disclosure was empty terms. A definition
+    list whose terms are nearly all empty is worse for a screen reader than a plain run of lines,
+    and this disclosure is the one surface that has to carry the whole document for a reader who
+    cannot use the picture.
+    """
+    version = import_pack_zip(session, _zip(), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="labels@example.edu")
+
+    body = client.get(
+        f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
+    ).get_data(as_text=True)
+
+    assert not EMPTY_TERM.search(body), "a label-less line reached the page as an empty <dt>"
+    # Each bare line is still there, as a line.
+    for line in ("TESTCO ALPHA", "18 Larkspur Lane, Kettle Springs", "CUSTOMER COPY"):
+        assert f"<li>{line}</li>" in body, line
+
+
+def test_a_row_that_really_has_a_label_is_still_a_definition_row(session, client, instructor):
+    """The <dl> is not thrown away: a genuine label and value still read as a pair, and the
+    document's own order is kept — the two lines above "Customer" are above it on the page and
+    "CUSTOMER COPY" is below, because those are the document's lines in sequence."""
+    version = import_pack_zip(session, _zip(), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="pairs@example.edu")
+
+    body = client.get(
+        f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
+    ).get_data(as_text=True)
+
+    assert "<dt class=\"font-medium\">Customer</dt><dd>Firstborn Supply</dd>" in body
+    assert body.index("TESTCO ALPHA") < body.index("Firstborn Supply") < body.index("CUSTOMER COPY")

@@ -39,11 +39,33 @@
   <summary class="mb-2 text-sm font-semibold cursor-pointer">View as text</summary>
   {% if alt_text %}<p class="mb-2 text-sm text-muted">{{ alt_text }}</p>{% endif %}
   {% if text_alt.fields %}
-  <dl class="mb-3 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
-    {% for row in text_alt.fields %}
-    <dt class="font-medium">{{ row[0] }}</dt><dd>{{ row[1] }}</dd>
-    {% endfor %}
-  </dl>
+  {# Most printed lines carry no label of their own — 210 of the clinic's 246 rows — because the
+     text is read off the artefact's own html. A definition list whose terms are nearly all empty
+     is worse for a screen reader than a plain run of lines, and this disclosure is the complete
+     version of the document for a reader who cannot use the picture. So each run of genuine
+     label/value rows is a <dl> and each run of bare lines is a <ul>, in the document's own order:
+     these are its lines in sequence and regrouping them would be rewriting the document. #}
+  {% set run = namespace(open=none) %}
+  <div class="mb-3 text-sm">
+    {%- for row in text_alt.fields %}
+      {%- set want = 'dl' if row[0] else 'ul' %}
+      {%- if run.open != want %}
+        {%- if run.open == 'dl' %}</dl>{% elif run.open == 'ul' %}</ul>{% endif %}
+        {%- if want == 'dl' %}
+          <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
+        {%- else %}
+          <ul class="space-y-1">
+        {%- endif %}
+        {%- set run.open = want %}
+      {%- endif %}
+      {%- if want == 'dl' %}
+        <dt class="font-medium">{{ row[0] }}</dt><dd>{{ row[1] }}</dd>
+      {%- else %}
+        <li>{{ row[1] }}</li>
+      {%- endif %}
+    {%- endfor %}
+    {%- if run.open == 'dl' %}</dl>{% elif run.open == 'ul' %}</ul>{% endif %}
+  </div>
   {% endif %}
   {% if text_alt.lines %}
   <div class="panel overflow-x-auto" role="region" tabindex="0"

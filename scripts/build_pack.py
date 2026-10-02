@@ -23,10 +23,12 @@ import importlib.util
 import io
 import json
 import os
+import re
 import sys
 from collections import Counter
 from datetime import date
 from decimal import Decimal
+from html.parser import HTMLParser
 from pathlib import Path
 
 DEFAULT_PRACTICESETS = Path(__file__).resolve().parents[2] / "practicesets"
@@ -138,6 +140,250 @@ def _face_amount(txn, profile) -> int | None:
 
 def _money(value: int) -> str:
     return f"{value / 100:,.2f}"
+
+
+# ---------------------------------------------------------------------------
+# What the artefact itself says
+#
+# A document's text alternative is read off the printed artefact's own html, not built from the
+# transaction behind it. Two defects made that necessary rather than merely tidy. A purchase order
+# and its vendor invoice share a transaction, so the order carried the invoice's text
+# byte-identically — the document a student is told to file read as the one they are told to enter,
+# and contradicted its own photograph. And the nine artefacts that belong to no transaction had no
+# text at all: a void cheque, four time cards, two petty cash vouchers, an appointment request and
+# a price list were blank pages for every paper-mode student and every screen-reader user, while
+# all nine still carried a triage mark.
+#
+# The html is also exactly what the photograph shows, so deriving the text from it is the only way
+# the picture and the text cannot disagree — which is the accessibility property this codebase
+# states as a commitment rather than an aspiration.
+#
+# html.parser is the standard library's. A pack has to build on a machine carrying nothing but
+# this repository's own dependencies, so this adds none.
+# ---------------------------------------------------------------------------
+
+_VOID_TAGS = frozenset({"area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+                        "meta", "param", "source", "track", "wbr"})
+
+# Tags whose words join the words around them. Everything else begins and ends a line of reading.
+_INLINE_TAGS = frozenset({"a", "abbr", "b", "big", "cite", "code", "em", "i", "s", "small",
+                          "span", "strong", "sub", "sup", "u"})
+
+_CELL_TAGS = frozenset({"td", "th"})
+
+
+class _Node:
+    """One element of an artefact's markup: what it is, what it is called, what is inside it."""
+
+    __slots__ = ("tag", "classes", "children")
+
+    def __init__(self, tag: str, classes: frozenset[str]):
+        self.tag = tag
+        self.classes = classes
+        self.children: list = []
+
+
+class _Markup(HTMLParser):
+    """The smallest tree the reading below needs.
+
+    ``convert_charrefs`` is the default and is wanted: ``&middot;`` and ``&mdash;`` are characters
+    a student reads, and ``&nbsp;`` is a space, which :func:`_collapse` then treats as one.
+    """
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.root = _Node("", frozenset())
+        self._open = [self.root]
+
+    def handle_starttag(self, tag, attrs):
+        node = _Node(tag, frozenset(dict(attrs).get("class", "").split()))
+        self._open[-1].children.append(node)
+        if tag not in _VOID_TAGS:
+            self._open.append(node)
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in _VOID_TAGS:
+            self._open.pop()
+
+    def handle_endtag(self, tag):
+        # An end tag nothing opened is ignored, and an element left open is closed by its parent's
+        # end tag, which is what a browser does with the same markup. The paper set writes
+        # unclosed <td> and <tr> in places, so this is not hypothetical.
+        for depth in range(len(self._open) - 1, 0, -1):
+            if self._open[depth].tag == tag:
+                del self._open[depth:]
+                return
+
+    def handle_data(self, data):
+        self._open[-1].children.append(data)
+
+
+def _collapse(text: str) -> str:
+    """One space between words and none at the ends. A non-breaking space is a space to a reader."""
+    return " ".join(text.replace("\xa0", " ").split())
+
+
+class _Reading:
+    """What one artefact says, in the order it is printed.
+
+    ``fields`` are label/value pairs; ``lines`` are the rows of the line-item table. Text carrying
+    no label of its own is still a field, with an empty label, because dropping it would lose the
+    company's name, a cheque's "Pay to the order of", and a register tape's total.
+    """
+
+    def __init__(self):
+        self.fields: list[list[str]] = []
+        self.lines: list[list[str]] = []
+        self._words: list[str] = []
+        self._label: str | None = None
+
+    def text(self, data: str) -> None:
+        self._words.append(data)
+
+    def label(self, data: str) -> None:
+        """A ``span.lbl``: the words after it are its value."""
+        self.close()
+        if self._label is not None:
+            self.fields.append(["", self._label])
+        self._label = _collapse(data).rstrip(":")
+
+    def line_break(self) -> None:
+        """A ``<br>`` ends a line — unless a label is still waiting for its value. A label and its
+        value are routinely on two lines ("Received from" above the customer's address)."""
+        if self._label is None:
+            self.close()
+        else:
+            self._words.append(" ")
+
+    def close(self) -> None:
+        """Emit whatever has been read. A label whose value has not arrived keeps waiting."""
+        value = _collapse("".join(self._words))
+        self._words = []
+        if self._label is not None:
+            if value:
+                self.fields.append([self._label, value])
+                self._label = None
+            return
+        if value:
+            self.fields.append(["", value])
+
+    def end_block(self) -> None:
+        """The end of a block element, which is the end of whatever was being read."""
+        self.close()
+        if self._label is not None:
+            # A label with nothing after it is not a label; it is a line of its own, like the
+            # "CUSTOMER COPY" stamped on an invoice.
+            self.fields.append(["", self._label])
+            self._label = None
+
+
+def _flat(node: _Node) -> str:
+    """Everything inside one element as a single line, for a table cell."""
+    parts: list[str] = []
+
+    def walk(current: _Node) -> None:
+        for child in current.children:
+            if isinstance(child, str):
+                parts.append(child)
+            elif child.tag == "br":
+                parts.append(" ")
+            elif "foot" not in child.classes:
+                walk(child)
+
+    walk(node)
+    return _collapse("".join(parts))
+
+
+def _rows(table: _Node) -> list[list[str]]:
+    """Every row of the line-item table, the heading row included: a column of figures with no
+    heading is not something a screen reader can make sense of."""
+    rows = []
+    for row in _tagged(table, "tr"):
+        cells = [_flat(cell) for cell in row.children
+                 if isinstance(cell, _Node) and cell.tag in _CELL_TAGS]
+        if any(cells):
+            rows.append(cells)
+    return rows
+
+
+def _tagged(node: _Node, tag: str) -> list[_Node]:
+    found = []
+    for child in node.children:
+        if isinstance(child, _Node):
+            if child.tag == tag:
+                found.append(child)
+            else:
+                found.extend(_tagged(child, tag))
+    return found
+
+
+def _read(node: _Node, out: _Reading) -> None:
+    for child in node.children:
+        if isinstance(child, str):
+            out.text(child)
+        elif "foot" in child.classes:
+            # The printed footer names the version ("… · version B"). A student must not be able
+            # to read which version they hold off their own document, and the photograph carries
+            # the same marker, so neither may show it.
+            continue
+        elif child.tag == "br":
+            out.line_break()
+        elif child.tag in _VOID_TAGS:
+            continue
+        elif child.tag == "table" and "items" in child.classes:
+            out.end_block()
+            out.lines.extend(_rows(child))
+        elif child.tag == "span" and "lbl" in child.classes:
+            out.label(_flat(child))
+        elif child.tag in _INLINE_TAGS:
+            _read(child, out)
+        else:
+            # Every other element — a div, a paragraph, a cell of a layout or meta table — is a
+            # block, and a block is a line of reading.
+            out.end_block()
+            _read(child, out)
+            out.end_block()
+
+
+def _text_from_html(markup: str) -> dict:
+    """One printed artefact's own words, as the pack's ``text_alternative``."""
+    parser = _Markup()
+    parser.feed(markup)
+    parser.close()
+    reading = _Reading()
+    _read(parser.root, reading)
+    reading.end_block()
+    return {"fields": reading.fields, "lines": reading.lines}
+
+
+_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+_A_DATE = re.compile(r"\b(" + "|".join(_MONTHS) + r")\s+(\d{1,2})\b")
+
+
+def _stated_date(text: dict, profile) -> str | None:
+    """The date an artefact prints, if it prints one.
+
+    Nine artefacts belong to no transaction, so the manifest holds no date for them and the
+    period's last day stood in — which listed the void cheque as Dec 7 while its own stub says
+    Dec 6. Four of the nine state a date and are now read; a time card states a period rather than
+    a date and a price list takes effect in January, and neither is guessed at.
+
+    Only a day inside the pack's own period counts. A document may well mention another date — a
+    remittance explains that the invoice it pays was "Dated 28 November" — and that is not its own.
+    """
+    start = date.fromisoformat(profile.PERIOD["start"])
+    end = date.fromisoformat(profile.PERIOD["end"])
+    for label, value in text["fields"]:
+        for month, day in _A_DATE.findall(f"{label} {value}"):
+            try:
+                stated = date(start.year, _MONTHS.index(month) + 1, int(day))
+            except ValueError:          # "Feb 30" on a document is not a date
+                continue
+            if start <= stated <= end:
+                return stated.isoformat()
+    return None
 
 
 def _text_alternative(txn, model, cheques: dict, profile) -> dict:
@@ -259,7 +505,45 @@ def _documents_by_transaction(model, profile) -> list[dict]:
     return docs
 
 
-def documents(model, profile, manifest) -> list[dict]:
+# What each printed artefact is called in a list of them, in the vocabulary the old labels used
+# ("Check 4101", "Invoice 7101"). Without it the list showed the bare printed reference — "4104",
+# "18", "J. Finch" — and a void cheque could not be told from the three real ones.
+KIND_LABEL = {
+    "sales_invoice": "Invoice",
+    "vendor_invoice": "Vendor invoice",
+    "credit_memo": "Credit memo",
+    "remittance": "Remittance",
+    "receipt": "Receipt",
+    "register_tape": "Cash register tape",
+    "purchase_order": "Purchase order",
+    "cheque": "Check",
+    "void_cheque": "Void cheque",
+    "time_card": "Time card",
+    "petty_cash_voucher": "Petty cash voucher",
+    "payroll_register": "Payroll register",
+    "appointment_request": "Appointment request",
+    "price_list": "Price list",
+}
+
+
+def _display_ref(entry: dict, profile) -> str:
+    """What the artefact is, and then which one it is."""
+    if entry["kind"] not in KIND_LABEL:
+        raise SystemExit(
+            f"{profile.COMPANY['slug']}: the envelope holds a {entry['kind']!r}, which KIND_LABEL "
+            f"has no name for, so it would be listed by its bare reference and a student could "
+            f"not tell it from anything else. Nothing was written."
+        )
+    label = KIND_LABEL[entry["kind"]]
+    printed = entry["printed_ref"]
+    if not printed:
+        return label
+    # A number reads as part of the name ("Void cheque 4104"); a person's does not, so the two are
+    # separated ("Time card, J. Finch").
+    return f"{label} {printed}" if any(c.isdigit() for c in printed) else f"{label}, {printed}"
+
+
+def documents(model, profile, manifest, stated: dict[str, str | None]) -> list[dict]:
     """One document per printed artefact, in the order the envelope holds them.
 
     It was one per transaction plus distractors the profile invented, which is how the paper
@@ -267,16 +551,24 @@ def documents(model, profile, manifest) -> list[dict]:
     quotation that exists nowhere in the envelope. ``model`` is unused here — the manifest alone
     says what was printed — but kept in the signature so the two document-list builders share a
     shape.
+
+    ``stated`` is the date each artefact prints, per :func:`_stated_date`, used where the manifest
+    has none: nine artefacts belong to no transaction, and the period's last day stood in for all
+    of them, which listed the void cheque as Dec 7 while its own stub says Dec 6.
     """
+    labels = [_display_ref(entry, profile) for entry in manifest]
+    # A label that repeats is no label at all, so anything that repeats says its date too.
+    repeated = {label for label, count in Counter(labels).items() if count > 1}
     docs = []
-    for seq, entry in enumerate(manifest, start=1):
-        label = entry["printed_ref"] or entry["kind"].replace("_", " ").capitalize()
+    for seq, (entry, label) in enumerate(zip(manifest, labels, strict=True), start=1):
+        when = (_iso_date(entry["date"], profile) if entry["date"]
+                else stated.get(entry["ref"]) or profile.PERIOD["end"])
         docs.append({
             "ref": entry["ref"],
-            "display_ref": f'{label}, {entry["date"]}' if entry["date"] else label,
+            "display_ref": f"{label}, {_day_label(when)}" if label in repeated else label,
             "type": "source_document",
             "kind": entry["kind"],
-            "date": _iso_date(entry["date"], profile) if entry["date"] else profile.PERIOD["end"],
+            "date": when,
             "received_seq": seq,
             # Guidance is keyed by ref rather than received_seq, so adding a document to the
             # envelope cannot silently move the guidance onto a different one. check() has
@@ -297,6 +589,12 @@ def _iso_date(label: str, profile) -> str:
     day = int(label.split()[1])
     year, month, _day = profile.PERIOD["start"].split("-")
     return f"{year}-{month}-{day:02d}"
+
+
+def _day_label(iso: str) -> str:
+    """The reverse of :func:`_iso_date`: the date as the documents themselves print it."""
+    when = date.fromisoformat(iso)
+    return f"{when:%b} {when.day}"
 
 
 def expected_entries(model, variant: str, profile, manifest=None) -> list[dict]:
@@ -421,15 +719,100 @@ def _render_manifest_images(set_dir: Path) -> dict[str, bytes]:
     return module.render_manifest(set_dir)
 
 
+def _variant_sets(documents_dir: Path, codes: list[str]) -> dict[str, Path]:
+    """One printed envelope per version, each the output of ``gendocs.py <CODE>``.
+
+    One set used to stand in for all three, because the printed artefact was said not to differ by
+    version "except in the figures it already carries". The figures are exactly what differs by
+    version, and that is the only reason three versions exist: D09's receipt reads 810.00 in A,
+    900.00 in B and 990.00 in C. Every student was shown version B's picture.
+    """
+    sets = {}
+    for code in codes:
+        set_dir = documents_dir / code
+        if not (set_dir / "manifest.json").is_file():
+            raise SystemExit(
+                f"--documents {documents_dir} must hold one directory per version "
+                f"({', '.join(codes)}), each the output of gendocs.py for that version.\n"
+                f"Expected {set_dir / 'manifest.json'}.\n"
+                f"A student is shown their own version's document, and the figures on it are the "
+                f"whole difference between the versions, so one set cannot stand in for three.\n"
+                f"Nothing was written."
+            )
+        sets[code] = set_dir
+    return sets
+
+
+# What the versions must agree about: which artefacts were printed, in what order, what each one is,
+# which transaction it belongs to and which one it is the evidence for. The figures on them differ;
+# the envelope does not.
+_INVENTORY = ("ref", "kind", "txn", "entry_for")
+
+
+def _one_inventory(manifests: dict[str, list[dict]]) -> list[dict]:
+    """The envelope's inventory, which must be the same envelope in every version.
+
+    The pack carries one document list for every version, so one version's manifest is taken — but
+    only because the others are checked against it rather than assumed to match. Inventories that
+    have diverged are two different practice sets, and reconciling them here would hand some
+    students a document their own version never printed.
+    """
+    codes = sorted(manifests)
+    base_code, base = codes[0], manifests[codes[0]]
+
+    def shape(entries):
+        return [{key: entry[key] for key in _INVENTORY} for entry in entries]
+
+    for code in codes[1:]:
+        if shape(manifests[code]) != shape(base):
+            theirs = {entry["ref"] for entry in manifests[code]}
+            mine = {entry["ref"] for entry in base}
+            raise SystemExit(
+                f"Version {code}'s document inventory is not version {base_code}'s.\n"
+                f"Only in {base_code}: {sorted(mine - theirs) or 'none'}\n"
+                f"Only in {code}: {sorted(theirs - mine) or 'none'}\n"
+                f"Compared on {', '.join(_INVENTORY)}, in order. The pack carries one document "
+                f"list for every version, so a difference here means the versions printed "
+                f"different envelopes and neither can speak for the other.\n"
+                f"Nothing was written."
+            )
+    return base
+
+
+def _agreed_dates(readings: dict[str, dict[str, dict]], profile) -> dict[str, str | None]:
+    """The date each artefact prints, which must be the same date in every version."""
+    codes = sorted(readings)
+    base_code = codes[0]
+    dates = {ref: _stated_date(text, profile) for ref, text in readings[base_code].items()}
+    for code in codes[1:]:
+        for ref, text in readings[code].items():
+            theirs = _stated_date(text, profile)
+            if theirs != dates[ref]:
+                raise SystemExit(
+                    f"{ref} prints {dates[ref]} in version {base_code} and {theirs} in version "
+                    f"{code}, and the pack lists one date per document.\n"
+                    f"Nothing was written."
+                )
+    return dates
+
+
 def build_source(company: str, practicesets: Path, slug: str | None = None,
                   documents_dir: Path | None = None, images_dir: Path | None = None) -> dict:
+    """``documents_dir``, when given, holds one directory per version (``A/``, ``B/``, ``C/``),
+    each the output of ``gendocs.py`` for that version. ``images_dir``, when given, is where the
+    photographs are written, one subdirectory per version; without it none are rendered, which is
+    what lets a test build the pack without WeasyPrint and poppler doing 78 renders.
+    """
     generators = require_practicesets(practicesets)
     model, errors_mod = load_model(generators, company)
     profile = load_profile(slug or company)
 
+    set_dirs: dict[str, Path] = {}
     manifest = None
     if documents_dir is not None:
-        manifest = json.loads((documents_dir / "manifest.json").read_text())
+        set_dirs = _variant_sets(documents_dir, sorted(model.VARIANTS))
+        manifest = _one_inventory({code: json.loads((set_dir / "manifest.json").read_text())
+                                   for code, set_dir in set_dirs.items()})
     # Riverbend's own check(model) takes no manifest; only a company that has moved to the
     # manifest path passes one, and only its profile's check() accepts the extra argument.
     if manifest is not None:
@@ -482,32 +865,34 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
     if manifest is not None:
         # The clinic's path: the document list, the pictures and the triage all come from what
         # was actually printed, not from replaying the model a second time.
-        docs = documents(model, profile, manifest)
-        images = _render_manifest_images(documents_dir)
+        # The text a student reads is the artefact's own html, per version. Built from the
+        # transaction instead, a purchase order carried its vendor invoice's text word for word
+        # (they share a transaction) and the nine artefacts belonging to no transaction carried
+        # none at all.
+        readings = {code: {entry["ref"]: _text_from_html((set_dir / entry["file"]).read_text())
+                           for entry in manifest}
+                    for code, set_dir in set_dirs.items()}
+        docs = documents(model, profile, manifest, _agreed_dates(readings, profile))
         if images_dir is not None:
-            # One file per ref, not per variant: the printed artefact does not differ by
-            # version except in the figures it already carries, and generate_pack.py loads
-            # these by ref to hand to every variant code. Images are not embedded in
-            # source.json — that is not where this pack format keeps them (PackAsset and V12
-            # expect them in the zip), and embedding 78 renders as base64 once took this file
-            # from 64 KB to 7.5 MB.
-            images_dir.mkdir(parents=True, exist_ok=True)
-            for ref, picture in images.items():
-                (images_dir / f"{ref}.png").write_bytes(picture)
-            print(f"Wrote {len(images)} photograph(s) to {images_dir}", file=sys.stderr)
+            # One file per ref **per version**, because the figures on the artefact are what
+            # differs between versions. generate_pack.py loads these by (ref, code). Images are
+            # not embedded in source.json — that is not where this pack format keeps them
+            # (PackAsset and V12 expect them in the zip), and embedding 78 renders as base64 once
+            # took this file from 64 KB to 7.5 MB.
+            for code, set_dir in sorted(set_dirs.items()):
+                pictures = _render_manifest_images(set_dir)
+                into = images_dir / code
+                into.mkdir(parents=True, exist_ok=True)
+                for ref, picture in pictures.items():
+                    (into / f"{ref}.png").write_bytes(picture)
+                print(f"Wrote {len(pictures)} photograph(s) of version {code} to {into}",
+                      file=sys.stderr)
         for code in sorted(model.VARIANTS):
             txns_by_no = {t["no"]: t for t in model.build(code)}
             for doc, entry in zip(docs, manifest, strict=True):
-                variant: dict = {}
-                # txn: the transaction this artefact belongs to (a purchase order carries one
-                # even though it is filed, not entered). entry_for, read below for triage, is
-                # deliberately not used here — a document still shows what it is about.
                 # image/alt are left unset: generator.build()'s _attach_images fills them in,
-                # using the photograph supplied from images_dir where there is one.
-                if entry["txn"] is not None:
-                    variant["text_alternative"] = _text_alternative(
-                        txns_by_no[entry["txn"]], model, cheques, profile)
-                doc["variants"][code] = variant
+                # using the photograph of this version supplied from images_dir.
+                doc["variants"][code] = {"text_alternative": readings[code][entry["ref"]]}
             answers[code] = {
                 # entry_for, not txn: a purchase order and its vendor invoice share a txn, and
                 # only the invoice is the evidence a student journalises from.
@@ -580,13 +965,14 @@ if __name__ == "__main__":
     parser.add_argument("--slug", default=None,
                         help="the pack slug, if different from COMPANY (default: COMPANY)")
     parser.add_argument("--documents", type=Path, default=None, dest="documents_dir",
-                        help="the directory gendocs.py wrote (manifest.json plus documents/); "
-                             "when given, the document list and pictures come from it rather "
-                             "than from one document per transaction")
+                        help="a directory holding one subdirectory per version (A/, B/, C/), each "
+                             "the output of gendocs.py for that version; when given, the document "
+                             "list and pictures come from what was printed rather than from one "
+                             "document per transaction")
     parser.add_argument("--images", type=Path, default=None, dest="images_dir",
-                        help="directory to write the photographed PNGs into, one per document "
-                             "ref (default packs/<slug>/documents); used only alongside "
-                             "--documents")
+                        help="directory to write the photographed PNGs into, one subdirectory per "
+                             "version and one file per document ref "
+                             "(default packs/<slug>/documents); used only alongside --documents")
     args = parser.parse_args()
     images_dir = args.images_dir
     if images_dir is None and args.documents_dir is not None:

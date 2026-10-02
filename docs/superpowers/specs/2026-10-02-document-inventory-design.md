@@ -71,16 +71,24 @@ effort repairing.
 
 `scripts/build_pack.py` currently derives one online document per transaction and appends
 `NO_ENTRY_DOCUMENTS` from the profile. It will instead take the manifest as the document list:
-every printed artefact becomes an online document, with `triage` true where the manifest names a
-transaction and false where it does not.
+every printed artefact becomes an online document, with `triage` true where the manifest names the
+transaction the artefact is *evidence for* (`entry_for`) and false where it does not. Not `txn`: a
+purchase order and its vendor invoice share a transaction and only the invoice is journalised.
+
+Each artefact's `text_alternative` is read off its own HTML rather than built from the transaction
+behind it — the transaction cannot distinguish the order from the invoice, and the nine artefacts
+that belong to none would carry no text at all. The HTML is also what the photograph shows, so the
+picture and the text cannot disagree.
 
 `NO_ENTRY_DOCUMENTS` then disappears from both profiles. The distractors stop being authored and
 start being the ones in the envelope.
 
 ### The generator ships the pictures
 
-Each manifest entry's HTML renders to a trimmed PNG per variant, shipped in the pack as the
-`image` the student screen already knows how to display. The pack's existing MVP Pillow renderer
+Each manifest entry's HTML renders to a trimmed PNG per variant — **per variant, from that
+variant's own HTML**, because the figures printed on the artefact are the whole difference between
+the variants and the only reason three exist — shipped in the pack as the `image` the student
+screen already knows how to display. The pack's existing MVP Pillow renderer
 (`generator/render.py`, "deliberately plain", built-in font) is superseded for these packs.
 
 ### The screen puts the document first

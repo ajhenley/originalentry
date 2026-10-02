@@ -40,17 +40,21 @@ def _load_source(path: Path) -> dict:
     raise SystemExit(f"Unsupported source type: {path.suffix} (use .py or .json).")
 
 
-def _load_photographs(source_path: Path) -> dict[str, bytes]:
+def _load_photographs(source_path: Path) -> dict[tuple[str, str], bytes]:
     """Real photographs of printed artefacts, if the translator left any beside the source.
 
-    ``scripts/build_pack.py`` writes one PNG per document ref (not per variant — the printed
-    artefact does not differ by version except in the figures it already carries) to a
-    ``documents/`` directory beside ``source.json``. Keyed by filename stem, which is the ref.
+    ``scripts/build_pack.py`` writes one PNG per document ref **per version** into
+    ``documents/<CODE>/`` beside ``source.json``. It used to write one per ref and hand it to every
+    version, on the grounds that the artefact does not differ by version except in the figures it
+    already carries — but the figures are exactly what differs, and that is the only reason three
+    versions exist. Keyed by ``(ref, variant_code)``.
     """
     photos_dir = source_path.parent / "documents"
     if not photos_dir.is_dir():
         return {}
-    return {png.stem: png.read_bytes() for png in sorted(photos_dir.glob("*.png"))}
+    return {(png.stem, code_dir.name): png.read_bytes()
+            for code_dir in sorted(photos_dir.iterdir()) if code_dir.is_dir()
+            for png in sorted(code_dir.glob("*.png"))}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -79,8 +83,9 @@ def main(argv: list[str] | None = None) -> int:
         # Silence here is exactly how a drawn image once shipped in place of a photograph with
         # nothing to show for it; said every time so an operator can tell which this pack got.
         if photographs:
-            print(f"  {len(photographs)} photograph(s) loaded from "
-                  f"{args.source.parent / 'documents'}")
+            codes = sorted({code for _ref, code in photographs})
+            print(f"  {len(photographs)} photograph(s) of {len(codes)} version(s) "
+                  f"({', '.join(codes)}) loaded from {args.source.parent / 'documents'}")
         else:
             print(f"  no photographs at {args.source.parent / 'documents'}; every image is drawn")
     return 0

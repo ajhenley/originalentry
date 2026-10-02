@@ -645,7 +645,7 @@
  "documents": [
   {
    "ref": "D02",
-   "display_ref": "7101, Dec 1",
+   "display_ref": "Invoice 7101",
    "type": "source_document",
    "kind": "sales_invoice",
    "date": "2026-12-01",
@@ -657,38 +657,75 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 1"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7101"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Marisol Okonkwo"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Marisol Okonkwo"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "290.00"
+        "",
+        "No. 7101"
+       ],
+       [
+        "",
+        "Date: Dec 1"
+       ],
+       [
+        "",
+        "CUSTOMER COPY"
+       ],
+       [
+        "Sold to",
+        "Marisol Okonkwo 18 Larkspur Lane, Kettle Springs"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "2",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-01",
         "Consultation, standard",
+        "2",
         "85.00",
         "170.00"
        ],
        [
-        "1",
+        "S-02",
         "Vaccination course",
+        "1",
         "120.00",
         "120.00"
+       ],
+       [
+        "Total",
+        "290.00"
        ]
       ]
      }
@@ -697,38 +734,75 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 1"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7101"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Marisol Okonkwo"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Marisol Okonkwo"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "300.00"
+        "",
+        "No. 7101"
+       ],
+       [
+        "",
+        "Date: Dec 1"
+       ],
+       [
+        "",
+        "CUSTOMER COPY"
+       ],
+       [
+        "Sold to",
+        "Marisol Okonkwo 18 Larkspur Lane, Kettle Springs"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "2",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-01",
         "Consultation, standard",
+        "2",
         "90.00",
         "180.00"
        ],
        [
-        "1",
+        "S-02",
         "Vaccination course",
+        "1",
         "120.00",
         "120.00"
+       ],
+       [
+        "Total",
+        "300.00"
        ]
       ]
      }
@@ -737,38 +811,75 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 1"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7101"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Marisol Okonkwo"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Marisol Okonkwo"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "310.00"
+        "",
+        "No. 7101"
+       ],
+       [
+        "",
+        "Date: Dec 1"
+       ],
+       [
+        "",
+        "CUSTOMER COPY"
+       ],
+       [
+        "Sold to",
+        "Marisol Okonkwo 18 Larkspur Lane, Kettle Springs"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "2",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-01",
         "Consultation, standard",
+        "2",
         "95.00",
         "190.00"
        ],
        [
-        "1",
+        "S-02",
         "Vaccination course",
+        "1",
         "120.00",
         "120.00"
+       ],
+       [
+        "Total",
+        "310.00"
        ]
       ]
      }
@@ -777,7 +888,7 @@
   },
   {
    "ref": "D05",
-   "display_ref": "7102, Dec 3",
+   "display_ref": "Invoice 7102",
    "type": "source_document",
    "kind": "sales_invoice",
    "date": "2026-12-03",
@@ -789,38 +900,75 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 3"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7102"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Bramble Farm"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Bramble Farm"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "870.00"
+        "",
+        "No. 7102"
+       ],
+       [
+        "",
+        "Date: Dec 3"
+       ],
+       [
+        "",
+        "ACCOUNTING COPY"
+       ],
+       [
+        "Sold to",
+        "Bramble Farm Bramble Farm, Wexford Road"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-04",
         "Routine surgery, day case",
+        "1",
         "680.00",
         "680.00"
        ],
        [
-        "2",
+        "S-06",
         "Laboratory panel",
+        "2",
         "95.00",
         "190.00"
+       ],
+       [
+        "Total",
+        "870.00"
        ]
       ]
      }
@@ -829,38 +977,75 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 3"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7102"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Bramble Farm"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Bramble Farm"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "870.00"
+        "",
+        "No. 7102"
+       ],
+       [
+        "",
+        "Date: Dec 3"
+       ],
+       [
+        "",
+        "ACCOUNTING COPY"
+       ],
+       [
+        "Sold to",
+        "Bramble Farm Bramble Farm, Wexford Road"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-04",
         "Routine surgery, day case",
+        "1",
         "680.00",
         "680.00"
        ],
        [
-        "2",
+        "S-06",
         "Laboratory panel",
+        "2",
         "95.00",
         "190.00"
+       ],
+       [
+        "Total",
+        "870.00"
        ]
       ]
      }
@@ -869,38 +1054,75 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 3"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7102"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Bramble Farm"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Bramble Farm"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "870.00"
+        "",
+        "No. 7102"
+       ],
+       [
+        "",
+        "Date: Dec 3"
+       ],
+       [
+        "",
+        "ACCOUNTING COPY"
+       ],
+       [
+        "Sold to",
+        "Bramble Farm Bramble Farm, Wexford Road"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-04",
         "Routine surgery, day case",
+        "1",
         "680.00",
         "680.00"
        ],
        [
-        "2",
+        "S-06",
         "Laboratory panel",
+        "2",
         "95.00",
         "190.00"
+       ],
+       [
+        "Total",
+        "870.00"
        ]
       ]
      }
@@ -909,7 +1131,7 @@
   },
   {
    "ref": "D08",
-   "display_ref": "7103, Dec 4",
+   "display_ref": "Invoice 7103",
    "type": "source_document",
    "kind": "sales_invoice",
    "date": "2026-12-04",
@@ -921,31 +1143,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 4"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7103"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Delacroix Stables"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Delacroix Stables"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "480.00"
+        "",
+        "No. 7103"
+       ],
+       [
+        "",
+        "Date: Dec 4"
+       ],
+       [
+        "",
+        "CUSTOMER COPY"
+       ],
+       [
+        "Sold to",
+        "Delacroix Stables 5 Delacroix Court, Bellhaven"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "2",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-03",
         "Dental scale and polish",
+        "2",
         "240.00",
+        "480.00"
+       ],
+       [
+        "Total",
         "480.00"
        ]
       ]
@@ -955,31 +1213,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 4"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7103"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Delacroix Stables"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Delacroix Stables"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "480.00"
+        "",
+        "No. 7103"
+       ],
+       [
+        "",
+        "Date: Dec 4"
+       ],
+       [
+        "",
+        "CUSTOMER COPY"
+       ],
+       [
+        "Sold to",
+        "Delacroix Stables 5 Delacroix Court, Bellhaven"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "2",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-03",
         "Dental scale and polish",
+        "2",
         "240.00",
+        "480.00"
+       ],
+       [
+        "Total",
         "480.00"
        ]
       ]
@@ -989,31 +1283,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 4"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Invoice 7103"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Delacroix Stables"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Fees charged - Delacroix Stables"
+        "",
+        "SALES INVOICE"
        ],
        [
-        "Amount",
-        "480.00"
+        "",
+        "No. 7103"
+       ],
+       [
+        "",
+        "Date: Dec 4"
+       ],
+       [
+        "",
+        "CUSTOMER COPY"
+       ],
+       [
+        "Sold to",
+        "Delacroix Stables 5 Delacroix Court, Bellhaven"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
+        "FOB",
+        "Destination"
+       ],
+       [
+        "",
+        "A 2% discount applies only if paid within ten days of the invoice date. Discounts deducted after that period remain due."
        ]
       ],
       "lines": [
        [
-        "2",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "S-03",
         "Dental scale and polish",
+        "2",
         "240.00",
+        "480.00"
+       ],
+       [
+        "Total",
         "480.00"
        ]
       ]
@@ -1023,7 +1353,7 @@
   },
   {
    "ref": "D14",
-   "display_ref": "CM-041, Dec 7",
+   "display_ref": "Credit memo CM-041",
    "type": "source_document",
    "kind": "credit_memo",
    "date": "2026-12-07",
@@ -1035,88 +1365,187 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 7"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Credit memo CM-041"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Delacroix Stables"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Delacroix Stables - one dental redone at no charge"
+        "",
+        "CREDIT MEMORANDUM"
        ],
        [
-        "Amount",
-        "240.00"
+        "",
+        "No. CM-041"
+       ],
+       [
+        "",
+        "Date: Dec 7"
+       ],
+       [
+        "Credit to",
+        "Delacroix Stables 5 Delacroix Court, Bellhaven"
+       ],
+       [
+        "Against invoice",
+        "7103"
+       ],
+       [
+        "Authorised by",
+        "J. Finch"
+       ],
+       [
+        "",
+        "This credit reduces the balance of invoice 7103; it is not a cash refund."
        ]
       ],
-      "lines": []
+      "lines": [
+       [
+        "Description",
+        "Amount"
+       ],
+       [
+        "Delacroix Stables - one dental redone at no charge",
+        "240.00"
+       ],
+       [
+        "Total",
+        "240.00"
+       ]
+      ]
      }
     },
     "B": {
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 7"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Credit memo CM-041"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Delacroix Stables"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Delacroix Stables - one dental redone at no charge"
+        "",
+        "CREDIT MEMORANDUM"
        ],
        [
-        "Amount",
-        "240.00"
+        "",
+        "No. CM-041"
+       ],
+       [
+        "",
+        "Date: Dec 7"
+       ],
+       [
+        "Credit to",
+        "Delacroix Stables 5 Delacroix Court, Bellhaven"
+       ],
+       [
+        "Against invoice",
+        "7103"
+       ],
+       [
+        "Authorised by",
+        "J. Finch"
+       ],
+       [
+        "",
+        "This credit reduces the balance of invoice 7103; it is not a cash refund."
        ]
       ],
-      "lines": []
+      "lines": [
+       [
+        "Description",
+        "Amount"
+       ],
+       [
+        "Delacroix Stables - one dental redone at no charge",
+        "240.00"
+       ],
+       [
+        "Total",
+        "240.00"
+       ]
+      ]
      }
     },
     "C": {
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 7"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Credit memo CM-041"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Customer",
-        "Delacroix Stables"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Delacroix Stables - one dental redone at no charge"
+        "",
+        "CREDIT MEMORANDUM"
        ],
        [
-        "Amount",
-        "240.00"
+        "",
+        "No. CM-041"
+       ],
+       [
+        "",
+        "Date: Dec 7"
+       ],
+       [
+        "Credit to",
+        "Delacroix Stables 5 Delacroix Court, Bellhaven"
+       ],
+       [
+        "Against invoice",
+        "7103"
+       ],
+       [
+        "Authorised by",
+        "J. Finch"
+       ],
+       [
+        "",
+        "This credit reduces the balance of invoice 7103; it is not a cash refund."
        ]
       ],
-      "lines": []
+      "lines": [
+       [
+        "Description",
+        "Amount"
+       ],
+       [
+        "Delacroix Stables - one dental redone at no charge",
+        "240.00"
+       ],
+       [
+        "Total",
+        "240.00"
+       ]
+      ]
      }
     }
    }
   },
   {
    "ref": "D04",
-   "display_ref": "20714, Dec 2",
+   "display_ref": "Remittance 20714",
    "type": "source_document",
    "kind": "remittance",
    "date": "2026-12-02",
@@ -1128,24 +1557,44 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
-       ],
-       [
-        "Document",
-        "Remittance 7091"
-       ],
-       [
-        "Customer",
+        "",
         "Harborview Kennels"
        ],
        [
-        "Description",
-        "Harborview Kennels pays Nov 26 invoice in full"
+        "",
+        "220 Harborview Drive, Marlow"
        ],
        [
-        "Amount",
-        "4,250.00"
+        "",
+        "Cheque No. 20714"
+       ],
+       [
+        "",
+        "Dec 2"
+       ],
+       [
+        "Remittance advice",
+        "Payment in full of the balance shown Remitted 4,250.00"
+       ],
+       [
+        "",
+        "Harborview Kennels"
+       ],
+       [
+        "",
+        "No. 20714"
+       ],
+       [
+        "",
+        "Pay to the order of Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "$ 4,250.00"
+       ],
+       [
+        "",
+        "⋮04120020714⋮ 8830⋮"
        ]
       ],
       "lines": []
@@ -1155,24 +1604,44 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
-       ],
-       [
-        "Document",
-        "Remittance 7091"
-       ],
-       [
-        "Customer",
+        "",
         "Harborview Kennels"
        ],
        [
-        "Description",
-        "Harborview Kennels pays Nov 26 invoice in full"
+        "",
+        "220 Harborview Drive, Marlow"
        ],
        [
-        "Amount",
-        "4,250.00"
+        "",
+        "Cheque No. 20714"
+       ],
+       [
+        "",
+        "Dec 2"
+       ],
+       [
+        "Remittance advice",
+        "Payment in full of the balance shown Remitted 4,250.00"
+       ],
+       [
+        "",
+        "Harborview Kennels"
+       ],
+       [
+        "",
+        "No. 20714"
+       ],
+       [
+        "",
+        "Pay to the order of Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "$ 4,250.00"
+       ],
+       [
+        "",
+        "⋮04120020714⋮ 8830⋮"
        ]
       ],
       "lines": []
@@ -1182,24 +1651,44 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
-       ],
-       [
-        "Document",
-        "Remittance 7091"
-       ],
-       [
-        "Customer",
+        "",
         "Harborview Kennels"
        ],
        [
-        "Description",
-        "Harborview Kennels pays Nov 26 invoice in full"
+        "",
+        "220 Harborview Drive, Marlow"
        ],
        [
-        "Amount",
-        "4,250.00"
+        "",
+        "Cheque No. 20714"
+       ],
+       [
+        "",
+        "Dec 2"
+       ],
+       [
+        "Remittance advice",
+        "Payment in full of the balance shown Remitted 4,250.00"
+       ],
+       [
+        "",
+        "Harborview Kennels"
+       ],
+       [
+        "",
+        "No. 20714"
+       ],
+       [
+        "",
+        "Pay to the order of Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "$ 4,250.00"
+       ],
+       [
+        "",
+        "⋮04120020714⋮ 8830⋮"
        ]
       ],
       "lines": []
@@ -1209,7 +1698,7 @@
   },
   {
    "ref": "D10",
-   "display_ref": "8842, Dec 5",
+   "display_ref": "Remittance 8842",
    "type": "source_document",
    "kind": "remittance",
    "date": "2026-12-05",
@@ -1221,24 +1710,48 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 5"
-       ],
-       [
-        "Document",
-        "Remittance 7093"
-       ],
-       [
-        "Customer",
+        "",
         "Bramble Farm"
        ],
        [
-        "Description",
-        "Bramble Farm pays Nov 28 invoice"
+        "",
+        "Bramble Farm, Wexford Road"
        ],
        [
-        "Amount",
-        "2,100.00"
+        "",
+        "Cheque No. 8842"
+       ],
+       [
+        "",
+        "Dec 5"
+       ],
+       [
+        "Remittance advice",
+        "Invoice 7093 2,100.00 Remitted 2,100.00"
+       ],
+       [
+        "",
+        "Dated 28 November — the discount period has passed."
+       ],
+       [
+        "",
+        "Bramble Farm"
+       ],
+       [
+        "",
+        "No. 8842"
+       ],
+       [
+        "",
+        "Pay to the order of Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "$ 2,100.00"
+       ],
+       [
+        "",
+        "⋮0412008842⋮ 8830⋮"
        ]
       ],
       "lines": []
@@ -1248,24 +1761,48 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 5"
-       ],
-       [
-        "Document",
-        "Remittance 7093"
-       ],
-       [
-        "Customer",
+        "",
         "Bramble Farm"
        ],
        [
-        "Description",
-        "Bramble Farm pays Nov 28 invoice"
+        "",
+        "Bramble Farm, Wexford Road"
        ],
        [
-        "Amount",
-        "2,100.00"
+        "",
+        "Cheque No. 8842"
+       ],
+       [
+        "",
+        "Dec 5"
+       ],
+       [
+        "Remittance advice",
+        "Invoice 7093 2,100.00 Remitted 2,100.00"
+       ],
+       [
+        "",
+        "Dated 28 November — the discount period has passed."
+       ],
+       [
+        "",
+        "Bramble Farm"
+       ],
+       [
+        "",
+        "No. 8842"
+       ],
+       [
+        "",
+        "Pay to the order of Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "$ 2,100.00"
+       ],
+       [
+        "",
+        "⋮0412008842⋮ 8830⋮"
        ]
       ],
       "lines": []
@@ -1275,24 +1812,48 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 5"
-       ],
-       [
-        "Document",
-        "Remittance 7093"
-       ],
-       [
-        "Customer",
+        "",
         "Bramble Farm"
        ],
        [
-        "Description",
-        "Bramble Farm pays Nov 28 invoice"
+        "",
+        "Bramble Farm, Wexford Road"
        ],
        [
-        "Amount",
-        "2,100.00"
+        "",
+        "Cheque No. 8842"
+       ],
+       [
+        "",
+        "Dec 5"
+       ],
+       [
+        "Remittance advice",
+        "Invoice 7093 2,100.00 Remitted 2,100.00"
+       ],
+       [
+        "",
+        "Dated 28 November — the discount period has passed."
+       ],
+       [
+        "",
+        "Bramble Farm"
+       ],
+       [
+        "",
+        "No. 8842"
+       ],
+       [
+        "",
+        "Pay to the order of Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "$ 2,100.00"
+       ],
+       [
+        "",
+        "⋮0412008842⋮ 8830⋮"
        ]
       ],
       "lines": []
@@ -1302,7 +1863,7 @@
   },
   {
    "ref": "D09",
-   "display_ref": "5512, Dec 5",
+   "display_ref": "Receipt 5512",
    "type": "source_document",
    "kind": "receipt",
    "date": "2026-12-05",
@@ -1314,20 +1875,40 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 5"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Receipt 5512"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Harborview Kennels pays 810 in advance for 18 nights' boarding in January"
+        "",
+        "RECEIPT"
+       ],
+       [
+        "",
+        "No. 5512"
+       ],
+       [
+        "",
+        "Date Dec 5"
+       ],
+       [
+        "Received from",
+        "Harborview Kennels 220 Harborview Drive, Marlow"
        ],
        [
         "Amount",
         "810.00"
+       ],
+       [
+        "For",
+        "Boarding, 20 nights in January — paid in advance"
+       ],
+       [
+        "",
+        "Received with thanks. J. Finch"
        ]
       ],
       "lines": []
@@ -1337,20 +1918,40 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 5"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Receipt 5512"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Harborview Kennels pays 900 in advance for 20 nights' boarding in January"
+        "",
+        "RECEIPT"
+       ],
+       [
+        "",
+        "No. 5512"
+       ],
+       [
+        "",
+        "Date Dec 5"
+       ],
+       [
+        "Received from",
+        "Harborview Kennels 220 Harborview Drive, Marlow"
        ],
        [
         "Amount",
         "900.00"
+       ],
+       [
+        "For",
+        "Boarding, 20 nights in January — paid in advance"
+       ],
+       [
+        "",
+        "Received with thanks. J. Finch"
        ]
       ],
       "lines": []
@@ -1360,20 +1961,40 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 5"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Receipt 5512"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Description",
-        "Harborview Kennels pays 990 in advance for 22 nights' boarding in January"
+        "",
+        "RECEIPT"
+       ],
+       [
+        "",
+        "No. 5512"
+       ],
+       [
+        "",
+        "Date Dec 5"
+       ],
+       [
+        "Received from",
+        "Harborview Kennels 220 Harborview Drive, Marlow"
        ],
        [
         "Amount",
         "990.00"
+       ],
+       [
+        "For",
+        "Boarding, 20 nights in January — paid in advance"
+       ],
+       [
+        "",
+        "Received with thanks. J. Finch"
        ]
       ],
       "lines": []
@@ -1383,7 +2004,7 @@
   },
   {
    "ref": "D07",
-   "display_ref": "Register tape, Dec 4",
+   "display_ref": "Cash register tape",
    "type": "source_document",
    "kind": "register_tape",
    "date": "2026-12-04",
@@ -1395,139 +2016,196 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
+        "",
+        "ALDER & FINCH VETERINARY CLINIC"
+       ],
+       [
+        "",
+        "COUNTER SALE"
+       ],
+       [
+        "",
         "Dec 4"
        ],
        [
-        "Document",
-        "Reception tape"
+        "",
+        "------------------------------"
        ],
        [
-        "Register",
-        "RECEPTION 1"
+        "",
+        "2 @ 85.00 Consultation, standard"
        ],
        [
-        "Clerk",
-        "02"
-       ],
-       [
-        "Description",
-        "Fees settled at the desk"
-       ],
-       [
-        "Amount",
-        "265.00"
-       ]
-      ],
-      "lines": [
-       [
-        "2",
-        "Consultation, standard",
-        "85.00",
+        "",
         "170.00"
        ],
        [
-        "1",
-        "Laboratory panel",
-        "95.00",
+        "",
+        "1 @ 95.00 Laboratory panel"
+       ],
+       [
+        "",
         "95.00"
+       ],
+       [
+        "",
+        "------------------------------"
+       ],
+       [
+        "",
+        "TOTAL 265.00"
+       ],
+       [
+        "",
+        "CASH 265.00"
+       ],
+       [
+        "",
+        "CHANGE 0.00"
+       ],
+       [
+        "",
+        "------------------------------"
+       ],
+       [
+        "",
+        "RECEPTION 1 CLERK 02"
        ]
-      ]
+      ],
+      "lines": []
      }
     },
     "B": {
      "text_alternative": {
       "fields": [
        [
-        "Date",
+        "",
+        "ALDER & FINCH VETERINARY CLINIC"
+       ],
+       [
+        "",
+        "COUNTER SALE"
+       ],
+       [
+        "",
         "Dec 4"
        ],
        [
-        "Document",
-        "Reception tape"
+        "",
+        "------------------------------"
        ],
        [
-        "Register",
-        "RECEPTION 1"
+        "",
+        "2 @ 90.00 Consultation, standard"
        ],
        [
-        "Clerk",
-        "02"
-       ],
-       [
-        "Description",
-        "Fees settled at the desk"
-       ],
-       [
-        "Amount",
-        "275.00"
-       ]
-      ],
-      "lines": [
-       [
-        "2",
-        "Consultation, standard",
-        "90.00",
+        "",
         "180.00"
        ],
        [
-        "1",
-        "Laboratory panel",
-        "95.00",
+        "",
+        "1 @ 95.00 Laboratory panel"
+       ],
+       [
+        "",
         "95.00"
+       ],
+       [
+        "",
+        "------------------------------"
+       ],
+       [
+        "",
+        "TOTAL 275.00"
+       ],
+       [
+        "",
+        "CASH 275.00"
+       ],
+       [
+        "",
+        "CHANGE 0.00"
+       ],
+       [
+        "",
+        "------------------------------"
+       ],
+       [
+        "",
+        "RECEPTION 1 CLERK 02"
        ]
-      ]
+      ],
+      "lines": []
      }
     },
     "C": {
      "text_alternative": {
       "fields": [
        [
-        "Date",
+        "",
+        "ALDER & FINCH VETERINARY CLINIC"
+       ],
+       [
+        "",
+        "COUNTER SALE"
+       ],
+       [
+        "",
         "Dec 4"
        ],
        [
-        "Document",
-        "Reception tape"
+        "",
+        "------------------------------"
        ],
        [
-        "Register",
-        "RECEPTION 1"
+        "",
+        "2 @ 95.00 Consultation, standard"
        ],
        [
-        "Clerk",
-        "02"
-       ],
-       [
-        "Description",
-        "Fees settled at the desk"
-       ],
-       [
-        "Amount",
-        "285.00"
-       ]
-      ],
-      "lines": [
-       [
-        "2",
-        "Consultation, standard",
-        "95.00",
+        "",
         "190.00"
        ],
        [
-        "1",
-        "Laboratory panel",
-        "95.00",
+        "",
+        "1 @ 95.00 Laboratory panel"
+       ],
+       [
+        "",
         "95.00"
+       ],
+       [
+        "",
+        "------------------------------"
+       ],
+       [
+        "",
+        "TOTAL 285.00"
+       ],
+       [
+        "",
+        "CASH 285.00"
+       ],
+       [
+        "",
+        "CHANGE 0.00"
+       ],
+       [
+        "",
+        "------------------------------"
+       ],
+       [
+        "",
+        "RECEPTION 1 CLERK 02"
        ]
-      ]
+      ],
+      "lines": []
      }
     }
    }
   },
   {
    "ref": "D03",
-   "display_ref": "AF-0440, Dec 2",
+   "display_ref": "Purchase order AF-0440",
    "type": "source_document",
    "kind": "purchase_order",
    "date": "2026-12-02",
@@ -1539,43 +2217,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Vendor inv CV-3310"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Vendor invoice",
-        "CV-3310"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Purchase order",
-        "AF-0440"
+        "",
+        "PURCHASE ORDER"
+       ],
+       [
+        "",
+        "No. AF-0440"
+       ],
+       [
+        "",
+        "Date: Dec 2"
+       ],
+       [
+        "Vendor",
+        "Cedarline Veterinary Supply 40 Cedarline Road, Portside"
        ],
        [
         "Terms",
         "n/30"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
+        "FOB",
+        "Destination"
        ],
        [
-        "Description",
-        "Clinic supplies on account, Cedarline"
+        "",
+        "Show this order number on your invoice and packing list. Goods are received subject to count and inspection."
        ],
        [
-        "Amount",
-        "1,480.00"
+        "",
+        "Authorised: J. Finch"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "1,480.00",
+        "1,480.00"
+       ],
+       [
+        "Total",
         "1,480.00"
        ]
       ]
@@ -1585,43 +2287,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Vendor inv CV-3310"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Vendor invoice",
-        "CV-3310"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Purchase order",
-        "AF-0440"
+        "",
+        "PURCHASE ORDER"
+       ],
+       [
+        "",
+        "No. AF-0440"
+       ],
+       [
+        "",
+        "Date: Dec 2"
+       ],
+       [
+        "Vendor",
+        "Cedarline Veterinary Supply 40 Cedarline Road, Portside"
        ],
        [
         "Terms",
         "n/30"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
+        "FOB",
+        "Destination"
        ],
        [
-        "Description",
-        "Clinic supplies on account, Cedarline"
+        "",
+        "Show this order number on your invoice and packing list. Goods are received subject to count and inspection."
        ],
        [
-        "Amount",
-        "1,480.00"
+        "",
+        "Authorised: J. Finch"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "1,480.00",
+        "1,480.00"
+       ],
+       [
+        "Total",
         "1,480.00"
        ]
       ]
@@ -1631,43 +2357,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Vendor inv CV-3310"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Vendor invoice",
-        "CV-3310"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Purchase order",
-        "AF-0440"
+        "",
+        "PURCHASE ORDER"
+       ],
+       [
+        "",
+        "No. AF-0440"
+       ],
+       [
+        "",
+        "Date: Dec 2"
+       ],
+       [
+        "Vendor",
+        "Cedarline Veterinary Supply 40 Cedarline Road, Portside"
        ],
        [
         "Terms",
         "n/30"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
+        "FOB",
+        "Destination"
        ],
        [
-        "Description",
-        "Clinic supplies on account, Cedarline"
+        "",
+        "Show this order number on your invoice and packing list. Goods are received subject to count and inspection."
        ],
        [
-        "Amount",
-        "1,480.00"
+        "",
+        "Authorised: J. Finch"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "1,480.00",
+        "1,480.00"
+       ],
+       [
+        "Total",
         "1,480.00"
        ]
       ]
@@ -1677,7 +2427,7 @@
   },
   {
    "ref": "D03-2",
-   "display_ref": "CV-3310, Dec 2",
+   "display_ref": "Vendor invoice CV-3310",
    "type": "source_document",
    "kind": "vendor_invoice",
    "date": "2026-12-02",
@@ -1689,19 +2439,31 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
+        "",
+        "Cedarline Veterinary Supply"
        ],
        [
-        "Document",
-        "Vendor inv CV-3310"
+        "",
+        "40 Cedarline Road, Portside"
        ],
        [
-        "Vendor invoice",
-        "CV-3310"
+        "",
+        "INVOICE"
        ],
        [
-        "Purchase order",
+        "",
+        "No. CV-3310"
+       ],
+       [
+        "",
+        "Date: Dec 2"
+       ],
+       [
+        "Sold to",
+        "Alder & Finch Veterinary Clinic, Inc. 12 Alder Row · Kettle Springs · Telephone 555-0198"
+       ],
+       [
+        "Your order",
         "AF-0440"
        ],
        [
@@ -1709,23 +2471,27 @@
         "n/30"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
-       ],
-       [
-        "Description",
-        "Clinic supplies on account, Cedarline"
-       ],
-       [
-        "Amount",
-        "1,480.00"
+        "FOB",
+        "Destination"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "1,480.00",
+        "1,480.00"
+       ],
+       [
+        "Total",
         "1,480.00"
        ]
       ]
@@ -1735,19 +2501,31 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
+        "",
+        "Cedarline Veterinary Supply"
        ],
        [
-        "Document",
-        "Vendor inv CV-3310"
+        "",
+        "40 Cedarline Road, Portside"
        ],
        [
-        "Vendor invoice",
-        "CV-3310"
+        "",
+        "INVOICE"
        ],
        [
-        "Purchase order",
+        "",
+        "No. CV-3310"
+       ],
+       [
+        "",
+        "Date: Dec 2"
+       ],
+       [
+        "Sold to",
+        "Alder & Finch Veterinary Clinic, Inc. 12 Alder Row · Kettle Springs · Telephone 555-0198"
+       ],
+       [
+        "Your order",
         "AF-0440"
        ],
        [
@@ -1755,23 +2533,27 @@
         "n/30"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
-       ],
-       [
-        "Description",
-        "Clinic supplies on account, Cedarline"
-       ],
-       [
-        "Amount",
-        "1,480.00"
+        "FOB",
+        "Destination"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "1,480.00",
+        "1,480.00"
+       ],
+       [
+        "Total",
         "1,480.00"
        ]
       ]
@@ -1781,19 +2563,31 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 2"
+        "",
+        "Cedarline Veterinary Supply"
        ],
        [
-        "Document",
-        "Vendor inv CV-3310"
+        "",
+        "40 Cedarline Road, Portside"
        ],
        [
-        "Vendor invoice",
-        "CV-3310"
+        "",
+        "INVOICE"
        ],
        [
-        "Purchase order",
+        "",
+        "No. CV-3310"
+       ],
+       [
+        "",
+        "Date: Dec 2"
+       ],
+       [
+        "Sold to",
+        "Alder & Finch Veterinary Clinic, Inc. 12 Alder Row · Kettle Springs · Telephone 555-0198"
+       ],
+       [
+        "Your order",
         "AF-0440"
        ],
        [
@@ -1801,23 +2595,27 @@
         "n/30"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
-       ],
-       [
-        "Description",
-        "Clinic supplies on account, Cedarline"
-       ],
-       [
-        "Amount",
-        "1,480.00"
+        "FOB",
+        "Destination"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "1,480.00",
+        "1,480.00"
+       ],
+       [
+        "Total",
         "1,480.00"
        ]
       ]
@@ -1827,7 +2625,7 @@
   },
   {
    "ref": "D11",
-   "display_ref": "AF-0441, Dec 6",
+   "display_ref": "Purchase order AF-0441",
    "type": "source_document",
    "kind": "purchase_order",
    "date": "2026-12-06",
@@ -1839,43 +2637,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 6"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Vendor inv TP-8802"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Vendor invoice",
-        "TP-8802"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Purchase order",
-        "AF-0441"
+        "",
+        "PURCHASE ORDER"
+       ],
+       [
+        "",
+        "No. AF-0441"
+       ],
+       [
+        "",
+        "Date: Dec 6"
+       ],
+       [
+        "Vendor",
+        "Thornfield Pharmaceuticals 9 Thornfield Way, Gatesville"
        ],
        [
         "Terms",
         "n/30"
        ],
        [
-        "Supplier",
-        "Thornfield Pharmaceuticals"
+        "FOB",
+        "Destination"
        ],
        [
-        "Description",
-        "Medication on account, Thornfield"
+        "",
+        "Show this order number on your invoice and packing list. Goods are received subject to count and inspection."
        ],
        [
-        "Amount",
-        "960.00"
+        "",
+        "Authorised: J. Finch"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "960.00",
+        "960.00"
+       ],
+       [
+        "Total",
         "960.00"
        ]
       ]
@@ -1885,43 +2707,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 6"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Vendor inv TP-8802"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Vendor invoice",
-        "TP-8802"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Purchase order",
-        "AF-0441"
+        "",
+        "PURCHASE ORDER"
+       ],
+       [
+        "",
+        "No. AF-0441"
+       ],
+       [
+        "",
+        "Date: Dec 6"
+       ],
+       [
+        "Vendor",
+        "Thornfield Pharmaceuticals 9 Thornfield Way, Gatesville"
        ],
        [
         "Terms",
         "n/30"
        ],
        [
-        "Supplier",
-        "Thornfield Pharmaceuticals"
+        "FOB",
+        "Destination"
        ],
        [
-        "Description",
-        "Medication on account, Thornfield"
+        "",
+        "Show this order number on your invoice and packing list. Goods are received subject to count and inspection."
        ],
        [
-        "Amount",
-        "960.00"
+        "",
+        "Authorised: J. Finch"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "960.00",
+        "960.00"
+       ],
+       [
+        "Total",
         "960.00"
        ]
       ]
@@ -1931,43 +2777,67 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 6"
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
        ],
        [
-        "Document",
-        "Vendor inv TP-8802"
+        "",
+        "Small animal practice · consultations, surgery and boarding"
        ],
        [
-        "Vendor invoice",
-        "TP-8802"
+        "",
+        "12 Alder Row · Kettle Springs · Telephone 555-0198"
        ],
        [
-        "Purchase order",
-        "AF-0441"
+        "",
+        "PURCHASE ORDER"
+       ],
+       [
+        "",
+        "No. AF-0441"
+       ],
+       [
+        "",
+        "Date: Dec 6"
+       ],
+       [
+        "Vendor",
+        "Thornfield Pharmaceuticals 9 Thornfield Way, Gatesville"
        ],
        [
         "Terms",
         "n/30"
        ],
        [
-        "Supplier",
-        "Thornfield Pharmaceuticals"
+        "FOB",
+        "Destination"
        ],
        [
-        "Description",
-        "Medication on account, Thornfield"
+        "",
+        "Show this order number on your invoice and packing list. Goods are received subject to count and inspection."
        ],
        [
-        "Amount",
-        "960.00"
+        "",
+        "Authorised: J. Finch"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "960.00",
+        "960.00"
+       ],
+       [
+        "Total",
         "960.00"
        ]
       ]
@@ -1977,7 +2847,7 @@
   },
   {
    "ref": "D11-2",
-   "display_ref": "TP-8802, Dec 6",
+   "display_ref": "Vendor invoice TP-8802",
    "type": "source_document",
    "kind": "vendor_invoice",
    "date": "2026-12-06",
@@ -1989,19 +2859,31 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 6"
+        "",
+        "Thornfield Pharmaceuticals"
        ],
        [
-        "Document",
-        "Vendor inv TP-8802"
+        "",
+        "9 Thornfield Way, Gatesville"
        ],
        [
-        "Vendor invoice",
-        "TP-8802"
+        "",
+        "INVOICE"
        ],
        [
-        "Purchase order",
+        "",
+        "No. TP-8802"
+       ],
+       [
+        "",
+        "Date: Dec 6"
+       ],
+       [
+        "Sold to",
+        "Alder & Finch Veterinary Clinic, Inc. 12 Alder Row · Kettle Springs · Telephone 555-0198"
+       ],
+       [
+        "Your order",
         "AF-0441"
        ],
        [
@@ -2009,23 +2891,27 @@
         "n/30"
        ],
        [
-        "Supplier",
-        "Thornfield Pharmaceuticals"
-       ],
-       [
-        "Description",
-        "Medication on account, Thornfield"
-       ],
-       [
-        "Amount",
-        "960.00"
+        "FOB",
+        "Destination"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "960.00",
+        "960.00"
+       ],
+       [
+        "Total",
         "960.00"
        ]
       ]
@@ -2035,19 +2921,31 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 6"
+        "",
+        "Thornfield Pharmaceuticals"
        ],
        [
-        "Document",
-        "Vendor inv TP-8802"
+        "",
+        "9 Thornfield Way, Gatesville"
        ],
        [
-        "Vendor invoice",
-        "TP-8802"
+        "",
+        "INVOICE"
        ],
        [
-        "Purchase order",
+        "",
+        "No. TP-8802"
+       ],
+       [
+        "",
+        "Date: Dec 6"
+       ],
+       [
+        "Sold to",
+        "Alder & Finch Veterinary Clinic, Inc. 12 Alder Row · Kettle Springs · Telephone 555-0198"
+       ],
+       [
+        "Your order",
         "AF-0441"
        ],
        [
@@ -2055,23 +2953,27 @@
         "n/30"
        ],
        [
-        "Supplier",
-        "Thornfield Pharmaceuticals"
-       ],
-       [
-        "Description",
-        "Medication on account, Thornfield"
-       ],
-       [
-        "Amount",
-        "960.00"
+        "FOB",
+        "Destination"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "960.00",
+        "960.00"
+       ],
+       [
+        "Total",
         "960.00"
        ]
       ]
@@ -2081,19 +2983,31 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 6"
+        "",
+        "Thornfield Pharmaceuticals"
        ],
        [
-        "Document",
-        "Vendor inv TP-8802"
+        "",
+        "9 Thornfield Way, Gatesville"
        ],
        [
-        "Vendor invoice",
-        "TP-8802"
+        "",
+        "INVOICE"
        ],
        [
-        "Purchase order",
+        "",
+        "No. TP-8802"
+       ],
+       [
+        "",
+        "Date: Dec 6"
+       ],
+       [
+        "Sold to",
+        "Alder & Finch Veterinary Clinic, Inc. 12 Alder Row · Kettle Springs · Telephone 555-0198"
+       ],
+       [
+        "Your order",
         "AF-0441"
        ],
        [
@@ -2101,23 +3015,27 @@
         "n/30"
        ],
        [
-        "Supplier",
-        "Thornfield Pharmaceuticals"
-       ],
-       [
-        "Description",
-        "Medication on account, Thornfield"
-       ],
-       [
-        "Amount",
-        "960.00"
+        "FOB",
+        "Destination"
        ]
       ],
       "lines": [
        [
-        "1",
+        "Item",
+        "Description",
+        "Qty",
+        "Unit",
+        "Amount"
+       ],
+       [
+        "MED",
         "Medication dispensed — see chart",
+        "1",
         "960.00",
+        "960.00"
+       ],
+       [
+        "Total",
         "960.00"
        ]
       ]
@@ -2127,7 +3045,7 @@
   },
   {
    "ref": "D01",
-   "display_ref": "4101, Dec 1",
+   "display_ref": "Check 4101",
    "type": "source_document",
    "kind": "cheque",
    "date": "2026-12-01",
@@ -2139,28 +3057,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4101 DATE Dec 1"
+       ],
+       [
+        "",
+        "PAYEE Marchmont Property Trust"
+       ],
+       [
+        "",
+        "FOR December rent"
+       ],
+       [
+        "",
+        "AMOUNT 2,200.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4101"
+       ],
+       [
         "Date",
         "Dec 1"
        ],
        [
-        "Document",
-        "Check 4101"
+        "",
+        "Pay to the order of Marchmont Property Trust $ 2,200.00"
        ],
        [
-        "Payee",
-        "Marchmont Property Trust"
+        "",
+        "December rent — dollars"
        ],
        [
-        "For",
-        "December rent"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Paid December rent"
+        "",
+        "J. Finch"
        ],
        [
-        "Amount",
-        "2,200.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4101⋮"
        ]
       ],
       "lines": []
@@ -2170,28 +3116,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4101 DATE Dec 1"
+       ],
+       [
+        "",
+        "PAYEE Marchmont Property Trust"
+       ],
+       [
+        "",
+        "FOR December rent"
+       ],
+       [
+        "",
+        "AMOUNT 2,200.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4101"
+       ],
+       [
         "Date",
         "Dec 1"
        ],
        [
-        "Document",
-        "Check 4101"
+        "",
+        "Pay to the order of Marchmont Property Trust $ 2,200.00"
        ],
        [
-        "Payee",
-        "Marchmont Property Trust"
+        "",
+        "December rent — dollars"
        ],
        [
-        "For",
-        "December rent"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Paid December rent"
+        "",
+        "J. Finch"
        ],
        [
-        "Amount",
-        "2,200.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4101⋮"
        ]
       ],
       "lines": []
@@ -2201,28 +3175,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4101 DATE Dec 1"
+       ],
+       [
+        "",
+        "PAYEE Marchmont Property Trust"
+       ],
+       [
+        "",
+        "FOR December rent"
+       ],
+       [
+        "",
+        "AMOUNT 2,200.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4101"
+       ],
+       [
         "Date",
         "Dec 1"
        ],
        [
-        "Document",
-        "Check 4101"
+        "",
+        "Pay to the order of Marchmont Property Trust $ 2,200.00"
        ],
        [
-        "Payee",
-        "Marchmont Property Trust"
+        "",
+        "December rent — dollars"
        ],
        [
-        "For",
-        "December rent"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Paid December rent"
+        "",
+        "J. Finch"
        ],
        [
-        "Amount",
-        "2,200.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4101⋮"
        ]
       ],
       "lines": []
@@ -2232,7 +3234,7 @@
   },
   {
    "ref": "D06",
-   "display_ref": "4102, Dec 3",
+   "display_ref": "Check 4102",
    "type": "source_document",
    "kind": "cheque",
    "date": "2026-12-03",
@@ -2244,28 +3246,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4102 DATE Dec 3"
+       ],
+       [
+        "",
+        "PAYEE Kettle Springs Municipal Utilities"
+       ],
+       [
+        "",
+        "FOR Utilities — November service"
+       ],
+       [
+        "",
+        "AMOUNT 385.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4102"
+       ],
+       [
         "Date",
         "Dec 3"
        ],
        [
-        "Document",
-        "Check 4102"
+        "",
+        "Pay to the order of Kettle Springs Municipal Utilities $ 385.00"
        ],
        [
-        "Payee",
-        "Kettle Springs Municipal Utilities"
+        "",
+        "Utilities — November service — dollars"
        ],
        [
-        "For",
-        "Utilities — November service"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Paid utilities"
+        "",
+        "J. Finch"
        ],
        [
-        "Amount",
-        "385.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4102⋮"
        ]
       ],
       "lines": []
@@ -2275,28 +3305,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4102 DATE Dec 3"
+       ],
+       [
+        "",
+        "PAYEE Kettle Springs Municipal Utilities"
+       ],
+       [
+        "",
+        "FOR Utilities — November service"
+       ],
+       [
+        "",
+        "AMOUNT 385.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4102"
+       ],
+       [
         "Date",
         "Dec 3"
        ],
        [
-        "Document",
-        "Check 4102"
+        "",
+        "Pay to the order of Kettle Springs Municipal Utilities $ 385.00"
        ],
        [
-        "Payee",
-        "Kettle Springs Municipal Utilities"
+        "",
+        "Utilities — November service — dollars"
        ],
        [
-        "For",
-        "Utilities — November service"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Paid utilities"
+        "",
+        "J. Finch"
        ],
        [
-        "Amount",
-        "385.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4102⋮"
        ]
       ],
       "lines": []
@@ -2306,28 +3364,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4102 DATE Dec 3"
+       ],
+       [
+        "",
+        "PAYEE Kettle Springs Municipal Utilities"
+       ],
+       [
+        "",
+        "FOR Utilities — November service"
+       ],
+       [
+        "",
+        "AMOUNT 385.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4102"
+       ],
+       [
         "Date",
         "Dec 3"
        ],
        [
-        "Document",
-        "Check 4102"
+        "",
+        "Pay to the order of Kettle Springs Municipal Utilities $ 385.00"
        ],
        [
-        "Payee",
-        "Kettle Springs Municipal Utilities"
+        "",
+        "Utilities — November service — dollars"
        ],
        [
-        "For",
-        "Utilities — November service"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Paid utilities"
+        "",
+        "J. Finch"
        ],
        [
-        "Amount",
-        "385.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4102⋮"
        ]
       ],
       "lines": []
@@ -2337,7 +3423,7 @@
   },
   {
    "ref": "D12",
-   "display_ref": "4103, Dec 6",
+   "display_ref": "Check 4103",
    "type": "source_document",
    "kind": "cheque",
    "date": "2026-12-06",
@@ -2349,32 +3435,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4103 DATE Dec 6"
+       ],
+       [
+        "",
+        "PAYEE Cedarline Veterinary Supply"
+       ],
+       [
+        "",
+        "FOR On account — November balance"
+       ],
+       [
+        "",
+        "AMOUNT 3,200.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4103"
+       ],
+       [
         "Date",
         "Dec 6"
        ],
        [
-        "Document",
-        "Check 4103"
+        "",
+        "Pay to the order of Cedarline Veterinary Supply $ 3,200.00"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
+        "",
+        "On account — November balance — dollars"
        ],
        [
-        "Payee",
-        "Cedarline Veterinary Supply"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "For",
-        "On account — November balance"
+        "",
+        "J. Finch"
        ],
        [
-        "Description",
-        "Paid Cedarline November balance"
-       ],
-       [
-        "Amount",
-        "3,200.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4103⋮"
        ]
       ],
       "lines": []
@@ -2384,32 +3494,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4103 DATE Dec 6"
+       ],
+       [
+        "",
+        "PAYEE Cedarline Veterinary Supply"
+       ],
+       [
+        "",
+        "FOR On account — November balance"
+       ],
+       [
+        "",
+        "AMOUNT 3,200.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4103"
+       ],
+       [
         "Date",
         "Dec 6"
        ],
        [
-        "Document",
-        "Check 4103"
+        "",
+        "Pay to the order of Cedarline Veterinary Supply $ 3,200.00"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
+        "",
+        "On account — November balance — dollars"
        ],
        [
-        "Payee",
-        "Cedarline Veterinary Supply"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "For",
-        "On account — November balance"
+        "",
+        "J. Finch"
        ],
        [
-        "Description",
-        "Paid Cedarline November balance"
-       ],
-       [
-        "Amount",
-        "3,200.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4103⋮"
        ]
       ],
       "lines": []
@@ -2419,32 +3553,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4103 DATE Dec 6"
+       ],
+       [
+        "",
+        "PAYEE Cedarline Veterinary Supply"
+       ],
+       [
+        "",
+        "FOR On account — November balance"
+       ],
+       [
+        "",
+        "AMOUNT 3,200.00"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4103"
+       ],
+       [
         "Date",
         "Dec 6"
        ],
        [
-        "Document",
-        "Check 4103"
+        "",
+        "Pay to the order of Cedarline Veterinary Supply $ 3,200.00"
        ],
        [
-        "Supplier",
-        "Cedarline Veterinary Supply"
+        "",
+        "On account — November balance — dollars"
        ],
        [
-        "Payee",
-        "Cedarline Veterinary Supply"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "For",
-        "On account — November balance"
+        "",
+        "J. Finch"
        ],
        [
-        "Description",
-        "Paid Cedarline November balance"
-       ],
-       [
-        "Amount",
-        "3,200.00"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4103⋮"
        ]
       ],
       "lines": []
@@ -2454,7 +3612,7 @@
   },
   {
    "ref": "D13",
-   "display_ref": "4105, Dec 7",
+   "display_ref": "Check 4105",
    "type": "source_document",
    "kind": "cheque",
    "date": "2026-12-07",
@@ -2466,52 +3624,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4105 DATE Dec 7"
+       ],
+       [
+        "",
+        "PAYEE Payroll account"
+       ],
+       [
+        "",
+        "FOR Weekly payroll 1–7 December"
+       ],
+       [
+        "",
+        "AMOUNT 4,296.25"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4105"
+       ],
+       [
         "Date",
         "Dec 7"
        ],
        [
-        "Document",
-        "Check 4105 / payroll register"
+        "",
+        "Pay to the order of Payroll account $ 4,296.25"
        ],
        [
-        "Payee",
-        "Payroll account"
+        "",
+        "Weekly payroll 1–7 December — dollars"
        ],
        [
-        "For",
-        "Weekly payroll 1–7 December"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Weekly payroll, Dec 1-7"
+        "",
+        "J. Finch"
        ],
        [
-        "Gross pay",
-        "5,500.00"
-       ],
-       [
-        "Veterinary salaries",
-        "3,600.00"
-       ],
-       [
-        "Office salaries",
-        "1,900.00"
-       ],
-       [
-        "FICA withheld",
-        "420.75"
-       ],
-       [
-        "Federal income tax withheld",
-        "602.00"
-       ],
-       [
-        "State income tax withheld",
-        "181.00"
-       ],
-       [
-        "Amount",
-        "4,296.25"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4105⋮"
        ]
       ],
       "lines": []
@@ -2521,52 +3683,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4105 DATE Dec 7"
+       ],
+       [
+        "",
+        "PAYEE Payroll account"
+       ],
+       [
+        "",
+        "FOR Weekly payroll 1–7 December"
+       ],
+       [
+        "",
+        "AMOUNT 4,296.25"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4105"
+       ],
+       [
         "Date",
         "Dec 7"
        ],
        [
-        "Document",
-        "Check 4105 / payroll register"
+        "",
+        "Pay to the order of Payroll account $ 4,296.25"
        ],
        [
-        "Payee",
-        "Payroll account"
+        "",
+        "Weekly payroll 1–7 December — dollars"
        ],
        [
-        "For",
-        "Weekly payroll 1–7 December"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Weekly payroll, Dec 1-7"
+        "",
+        "J. Finch"
        ],
        [
-        "Gross pay",
-        "5,500.00"
-       ],
-       [
-        "Veterinary salaries",
-        "3,600.00"
-       ],
-       [
-        "Office salaries",
-        "1,900.00"
-       ],
-       [
-        "FICA withheld",
-        "420.75"
-       ],
-       [
-        "Federal income tax withheld",
-        "602.00"
-       ],
-       [
-        "State income tax withheld",
-        "181.00"
-       ],
-       [
-        "Amount",
-        "4,296.25"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4105⋮"
        ]
       ],
       "lines": []
@@ -2576,52 +3742,56 @@
      "text_alternative": {
       "fields": [
        [
+        "",
+        "CHECK 4105 DATE Dec 7"
+       ],
+       [
+        "",
+        "PAYEE Payroll account"
+       ],
+       [
+        "",
+        "FOR Weekly payroll 1–7 December"
+       ],
+       [
+        "",
+        "AMOUNT 4,296.25"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4105"
+       ],
+       [
         "Date",
         "Dec 7"
        ],
        [
-        "Document",
-        "Check 4105 / payroll register"
+        "",
+        "Pay to the order of Payroll account $ 4,296.25"
        ],
        [
-        "Payee",
-        "Payroll account"
+        "",
+        "Weekly payroll 1–7 December — dollars"
        ],
        [
-        "For",
-        "Weekly payroll 1–7 December"
+        "",
+        "Harbour National Bank"
        ],
        [
-        "Description",
-        "Weekly payroll, Dec 1-7"
+        "",
+        "J. Finch"
        ],
        [
-        "Gross pay",
-        "5,500.00"
-       ],
-       [
-        "Veterinary salaries",
-        "3,600.00"
-       ],
-       [
-        "Office salaries",
-        "1,900.00"
-       ],
-       [
-        "FICA withheld",
-        "420.75"
-       ],
-       [
-        "Federal income tax withheld",
-        "602.00"
-       ],
-       [
-        "State income tax withheld",
-        "181.00"
-       ],
-       [
-        "Amount",
-        "4,296.25"
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4105⋮"
        ]
       ],
       "lines": []
@@ -2631,22 +3801,172 @@
   },
   {
    "ref": "N01",
-   "display_ref": "4104",
+   "display_ref": "Void cheque 4104",
    "type": "source_document",
    "kind": "void_cheque",
-   "date": "2026-12-07",
+   "date": "2026-12-06",
    "received_seq": 17,
    "guided": false,
    "guidance": null,
    "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "CHECK 4104 DATE Dec 6"
+       ],
+       [
+        "",
+        "PAYEE ——"
+       ],
+       [
+        "",
+        "FOR spoiled in the printer"
+       ],
+       [
+        "",
+        "AMOUNT ——"
+       ],
+       [
+        "",
+        "VOID"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4104"
+       ],
+       [
+        "Date",
+        "—"
+       ],
+       [
+        "",
+        "Pay to the order of ______________________"
+       ],
+       [
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4104⋮"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "CHECK 4104 DATE Dec 6"
+       ],
+       [
+        "",
+        "PAYEE ——"
+       ],
+       [
+        "",
+        "FOR spoiled in the printer"
+       ],
+       [
+        "",
+        "AMOUNT ——"
+       ],
+       [
+        "",
+        "VOID"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4104"
+       ],
+       [
+        "Date",
+        "—"
+       ],
+       [
+        "",
+        "Pay to the order of ______________________"
+       ],
+       [
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4104⋮"
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "CHECK 4104 DATE Dec 6"
+       ],
+       [
+        "",
+        "PAYEE ——"
+       ],
+       [
+        "",
+        "FOR spoiled in the printer"
+       ],
+       [
+        "",
+        "AMOUNT ——"
+       ],
+       [
+        "",
+        "VOID"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic, Inc."
+       ],
+       [
+        "",
+        "12 Alder Row"
+       ],
+       [
+        "",
+        "No. 4104"
+       ],
+       [
+        "Date",
+        "—"
+       ],
+       [
+        "",
+        "Pay to the order of ______________________"
+       ],
+       [
+        "",
+        "⋮084301229⋮ 55•0173•2 ⋮4104⋮"
+       ]
+      ],
+      "lines": []
+     }
+    }
    }
   },
   {
    "ref": "N02",
-   "display_ref": "J. Finch",
+   "display_ref": "Time card, J. Finch",
    "type": "source_document",
    "kind": "time_card",
    "date": "2026-12-07",
@@ -2654,14 +3974,263 @@
    "guided": false,
    "guidance": null,
    "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE J. Finch Veterinarian, principal CHARGED TO Office salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:02",
+        "12:01",
+        "12:33",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:00",
+        "12:04",
+        "12:30",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:00",
+        "12:00",
+        "12:33",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:00",
+        "12:01",
+        "12:30",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:03",
+        "12:00",
+        "12:34",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE J. Finch Veterinarian, principal CHARGED TO Office salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:02",
+        "12:01",
+        "12:33",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:00",
+        "12:04",
+        "12:30",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:00",
+        "12:00",
+        "12:33",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:00",
+        "12:01",
+        "12:30",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:03",
+        "12:00",
+        "12:34",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE J. Finch Veterinarian, principal CHARGED TO Office salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:02",
+        "12:01",
+        "12:33",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:00",
+        "12:04",
+        "12:30",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:00",
+        "12:00",
+        "12:33",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:00",
+        "12:01",
+        "12:30",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:03",
+        "12:00",
+        "12:34",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    }
    }
   },
   {
    "ref": "N03",
-   "display_ref": "A. Alder",
+   "display_ref": "Time card, A. Alder",
    "type": "source_document",
    "kind": "time_card",
    "date": "2026-12-07",
@@ -2669,14 +4238,263 @@
    "guided": false,
    "guidance": null,
    "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE A. Alder Veterinarian CHARGED TO Clinical salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:01",
+        "12:05",
+        "12:35",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:00",
+        "12:04",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:00",
+        "12:01",
+        "12:30",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:01",
+        "12:02",
+        "12:33",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:04",
+        "12:05",
+        "12:31",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE A. Alder Veterinarian CHARGED TO Clinical salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:01",
+        "12:05",
+        "12:35",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:00",
+        "12:04",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:00",
+        "12:01",
+        "12:30",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:01",
+        "12:02",
+        "12:33",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:04",
+        "12:05",
+        "12:31",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE A. Alder Veterinarian CHARGED TO Clinical salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:01",
+        "12:05",
+        "12:35",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:00",
+        "12:04",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:00",
+        "12:01",
+        "12:30",
+        "5:04",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:01",
+        "12:02",
+        "12:33",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:04",
+        "12:05",
+        "12:31",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    }
    }
   },
   {
    "ref": "N04",
-   "display_ref": "R. Amaechi",
+   "display_ref": "Time card, R. Amaechi",
    "type": "source_document",
    "kind": "time_card",
    "date": "2026-12-07",
@@ -2684,14 +4502,263 @@
    "guided": false,
    "guidance": null,
    "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE R. Amaechi Veterinary nurse CHARGED TO Clinical salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:04",
+        "12:04",
+        "12:35",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:02",
+        "12:00",
+        "12:34",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:03",
+        "12:05",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:02",
+        "12:03",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:02",
+        "12:02",
+        "12:31",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE R. Amaechi Veterinary nurse CHARGED TO Clinical salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:04",
+        "12:04",
+        "12:35",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:02",
+        "12:00",
+        "12:34",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:03",
+        "12:05",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:02",
+        "12:03",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:02",
+        "12:02",
+        "12:31",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE R. Amaechi Veterinary nurse CHARGED TO Clinical salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:04",
+        "12:04",
+        "12:35",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:02",
+        "12:00",
+        "12:34",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:04",
+        "12:00",
+        "12:34",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:03",
+        "12:05",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:02",
+        "12:03",
+        "12:34",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:02",
+        "12:02",
+        "12:31",
+        "5:01",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    }
    }
   },
   {
    "ref": "N05",
-   "display_ref": "S. Moreau",
+   "display_ref": "Time card, S. Moreau",
    "type": "source_document",
    "kind": "time_card",
    "date": "2026-12-07",
@@ -2699,14 +4766,263 @@
    "guided": false,
    "guidance": null,
    "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE S. Moreau Reception CHARGED TO Office salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:01",
+        "12:00",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:04",
+        "12:03",
+        "12:32",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:02",
+        "12:04",
+        "12:30",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:04",
+        "12:03",
+        "12:31",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:01",
+        "12:03",
+        "12:33",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:00",
+        "12:04",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE S. Moreau Reception CHARGED TO Office salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:01",
+        "12:00",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:04",
+        "12:03",
+        "12:32",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:02",
+        "12:04",
+        "12:30",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:04",
+        "12:03",
+        "12:31",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:01",
+        "12:03",
+        "12:33",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:00",
+        "12:04",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "TIME CARD PERIOD 1–7 DECEMBER"
+       ],
+       [
+        "",
+        "Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "EMPLOYEE S. Moreau Reception CHARGED TO Office salaries"
+       ],
+       [
+        "",
+        "Salaried — hours recorded for attendance only. Approved J.F."
+       ]
+      ],
+      "lines": [
+       [
+        "Date",
+        "In",
+        "Out",
+        "In",
+        "Out",
+        "Hrs"
+       ],
+       [
+        "Dec 1",
+        "8:01",
+        "12:00",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 2",
+        "8:04",
+        "12:03",
+        "12:32",
+        "5:03",
+        "8.0"
+       ],
+       [
+        "Dec 3",
+        "8:02",
+        "12:04",
+        "12:30",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 4",
+        "8:04",
+        "12:03",
+        "12:31",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Dec 5",
+        "8:01",
+        "12:03",
+        "12:33",
+        "5:00",
+        "8.0"
+       ],
+       [
+        "Dec 6",
+        "8:00",
+        "12:04",
+        "12:34",
+        "5:02",
+        "8.0"
+       ],
+       [
+        "Total hours",
+        "48.0"
+       ]
+      ]
+     }
+    }
    }
   },
   {
    "ref": "D15",
-   "display_ref": "Payroll register, Dec 7",
+   "display_ref": "Payroll register",
    "type": "source_document",
    "kind": "payroll_register",
    "date": "2026-12-07",
@@ -2718,24 +5034,291 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 7"
+        "",
+        "PAYROLL REGISTER"
        ],
        [
-        "Document",
-        "Payroll register"
+        "",
+        "Week ended 7 December · Alder & Finch Veterinary Clinic"
        ],
        [
-        "Description",
-        "Employer FICA on the Dec 7 payroll"
+        "",
+        "Control totals for the entry:"
        ],
        [
-        "Employer FICA",
-        "420.75"
+        "",
+        "Clinical salaries 3,600.00 Office salaries 1,900.00 Gross 5,500.00"
        ],
        [
-        "Amount",
-        "420.75"
+        "",
+        "FICA withheld 420.75 Federal 602.00 State 181.00 Net paid by cheque 4105 4,296.25"
+       ],
+       [
+        "",
+        "Employer taxes: FICA 420.75. No federal or state unemployment tax is due — every employee passed the wage base earlier in the year."
+       ]
+      ],
+      "lines": [
+       [
+        "Employee",
+        "Function",
+        "Gross",
+        "FICA",
+        "Federal",
+        "State",
+        "Net pay"
+       ],
+       [
+        "J. Finch",
+        "Office",
+        "950.00",
+        "72.67",
+        "103.98",
+        "31.26",
+        "742.09"
+       ],
+       [
+        "A. Alder",
+        "Clinical",
+        "1,800.00",
+        "137.70",
+        "197.02",
+        "59.24",
+        "1,406.04"
+       ],
+       [
+        "R. Amaechi",
+        "Clinical",
+        "1,800.00",
+        "137.70",
+        "197.02",
+        "59.24",
+        "1,406.04"
+       ],
+       [
+        "S. Moreau",
+        "Office",
+        "950.00",
+        "72.68",
+        "103.98",
+        "31.26",
+        "742.08"
+       ],
+       [
+        "Totals",
+        "5,500.00",
+        "420.75",
+        "602.00",
+        "181.00",
+        "4,296.25"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "PAYROLL REGISTER"
+       ],
+       [
+        "",
+        "Week ended 7 December · Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "Control totals for the entry:"
+       ],
+       [
+        "",
+        "Clinical salaries 3,600.00 Office salaries 1,900.00 Gross 5,500.00"
+       ],
+       [
+        "",
+        "FICA withheld 420.75 Federal 602.00 State 181.00 Net paid by cheque 4105 4,296.25"
+       ],
+       [
+        "",
+        "Employer taxes: FICA 420.75. No federal or state unemployment tax is due — every employee passed the wage base earlier in the year."
+       ]
+      ],
+      "lines": [
+       [
+        "Employee",
+        "Function",
+        "Gross",
+        "FICA",
+        "Federal",
+        "State",
+        "Net pay"
+       ],
+       [
+        "J. Finch",
+        "Office",
+        "950.00",
+        "72.67",
+        "103.98",
+        "31.26",
+        "742.09"
+       ],
+       [
+        "A. Alder",
+        "Clinical",
+        "1,800.00",
+        "137.70",
+        "197.02",
+        "59.24",
+        "1,406.04"
+       ],
+       [
+        "R. Amaechi",
+        "Clinical",
+        "1,800.00",
+        "137.70",
+        "197.02",
+        "59.24",
+        "1,406.04"
+       ],
+       [
+        "S. Moreau",
+        "Office",
+        "950.00",
+        "72.68",
+        "103.98",
+        "31.26",
+        "742.08"
+       ],
+       [
+        "Totals",
+        "5,500.00",
+        "420.75",
+        "602.00",
+        "181.00",
+        "4,296.25"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "PAYROLL REGISTER"
+       ],
+       [
+        "",
+        "Week ended 7 December · Alder & Finch Veterinary Clinic"
+       ],
+       [
+        "",
+        "Control totals for the entry:"
+       ],
+       [
+        "",
+        "Clinical salaries 3,600.00 Office salaries 1,900.00 Gross 5,500.00"
+       ],
+       [
+        "",
+        "FICA withheld 420.75 Federal 602.00 State 181.00 Net paid by cheque 4105 4,296.25"
+       ],
+       [
+        "",
+        "Employer taxes: FICA 420.75. No federal or state unemployment tax is due — every employee passed the wage base earlier in the year."
+       ]
+      ],
+      "lines": [
+       [
+        "Employee",
+        "Function",
+        "Gross",
+        "FICA",
+        "Federal",
+        "State",
+        "Net pay"
+       ],
+       [
+        "J. Finch",
+        "Office",
+        "950.00",
+        "72.67",
+        "103.98",
+        "31.26",
+        "742.09"
+       ],
+       [
+        "A. Alder",
+        "Clinical",
+        "1,800.00",
+        "137.70",
+        "197.02",
+        "59.24",
+        "1,406.04"
+       ],
+       [
+        "R. Amaechi",
+        "Clinical",
+        "1,800.00",
+        "137.70",
+        "197.02",
+        "59.24",
+        "1,406.04"
+       ],
+       [
+        "S. Moreau",
+        "Office",
+        "950.00",
+        "72.68",
+        "103.98",
+        "31.26",
+        "742.08"
+       ],
+       [
+        "Totals",
+        "5,500.00",
+        "420.75",
+        "602.00",
+        "181.00",
+        "4,296.25"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "ref": "N06",
+   "display_ref": "Petty cash voucher 18",
+   "type": "source_document",
+   "kind": "petty_cash_voucher",
+   "date": "2026-12-02",
+   "received_seq": 23,
+   "guided": false,
+   "guidance": null,
+   "variants": {
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "PETTY CASH VOUCHER No. 18"
+       ],
+       [
+        "",
+        "Dec 2"
+       ],
+       [
+        "",
+        "For: Postage — client reminders"
+       ],
+       [
+        "",
+        "Amount 42.00"
+       ],
+       [
+        "",
+        "Charge to: Office Salaries Expense Approved J.F. Received by S.M."
        ]
       ],
       "lines": []
@@ -2745,24 +5328,24 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 7"
+        "",
+        "PETTY CASH VOUCHER No. 18"
        ],
        [
-        "Document",
-        "Payroll register"
+        "",
+        "Dec 2"
        ],
        [
-        "Description",
-        "Employer FICA on the Dec 7 payroll"
+        "",
+        "For: Postage — client reminders"
        ],
        [
-        "Employer FICA",
-        "420.75"
+        "",
+        "Amount 42.00"
        ],
        [
-        "Amount",
-        "420.75"
+        "",
+        "Charge to: Office Salaries Expense Approved J.F. Received by S.M."
        ]
       ],
       "lines": []
@@ -2772,24 +5355,24 @@
      "text_alternative": {
       "fields": [
        [
-        "Date",
-        "Dec 7"
+        "",
+        "PETTY CASH VOUCHER No. 18"
        ],
        [
-        "Document",
-        "Payroll register"
+        "",
+        "Dec 2"
        ],
        [
-        "Description",
-        "Employer FICA on the Dec 7 payroll"
+        "",
+        "For: Postage — client reminders"
        ],
        [
-        "Employer FICA",
-        "420.75"
+        "",
+        "Amount 42.00"
        ],
        [
-        "Amount",
-        "420.75"
+        "",
+        "Charge to: Office Salaries Expense Approved J.F. Received by S.M."
        ]
       ],
       "lines": []
@@ -2798,48 +5381,201 @@
    }
   },
   {
-   "ref": "N06",
-   "display_ref": "18",
-   "type": "source_document",
-   "kind": "petty_cash_voucher",
-   "date": "2026-12-07",
-   "received_seq": 23,
-   "guided": false,
-   "guidance": null,
-   "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
-   }
-  },
-  {
    "ref": "N07",
-   "display_ref": "19",
+   "display_ref": "Petty cash voucher 19",
    "type": "source_document",
    "kind": "petty_cash_voucher",
-   "date": "2026-12-07",
+   "date": "2026-12-04",
    "received_seq": 24,
    "guided": false,
    "guidance": null,
    "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "PETTY CASH VOUCHER No. 19"
+       ],
+       [
+        "",
+        "Dec 4"
+       ],
+       [
+        "",
+        "For: Cleaning supplies for the kennels"
+       ],
+       [
+        "",
+        "Amount 78.00"
+       ],
+       [
+        "",
+        "Charge to: Clinic Supplies Approved J.F. Received by S.M."
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "PETTY CASH VOUCHER No. 19"
+       ],
+       [
+        "",
+        "Dec 4"
+       ],
+       [
+        "",
+        "For: Cleaning supplies for the kennels"
+       ],
+       [
+        "",
+        "Amount 78.00"
+       ],
+       [
+        "",
+        "Charge to: Clinic Supplies Approved J.F. Received by S.M."
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "PETTY CASH VOUCHER No. 19"
+       ],
+       [
+        "",
+        "Dec 4"
+       ],
+       [
+        "",
+        "For: Cleaning supplies for the kennels"
+       ],
+       [
+        "",
+        "Amount 78.00"
+       ],
+       [
+        "",
+        "Charge to: Clinic Supplies Approved J.F. Received by S.M."
+       ]
+      ],
+      "lines": []
+     }
+    }
    }
   },
   {
    "ref": "N08",
-   "display_ref": "AR-3120",
+   "display_ref": "Appointment request AR-3120",
    "type": "source_document",
    "kind": "appointment_request",
-   "date": "2026-12-07",
+   "date": "2026-12-06",
    "received_seq": 25,
    "guided": false,
    "guidance": null,
    "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "Wren Vance"
+       ],
+       [
+        "",
+        "62 Mill Street, Kettle Springs"
+       ],
+       [
+        "",
+        "APPOINTMENT REQUEST"
+       ],
+       [
+        "",
+        "Ref AR-3120 · Date Dec 6"
+       ],
+       [
+        "",
+        "Please book a dental scale and polish for my older collie in the new year. I am told there is a waiting list, so any date after 12 January would suit."
+       ],
+       [
+        "",
+        "No treatment has been given and nothing is owed at this stage."
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "Wren Vance"
+       ],
+       [
+        "",
+        "62 Mill Street, Kettle Springs"
+       ],
+       [
+        "",
+        "APPOINTMENT REQUEST"
+       ],
+       [
+        "",
+        "Ref AR-3120 · Date Dec 6"
+       ],
+       [
+        "",
+        "Please book a dental scale and polish for my older collie in the new year. I am told there is a waiting list, so any date after 12 January would suit."
+       ],
+       [
+        "",
+        "No treatment has been given and nothing is owed at this stage."
+       ]
+      ],
+      "lines": []
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "Wren Vance"
+       ],
+       [
+        "",
+        "62 Mill Street, Kettle Springs"
+       ],
+       [
+        "",
+        "APPOINTMENT REQUEST"
+       ],
+       [
+        "",
+        "Ref AR-3120 · Date Dec 6"
+       ],
+       [
+        "",
+        "Please book a dental scale and polish for my older collie in the new year. I am told there is a waiting list, so any date after 12 January would suit."
+       ],
+       [
+        "",
+        "No treatment has been given and nothing is owed at this stage."
+       ]
+      ],
+      "lines": []
+     }
+    }
    }
   },
   {
@@ -2852,9 +5588,156 @@
    "guided": false,
    "guidance": null,
    "variants": {
-    "A": {},
-    "B": {},
-    "C": {}
+    "A": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "Kestrel Office Supply"
+       ],
+       [
+        "",
+        "77 Depot Street, Marlow"
+       ],
+       [
+        "",
+        "PRICE LIST"
+       ],
+       [
+        "",
+        "Effective 1 January"
+       ],
+       [
+        "",
+        "Our prices for practice stationery change as follows from 1 January. Orders placed before that date are honoured at current prices."
+       ],
+       [
+        "",
+        "Nothing has been ordered against this notice."
+       ]
+      ],
+      "lines": [
+       [
+        "Item",
+        "Description",
+        "Current",
+        "From 1 Jan"
+       ],
+       [
+        "ST-11",
+        "Consultation cards, box of 500",
+        "38.00",
+        "41.00"
+       ],
+       [
+        "ST-14",
+        "Vaccination certificates, box of 250",
+        "26.00",
+        "28.50"
+       ]
+      ]
+     }
+    },
+    "B": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "Kestrel Office Supply"
+       ],
+       [
+        "",
+        "77 Depot Street, Marlow"
+       ],
+       [
+        "",
+        "PRICE LIST"
+       ],
+       [
+        "",
+        "Effective 1 January"
+       ],
+       [
+        "",
+        "Our prices for practice stationery change as follows from 1 January. Orders placed before that date are honoured at current prices."
+       ],
+       [
+        "",
+        "Nothing has been ordered against this notice."
+       ]
+      ],
+      "lines": [
+       [
+        "Item",
+        "Description",
+        "Current",
+        "From 1 Jan"
+       ],
+       [
+        "ST-11",
+        "Consultation cards, box of 500",
+        "38.00",
+        "41.00"
+       ],
+       [
+        "ST-14",
+        "Vaccination certificates, box of 250",
+        "26.00",
+        "28.50"
+       ]
+      ]
+     }
+    },
+    "C": {
+     "text_alternative": {
+      "fields": [
+       [
+        "",
+        "Kestrel Office Supply"
+       ],
+       [
+        "",
+        "77 Depot Street, Marlow"
+       ],
+       [
+        "",
+        "PRICE LIST"
+       ],
+       [
+        "",
+        "Effective 1 January"
+       ],
+       [
+        "",
+        "Our prices for practice stationery change as follows from 1 January. Orders placed before that date are honoured at current prices."
+       ],
+       [
+        "",
+        "Nothing has been ordered against this notice."
+       ]
+      ],
+      "lines": [
+       [
+        "Item",
+        "Description",
+        "Current",
+        "From 1 Jan"
+       ],
+       [
+        "ST-11",
+        "Consultation cards, box of 500",
+        "38.00",
+        "41.00"
+       ],
+       [
+        "ST-14",
+        "Vaccination certificates, box of 250",
+        "26.00",
+        "28.50"
+       ]
+      ]
+     }
+    }
    }
   }
  ],

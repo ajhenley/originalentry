@@ -20,9 +20,9 @@ PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 ALDERFINCH_SOURCE = Path(__file__).resolve().parents[2] / "packs" / "alderfinch" / "source.json"
 
 
-def _a_tiny_png() -> bytes:
+def _a_tiny_png(colour=(255, 0, 0)) -> bytes:
     buf = io.BytesIO()
-    Image.new("RGB", (1, 1), (255, 0, 0)).save(buf, format="PNG")
+    Image.new("RGB", (1, 1), colour).save(buf, format="PNG")
     return buf.getvalue()
 
 
@@ -84,12 +84,28 @@ def test_a_supplied_photograph_is_not_drawn_over():
     exactly as it did before."""
     source = json.loads(ALDERFINCH_SOURCE.read_text())
     ref = source["documents"][0]["ref"]
-    sentinel = _a_tiny_png()
+    sentinels = {("A", (255, 0, 0)), ("B", (0, 255, 0)), ("C", (0, 0, 255))}
+    supplied = {(ref, code): _a_tiny_png(colour) for code, colour in sentinels}
 
-    generated = build(source, render_images=True, images={ref: sentinel})
+    generated = build(source, render_images=True, images=supplied)
 
-    for code in ("A", "B", "C"):
+    for (_ref, code), sentinel in supplied.items():
         assert generated.images[f"documents/{code}/{ref}.png"] == sentinel
+
+
+def test_each_version_gets_its_own_photograph():
+    """One photograph per ref was handed to every version, so a version-A student was shown
+    version B's document — and the figures on it are the whole difference between the versions."""
+    source = json.loads(ALDERFINCH_SOURCE.read_text())
+    ref = source["documents"][0]["ref"]
+    supplied = {(ref, "B"): _a_tiny_png((0, 255, 0))}
+
+    generated = build(source, render_images=True, images=supplied)
+
+    assert generated.images[f"documents/B/{ref}.png"] == supplied[(ref, "B")]
+    for code in ("A", "C"):
+        assert generated.images[f"documents/{code}/{ref}.png"] != supplied[(ref, "B")], \
+            f"version {code} was given version B's photograph"
 
 
 def test_refuses_missing_triage():

@@ -577,9 +577,11 @@ def documents(model, profile, manifest) -> list[dict]:
     return docs
 ```
 
-`build_source` gains a `--documents DIR` argument naming the directory `gendocs.py` wrote, loads `manifest.json` from it, passes it here, and calls `render_manifest` to fill each variant's `image` and `alt`. Alt text stays what it is today — `f"{display_ref} for {company name}"` — because the text alternative beneath carries the content.
+`build_source` gains a `--documents DIR` argument naming a directory holding one subdirectory per version (`A/`, `B/`, `C/`), each the output of `gendocs.py` for that version. It takes the inventory from one of them and checks the others against it, reads each artefact's text and renders its picture per version, and fills each variant's `image` and `alt`. Alt text stays what it is today — `f"{display_ref} for {company name}"` — because the text alternative beneath carries the content.
 
-Triage becomes `{entry["ref"]: entry["txn"] is not None for entry in manifest}`, and `expected_entries` maps a transaction to its document by looking up the manifest entry whose `txn` matches.
+One set cannot stand in for three. The figures printed on the artefact are the whole difference between the versions, which is the only reason three versions exist: D09's receipt reads 810.00 in A, 900.00 in B and 990.00 in C.
+
+Triage becomes `{entry["ref"]: entry["entry_for"] is not None for entry in manifest}` — `txn` is wrong, because a purchase order and its vendor invoice share one — and `expected_entries` maps a transaction to its document by looking up the manifest entry whose `entry_for` matches.
 
 - [ ] **Step 4: Delete the invented distractors**
 
@@ -588,10 +590,10 @@ Remove `NO_ENTRY_DOCUMENTS` from `packs/alderfinch/profile.py` and from `scripts
 - [ ] **Step 5: Generate and verify**
 
 ```bash
-cd ../practicesets && PRACTICESET_COMPANY=alderfinch PRACTICESET_OUT=/tmp/clinic-docs \
-  .venv/bin/python -B generators/gendocs.py B
+cd ../practicesets && for v in A B C; do PRACTICESET_COMPANY=alderfinch \
+  PRACTICESET_OUT=/tmp/clinic/$v .venv/bin/python -B generators/gendocs.py $v; done
 cd ../originalentry
-.venv/bin/python -B scripts/build_pack.py alderfinch --documents /tmp/clinic-docs \
+.venv/bin/python -B scripts/build_pack.py alderfinch --documents /tmp/clinic \
   > packs/alderfinch/source.json
 .venv/bin/python -B -m pytest tests/unit/test_document_manifest.py -v -p no:cacheprovider
 ```
@@ -700,9 +702,9 @@ script to open it."
 
 ```bash
 cd ../practicesets && for v in A B C; do PRACTICESET_COMPANY=alderfinch \
-  PRACTICESET_OUT=/tmp/clinic-$v .venv/bin/python -B generators/gendocs.py $v; done
+  PRACTICESET_OUT=/tmp/clinic/$v .venv/bin/python -B generators/gendocs.py $v; done
 cd ../originalentry
-.venv/bin/python -B scripts/build_pack.py alderfinch --documents /tmp/clinic-B > packs/alderfinch/source.json
+.venv/bin/python -B scripts/build_pack.py alderfinch --documents /tmp/clinic > packs/alderfinch/source.json
 .venv/bin/python -B scripts/generate_pack.py packs/alderfinch/source.json /tmp/clinic.zip
 FLASK_APP=originalentry.app:create_app .venv/bin/python -B -m flask packs validate /tmp/clinic.zip
 ```

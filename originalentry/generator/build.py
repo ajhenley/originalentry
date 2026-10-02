@@ -55,11 +55,14 @@ def _safe_ref(ref: str) -> str:
 
 
 def build(source: dict, *, render_images: bool = False,
-          images: dict[str, bytes] | None = None) -> GeneratedPack:
-    """``images``, when given, is a photograph of the real printed artefact per document ref —
-    the envelope's own picture, supplied by the translator rather than drawn here. It is keyed by
-    document ref because one photograph serves every variant: the printed artefact does not
-    differ by version except in the figures it already carries.
+          images: dict[tuple[str, str], bytes] | None = None) -> GeneratedPack:
+    """``images``, when given, is a photograph of the real printed artefact — the envelope's own
+    picture, supplied by the translator rather than drawn here — keyed by
+    ``(document ref, variant code)``.
+
+    It was once keyed by ref alone, on the grounds that one photograph serves every variant. It
+    does not: the figures on the artefact are the whole difference between the variants, so every
+    student was shown version B's receipt reading 900.00 while version A's answer key said 810.00.
     """
     src = copy.deepcopy(source)
     answers: dict[str, dict] = src.pop("answers", {})
@@ -148,13 +151,16 @@ def _build_key(
 
 
 def _attach_images(src: dict, images: dict[str, bytes],
-                   supplied: dict[str, bytes] | None = None) -> None:
+                   supplied: dict[tuple[str, str], bytes] | None = None) -> None:
     """Give every document its picture: the photographed one where there is one, otherwise the
     drawn one.
 
     The drawn renderer is deliberately plain and exists for packs with no printed artefact
     behind them. A pack that ships photographs of the real documents must not have them drawn
     over, which is what happened while this attached unconditionally.
+
+    ``supplied`` is keyed by ``(ref, variant code)``: the photograph a student is shown must be of
+    their own version's document, because the figures on it are what differs between versions.
     """
     from . import render  # imported lazily so the core works without Pillow
 
@@ -165,6 +171,6 @@ def _attach_images(src: dict, images: dict[str, bytes],
             variant["image"] = path
             if not (variant.get("alt") or "").strip():
                 variant["alt"] = f"{document['display_ref']} for {company.get('name', '')}".strip()
-            photograph = (supplied or {}).get(document["ref"])
+            photograph = (supplied or {}).get((document["ref"], code))
             images[path] = photograph if photograph else render.render_document_png(
                 document, code, company)

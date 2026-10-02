@@ -32,8 +32,11 @@
 </figure>
 {% endif %}
 
-<section aria-label="Document as text" class="mb-6" data-pack-content>
-  <h2 class="mb-2 text-sm font-semibold">View as text</h2>
+{# The document is the page when there is one. The text is not a fallback — a screen reader
+   given only the alt attribute learns the document's name and none of its figures — so it stays
+   on the page, one disclosure away, and open when there is no picture to disclose it from. #}
+<details {% if not has_image %}open{% endif %} class="mb-6" data-pack-content>
+  <summary class="mb-2 text-sm font-semibold cursor-pointer">View as text</summary>
   {% if alt_text %}<p class="mb-2 text-sm text-muted">{{ alt_text }}</p>{% endif %}
   {% if text_alt.fields %}
   <dl class="mb-3 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
@@ -57,7 +60,7 @@
     </table>
   </div>
   {% endif %}
-</section>
+</details>
 
 <section aria-label="What to do with this document">
   <h2 class="mb-2 font-semibold">What does this document need?</h2>

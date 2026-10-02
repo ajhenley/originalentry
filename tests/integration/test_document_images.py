@@ -200,6 +200,34 @@ def test_screen_mode_shows_the_image_and_still_offers_the_text(session, client, 
     assert "View as text" in body            # and the reading that does not need the image
 
 
+def test_the_text_is_behind_a_disclosure_when_there_is_a_picture(session, client, instructor):
+    """The document should be the page. The text stays reachable, because an alt attribute
+    naming the document tells a screen reader nothing about its figures."""
+    version = import_pack_zip(session, _zip(), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="disclosure@example.edu")
+
+    body = client.get(
+        f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
+    ).get_data(as_text=True)
+
+    assert "<details" in body
+    assert "View as text" in body
+    assert "<details open" not in body
+
+
+def test_the_text_is_open_when_there_is_no_picture(session, client, instructor):
+    """A pack with no images would otherwise show nothing at all."""
+    version = import_pack_zip(session, _zip(), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, mode="paper",
+                                 email="disclosure-paper@example.edu")
+
+    body = client.get(
+        f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
+    ).get_data(as_text=True)
+
+    assert "<details open" in body or "<details" not in body
+
+
 def test_a_paper_pack_keeps_loading_as_one(session, instructor):
     version = import_pack_zip(session, _zip(pack=testco_alpha.PACK, images={}), actor=instructor)
 

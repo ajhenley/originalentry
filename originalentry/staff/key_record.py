@@ -38,6 +38,10 @@ class KeyDocument:
     takes_entry: bool
     journal: str
     lines: list[KeyLine] = field(default_factory=list)
+    #: Why this document takes no entry (V17's own field), set only where ``takes_entry`` is
+    #: False. An instructor marking on paper needs the reason, not only the bare "No entry" --
+    #: the same reason scripts/build_walkthrough.py already prints, now reaching the app too.
+    reason: str = ""
 
 
 @dataclass
@@ -133,6 +137,7 @@ def printable_key(
                 takes_entry=takes_entry,
                 journal=journals.get(entry.journal, entry.journal) if entry else NO_ENTRY,
                 lines=_lines(entry.lines, accounts, parties) if entry else [],
+                reason="" if takes_entry else key.triage_reasons.get(ref, ""),
             )
         )
 

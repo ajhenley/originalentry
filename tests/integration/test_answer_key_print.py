@@ -35,6 +35,12 @@ QUOTE = {
 }
 
 
+#  F3: the reason a filed document needs no entry, so it can be told apart from the stray
+#  reason below -- the one no rendered row may ever carry, because INV-1 takes an entry.
+FILED_REASON = "Quoted, not ordered; no transaction has happened."
+STRAY_REASON = "This must never reach the page: INV-1 takes an entry."
+
+
 @pytest.fixture
 def key(session, client):
     data = copy.deepcopy(testco_alpha.PACK)
@@ -42,6 +48,7 @@ def key(session, client):
     data["documents"] = [*data["documents"], copy.deepcopy(QUOTE)]
     answer = copy.deepcopy(testco_alpha.KEY_A)
     answer.setdefault("triage", {})[QUOTE["ref"]] = False
+    answer["triage_reasons"] = {QUOTE["ref"]: FILED_REASON, "INV-1": STRAY_REASON}
     pv = import_content(session, schema.load_pack(data), source_sha256=secrets.token_hex(32))
     import_answer_keys(session, pv, {"A": schema.load_answer_key(answer)})
     pack = session.get(ContentPack, pv.content_pack_id)
@@ -71,6 +78,31 @@ def test_it_lists_the_documents_that_take_no_entry(client, key):
     body = client.get(_url(pv)).get_data(as_text=True)
 
     assert "No entry" in body
+
+
+def test_it_states_the_reason_a_filed_document_needs_no_entry(client, key):
+    """printable_key's own docstring says an instructor needs a document "with the entry it
+    takes (or the fact that it takes none)" -- the fact alone used to print as a bare "No entry"
+    with nothing saying why. triage_reasons is V17's own field for that reason (F3)."""
+    pv, _, instructor, _ = key
+    client.sign_in(instructor)
+
+    body = client.get(_url(pv)).get_data(as_text=True)
+
+    assert FILED_REASON in body
+
+
+def test_no_reason_prints_on_a_document_that_takes_an_entry(client, key):
+    """A reason recorded against a document that takes an entry (a broken key -- V17 would
+    refuse it) must never render. printable_key only ever sets KeyDocument.reason where
+    takes_entry is False, so a reason reaching an entered document's row would mean that
+    contract broke, not that the template failed to double-guard it."""
+    pv, _, instructor, _ = key
+    client.sign_in(instructor)
+
+    body = client.get(_url(pv)).get_data(as_text=True)
+
+    assert STRAY_REASON not in body
 
 
 def test_it_shows_each_expected_entry_in_money(client, key):

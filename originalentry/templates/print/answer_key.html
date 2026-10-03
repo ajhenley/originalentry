@@ -45,6 +45,9 @@
           <div>{% if line.credit_cents %}<span class="pl-4">{% endif %}{{ line.account }}
             {%- if line.party %} · {{ line.party }}{% endif %}{% if line.credit_cents %}</span>{% endif %}</div>
           {% else %}<span class="text-muted">—</span>{% endfor %}
+          {# doc.reason is populated only where doc.takes_entry is False (key_record.py's own
+             contract for the field) -- the single place that decision is made. #}
+          {% if doc.reason %}<div class="text-xs text-muted mt-1">{{ doc.reason }}</div>{% endif %}
         </td>
         <td class="figure text-right">
           {% for line in doc.lines %}

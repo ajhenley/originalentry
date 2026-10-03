@@ -112,6 +112,16 @@ on `practicesets/main`; nothing in that repository needs to change.
   expand kind to ref so V17 still sees one reason per document. Thirty-four near-identical strings
   is a worse artefact than nine with a mechanism.
 
+**The guidance has to be re-keyed, and that is a judgement.** Riverbend's `GUIDANCE` and
+`GUIDED_SEQUENCES` are keyed by **transaction number** — `{1, 2}` — because the per-transaction arm
+knows nothing about refs. The clinic's are keyed by ref, which is what the manifest arm requires.
+Transaction 2 is now three artefacts: `D02` the customer's purchase order, `D02-2` the invoice,
+`D02-3` the bill of lading. The guidance belongs on the document the student has to act on, so it
+goes to `D02-2`, with transaction 1's going to `D01`; the purchase order and the bill of lading are
+filed and need no scaffolding. V10 caps guided documents at two, so the count is unchanged. Written
+down because it was not obvious and nothing in the pack would have caught putting it on the wrong
+one of the three.
+
 **D22 is fixed by this, and it was checked rather than assumed.** In the envelope the vendor invoice
 prints `40 … 1,840.00, Total 1,840.00` and a separate receiving report prints `40 … 38`. The
 fabricated `1,748.00` — the received quantity priced out, which is the answer — disappears, because

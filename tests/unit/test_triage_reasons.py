@@ -13,6 +13,8 @@ from pathlib import Path
 
 import pytest
 from originalentry.generator import build
+from originalentry.packs import schema
+from originalentry.packs.validate import validate_pack
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKS = ("riverbend", "alderfinch")
@@ -72,3 +74,55 @@ def test_the_clinic_explains_the_documents_the_envelope_added():
     assert "voided before use" in reasons["N01"]
     assert "replenished" in reasons["N06"]
     assert "payroll" in reasons["N02"]
+
+
+# ── V17 ──────────────────────────────────────────────────────────────────────────────────
+
+
+def _pack_and_keys(slug: str):
+    source = json.loads((ROOT / "packs" / slug / "source.json").read_text())
+    generated = build(source, render_images=False)
+    return schema.load_pack(generated.pack), {
+        code: schema.load_answer_key(key) for code, key in generated.keys.items()
+    }
+
+
+@pytest.mark.parametrize("slug", PACKS)
+def test_both_packs_satisfy_v17(slug):
+    pack, keys = _pack_and_keys(slug)
+
+    assert [p for p in validate_pack(pack, keys) if p.rule == "V17"] == []
+
+
+def test_v17_reports_a_filed_document_with_no_reason():
+    pack, keys = _pack_and_keys("alderfinch")
+    keys["A"].triage_reasons.pop("N06")
+
+    problems = [p for p in validate_pack(pack, keys) if p.rule == "V17"]
+
+    assert len(problems) == 1, problems
+    assert "N06" in problems[0].message
+    assert problems[0].path == "answer_keys.A.triage_reasons"
+
+
+def test_v17_reports_a_reason_left_on_a_document_that_takes_an_entry():
+    """The half that stops the map rotting: a set changes, a document starts taking an entry,
+    and the sentence saying it needs none is still there."""
+    pack, keys = _pack_and_keys("alderfinch")
+    entered = next(ref for ref, needs in keys["A"].triage.items() if needs)
+    keys["A"].triage_reasons[entered] = "Left behind by an earlier version of this set."
+
+    problems = [p for p in validate_pack(pack, keys) if p.rule == "V17"]
+
+    assert len(problems) == 1, problems
+    assert entered in problems[0].message
+
+
+def test_v17_reports_a_reason_that_is_only_whitespace():
+    pack, keys = _pack_and_keys("alderfinch")
+    keys["A"].triage_reasons["N06"] = "   "
+
+    problems = [p for p in validate_pack(pack, keys) if p.rule == "V17"]
+
+    assert len(problems) == 1, problems
+    assert "N06" in problems[0].message

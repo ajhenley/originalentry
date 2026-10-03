@@ -83,6 +83,7 @@ def validate_pack(pack: Pack, keys: dict[str, AnswerKey] | None = None) -> list[
         _keys_references(pack, keys, account_numbers, party_codes, problems)
         _v8_entries_fit_their_journal(pack, keys, problems)
         _v10_coverage(pack, keys, problems)
+        _v17_reasons(pack, keys, problems)
         _v11_signatures_and_adjustments(pack, keys, problems)
         _v9_replay(pack, keys, problems)
 
@@ -421,6 +422,36 @@ def _v10_coverage(pack: Pack, keys: dict[str, AnswerKey], problems: list[Problem
                         f"answer_keys.{variant_code}.triage",
                         "V10",
                         f"Document {ref!r} has no triage value.",
+                    )
+                )
+
+
+def _v17_reasons(pack: Pack, keys: dict[str, AnswerKey], problems: list[Problem]) -> None:
+    """A marked judgement has to have a stated reason, and only where it is marked.
+
+    Deciding a document needs no entry is marked, and the instructor copy prints that decision.
+    Without the first half it printed eleven blank lines for the clinic. Without the second, a
+    reason survives on a document that has since started taking an entry, and a correct note
+    becomes a wrong one with nothing to catch it.
+    """
+    for code, key in keys.items():
+        path = f"answer_keys.{code}.triage_reasons"
+        for ref, needs_entry in sorted(key.triage.items()):
+            reason = key.triage_reasons.get(ref, "")
+            if not needs_entry and not reason.strip():
+                problems.append(
+                    Problem(
+                        path,
+                        "V17",
+                        f"Document {ref!r} needs no entry and records no reason why.",
+                    )
+                )
+            elif needs_entry and ref in key.triage_reasons:
+                problems.append(
+                    Problem(
+                        path,
+                        "V17",
+                        f"Document {ref!r} takes an entry and carries a no-entry reason.",
                     )
                 )
 

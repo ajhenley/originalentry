@@ -8,6 +8,7 @@ above a blank line eleven times.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 
@@ -24,6 +25,17 @@ PACKS = ("riverbend", "alderfinch")
 def pack(request):
     source = json.loads((ROOT / "packs" / request.param / "source.json").read_text())
     return request.param, source, build(source, render_images=False)
+
+
+def _load_profile(slug: str):
+    """The profile module, loaded by path -- the same way scripts/build_pack.py's own
+    load_profile does, so this reads the file that was actually authored rather than a cached
+    import of it."""
+    path = ROOT / "packs" / slug / "profile.py"
+    spec = importlib.util.spec_from_file_location(f"{slug}_profile_for_triage_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_every_filed_document_has_a_reason_in_every_version(pack):
@@ -48,18 +60,26 @@ def test_no_reason_is_recorded_for_a_document_that_takes_an_entry(pack):
         assert not stray, f"{slug} {code}: {stray} take an entry and carry a no-entry reason"
 
 
-def test_the_reason_is_authored_once_and_not_per_version(pack):
-    """One sentence per ref in the profile, copied into each version. Three divergent copies
-    would be three places to correct."""
+def test_every_packs_committed_reason_is_the_one_its_profile_authored(pack):
+    """Ties the committed pack back to what was authored (M5): nothing before this tied the
+    committed `triage_reasons` to the profile's `FILED_REASONS`, so a ref dropped, substituted or
+    truncated on the way into source.json would commit silently. Replaces
+    test_the_reason_is_authored_once_and_not_per_version, which could not fail: `_triage_reasons`
+    reads one `FILED_REASONS` and writes the same string into every version, so divergence across
+    versions was unconstructable by any single-line change. This asserts against the author
+    instead of against itself, and it is the first thing in this file that covers the clinic."""
     slug, source, generated = pack
+    profile = _load_profile(slug)
 
-    by_ref: dict[str, set[str]] = {}
-    for key in generated.keys.values():
-        for ref, reason in key["triage_reasons"].items():
-            by_ref.setdefault(ref, set()).add(reason)
-
-    differing = {ref: texts for ref, texts in by_ref.items() if len(texts) > 1}
-    assert not differing, f"{slug}: {sorted(differing)} read differently in different versions"
+    for code, key in generated.keys.items():
+        filed = {ref for ref, needs_entry in key["triage"].items() if not needs_entry}
+        assert set(key["triage_reasons"]) == filed, (
+            f"{slug} {code}: refs carrying a reason do not match the refs filed"
+        )
+        for ref in filed:
+            assert key["triage_reasons"][ref] == profile.FILED_REASONS[ref], (
+                f"{slug} {code}: {ref}'s committed reason does not match FILED_REASONS[{ref!r}]"
+            )
 
 
 def test_the_clinic_explains_the_documents_the_envelope_added():

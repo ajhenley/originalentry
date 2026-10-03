@@ -7,7 +7,15 @@ import secrets
 from datetime import date
 
 import pytest
-from originalentry.models import Account, EntryLine, JournalEntry, Section, SourceDocument, User
+from originalentry.models import (
+    Account,
+    EntryLine,
+    JournalEntry,
+    Section,
+    SourceDocument,
+    StaffAction,
+    User,
+)
 from originalentry.packs import schema
 from originalentry.packs.importer import import_content
 from originalentry.packs.migrate import migrate_assignment
@@ -262,6 +270,44 @@ def test_identity_changes_are_scoped_to_refs_the_student_used(session):
     report = migrate_assignment(session, assignment, 2)
 
     assert [(c.ref, c.field) for c in report.changed_identity] == [(used_ref, "display_ref")]
+
+
+def _staff_action(session, assignment):
+    return session.scalars(
+        select(StaffAction)
+        .where(StaffAction.target_table == "assignment", StaffAction.target_id == assignment.id)
+        .order_by(StaffAction.id.desc())
+    ).first()
+
+
+def test_an_accepted_identity_override_is_recorded_in_the_audit_row(session):
+    """F2: a migration that reattaches work onto documents whose answer changed is exactly what
+    staff_actions exists for, and until now nothing but terminal scrollback said it happened."""
+    slug = f"audit-{secrets.token_hex(3)}"
+    assignment, ws, used_ref = _setup(session, slug)
+    _import_renaming(session, slug, 2, (used_ref, "Something else entirely"))
+
+    migrate_assignment(session, assignment, 2, dry_run=False, accept_identity_changes=True)
+
+    action = _staff_action(session, assignment)
+    assert action is not None
+    identity = action.detail.get("identity_changes_accepted")
+    assert identity is not None, action.detail
+    assert identity["count"] == 1
+    assert identity["refs"] == [used_ref]
+
+
+def test_a_migration_with_no_identity_change_claims_no_acceptance(session):
+    """The same audit row, when nothing needed accepting, must not claim it did."""
+    slug = f"audit-{secrets.token_hex(3)}"
+    assignment, ws, _ = _setup(session, slug)
+    _import(session, slug, 2)
+
+    migrate_assignment(session, assignment, 2, dry_run=False)
+
+    action = _staff_action(session, assignment)
+    assert action is not None
+    assert "identity_changes_accepted" not in action.detail
 
 
 def test_the_override_still_refuses_when_content_is_also_gone(session):

@@ -247,23 +247,46 @@ def migrate_assignment(
 
     if to_pv.first_used_at is None:
         to_pv.first_used_at = old_pv.first_used_at
-    _point_assignment_at(session, assignment, to_pv, actor, len(workspaces))
+    # report.changed_identity is non-empty here only if report.feasible let it through, which
+    # (since dry_run/not-feasible already returned above) means changed_identity_accepted was
+    # True -- the override is what carried this migration. Nothing to pass on the ordinary path.
+    _point_assignment_at(session, assignment, to_pv, actor, len(workspaces),
+                         accepted_identity=report.changed_identity or None)
     report.applied = True
     return report
 
 
-def _point_assignment_at(session: Session, assignment, to_pv, actor, workspaces: int) -> None:
+#: Caps how many refs an accepted-identity-override migration writes into the audit row. The
+#: count is exact regardless; this bounds only the list, so a migration touching hundreds of
+#: refs cannot turn one staff action into an unbounded blob.
+_MAX_RECORDED_IDENTITY_REFS = 50
+
+
+def _point_assignment_at(
+    session: Session, assignment, to_pv, actor, workspaces: int, *,
+    accepted_identity: list[IdentityChange] | None = None,
+) -> None:
     """Move the assignment onto the new version and record that it happened.
 
     Without this the work moves and the assignment does not, which reads as success and leaves
     two quiet faults: the next student to join opens the old version, and a later migration
     looks for workspaces on a version none of them are on any more and finds nothing to do.
+
+    ``accepted_identity``, when given, is the identity changes ``--accept-identity-changes``
+    let through: a migration that deliberately reattaches a student's work onto documents whose
+    answer changed is exactly the case staff_actions exists for, and until now the only trace of
+    that decision was terminal scrollback.
     """
     from_version = session.get(PackVersion, assignment.fixed_pack_version_id).version
     assignment.fixed_pack_version_id = to_pv.id
     session.flush()
+    detail = {"from_version": from_version, "to_version": to_pv.version,
+              "workspaces": workspaces}
+    if accepted_identity:
+        refs = sorted({change.ref for change in accepted_identity})
+        detail["identity_changes_accepted"] = {
+            "count": len(refs), "refs": refs[:_MAX_RECORDED_IDENTITY_REFS],
+        }
     staff_actions.record(
-        session, actor, "migrate_pack", "assignment", assignment.id,
-        detail={"from_version": from_version, "to_version": to_pv.version,
-                "workspaces": workspaces},
+        session, actor, "migrate_pack", "assignment", assignment.id, detail=detail,
     )

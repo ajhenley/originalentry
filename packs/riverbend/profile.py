@@ -118,30 +118,12 @@ FILED_REASONS = {
     "price_list": "A supplier's price notice. Nothing has been ordered against it.",
 }
 
-# Documents that arrive and need nothing done with them. Triage is the first thing marked, and
-# without these every document in the set would need an entry, which would make it no exercise
-# at all. Taken from the paper set's own "documents requiring no entry".
-NO_ENTRY_DOCUMENTS = [
-    {
-        "ref": "N01", "display_ref": "Purchase order RV-2210", "date": "2026-12-15",
-        "fields": [["From", "Ridgeview Cycles"], ["Purchase order", "RV-2210"],
-                   ["Required delivery", "18 January"], ["Terms", "2/10, n/30"],
-                   ["Amount", "3,840.00"]],
-        "lines": [["6", "Cascade 29er mountain bike", "640.00", "3,840.00"]],
-    },
-    {
-        "ref": "N02", "display_ref": "Request for quotation RFQ-0041", "date": "2026-12-15",
-        "fields": [["From", "Halden & Coe Outfitters"], ["Reference", "RFQ-0041"],
-                   ["Amount", "None stated"]],
-        "lines": [],
-    },
-    {
-        "ref": "N03", "display_ref": "Price list from Ridgeline Tires", "date": "2026-12-15",
-        "fields": [["From", "Ridgeline Tires"], ["Effective", "1 January"],
-                   ["Amount", "None stated"]],
-        "lines": [["", "Commuter tire, pair", "32.00", "34.00 from 1 Jan"]],
-    },
-]
+# NO_ENTRY_DOCUMENTS is gone. It held three distractors this profile invented — an incoming
+# purchase order, a request for quotation and a price list — because the per-transaction document
+# list had no envelope to take an inventory from, so without them every document in the set would
+# have needed an entry and there would have been nothing to triage. The printed envelope files
+# thirty-four of its own, the invented three among them (N13, N14, N15), and a document that is
+# photographed cannot contradict its own photograph the way an authored summary could.
 
 COMPANY = {
     "slug": "riverbend", "name": "Riverbend Bicycle Supply",
@@ -246,10 +228,16 @@ REFERENCE_PAGES = [
 # confirm they still exist. Riverbend has 28 transactions; a company with fewer (the clinic has
 # 15) would make every one of these branches dead, silently, with nothing reporting it.
 #
-# 14 and 23 are the two customer remittances whose own cash figure cannot be journalised without
-# the invoice it is paying off; 16 is the credit memo, whose returns-account face amount
-# (FACE_ACCOUNTS["returns"]) still needs the item and the invoice it was taken against.
-_SPECIAL_TRANSACTIONS = {14, 16, 18, 23, 24, 25, 26, 27}
+# 14, 16 and 23 are gone from this set with their branches. They were the two customer
+# remittances and the credit memo, and each carried arithmetic the *summary* could not be
+# journalised without: a remitted figure whose invoice, discount and deduction were nowhere on
+# it, and a credit memo whose returned item was nowhere on it. The printed remittance advice and
+# the printed memo state all of it themselves -- invoice 4871 4,080.00 less 2% (81.60) remitted
+# 3,998.40; invoice 4872 5,120.00 less credit memo CM-118 (640.00) less 2% (89.60) remitted
+# 4,390.40; "Against invoice 4872" over an item row reading 1 Cascade 29er mountain bike 640.00
+# -- so restating them here could only be a second copy of a figure the artefact already prints,
+# and a copy is a thing that can disagree.
+_SPECIAL_TRANSACTIONS = {18, 24, 25, 26, 27}
 
 
 def extra_fields(txn, model, money, cents, *, stage):
@@ -268,16 +256,14 @@ def extra_fields(txn, model, money, cents, *, stage):
     if stage == "furniture":
         if txn["doc"] == "Cash register tape":
             return [["Register", "1"], ["Clerk", "04"]]
-        # Every sales invoice prints these terms on its own face (the paper generator's own
-        # invoice body, ../practicesets/generators/gendocs.py, "Terms 2/10, n/30"; the incoming
-        # customer purchase order corroborates the same figure). The model's meta dict never
-        # carries them -- "terms" there is only ever set for a vendor's own invoice -- so the
-        # generic furniture loop in build_pack.py, which reads meta["terms"], never sees a
-        # customer's. Scoped to the transactions that actually produce a sales invoice
-        # (model.DOCS["purchase_orders"]' own keys, the same set the paper generator invoices
-        # against) rather than "any document with ar", which would also catch the remittances.
-        if txn["no"] in model.DOCS.get("purchase_orders", {}):
-            return [["Terms", "2/10, n/30"]]
+        # A Terms row stood here for the five sales invoices, saying "2/10, n/30". It was added
+        # because the invoice's *summary* carried no terms at all -- the model's meta dict sets
+        # "terms" only for a vendor's own invoice, so the generic furniture loop in
+        # build_pack.py, which reads meta["terms"], never saw a customer's. The printed invoice
+        # has always had them on its face ("Terms 2/10, n/30", in gendocs.py's own invoice body),
+        # and D02-2, D05-2, D09-2, D11-2 and D19-2 each read a Terms field off it in all three
+        # versions, so this row would now be a second statement of a figure the paper already
+        # makes.
         return []
 
     # stage == "detail": the breakdowns a stub carries because the face amount alone cannot be
@@ -301,42 +287,6 @@ def extra_fields(txn, model, money, cents, *, stage):
                    ["State income tax payable", money(cents(640))]]
     if txn["no"] == 18:
         fields += [["Invoice", "N-8841, 7,860.00"], ["Discount taken", "1%, 78.60"]]
-    if txn["no"] == 14:
-        # Remittance 4871: the customer's own arithmetic, read off the printed remittance
-        # advice (../practicesets/companies/riverbend.py, DOCS["remittances"][14]'s body) --
-        # invoice 4871's gross, the 2% cash discount taken, and what was remitted. Derived from
-        # this variant's own booked lines rather than retyped, so it cannot drift from the entry
-        # it explains. "Paid within the discount period." is that advice's own note and is
-        # deliberately left off: it is the answer, not the arithmetic.
-        gross = next(credit for account, _debit, credit in txn["lines"] if account == 105)
-        discount = next(debit for account, debit, _credit in txn["lines"] if account == 403)
-        remitted = next(debit for account, debit, _credit in txn["lines"] if account == 101)
-        fields += [["Invoice", "4871"],
-                   ["Invoice amount", money(cents(gross))],
-                   ["Less 2% cash discount", f"({money(cents(discount))})"],
-                   ["Remitted", money(cents(remitted))]]
-    if txn["no"] == 16:
-        # Credit memo CM-118: the invoice it is credited against and the one item returned, both
-        # read off the printed memo (../practicesets/generators/gendocs.py's credit-memorandum
-        # section and DOCS["credit_memo"]). The 395.00 cost reversal is deliberately not here --
-        # it comes from the inventory reference page, which is the exercise.
-        fields += [["Against invoice", "4872"],
-                   ["Item returned", "1 Cascade 29er mountain bike, 640.00"]]
-    if txn["no"] == 23:
-        # Remittance 4872: invoice 4872's gross and the credit memo already taken against it are
-        # both fixed (S-02's price never varies by version), so the only figure that varies here
-        # is none at all -- but it is still read off this variant's own booked cash line rather
-        # than hand-typed, for the same reason as 14. The 2% deduction the customer was not
-        # entitled to is company arithmetic, not a confession; the paper remittance carries no
-        # note on this one (DOCS["remittances"][23]'s note is None) and neither does this.
-        balance = 5120 - 640
-        short = round(balance * 0.02, 2)
-        remitted = next(debit for account, debit, _credit in txn["lines"] if account == 101)
-        fields += [["Invoice", "4872"],
-                   ["Invoice amount", "5,120.00"],
-                   ["Less credit memo CM-118", "(640.00)"],
-                   ["Less 2% deducted", f"({money(cents(short))})"],
-                   ["Remitted", money(cents(remitted))]]
     if txn["no"] == 27:
         fields += [["Delivery", money(cents(190))], ["Office supplies", money(cents(275))],
                    ["Advertising", money(cents(155))]]
@@ -366,9 +316,17 @@ def _bare(text: str) -> str:
 GUIDED_SEQUENCES = {"D01", "D02-2"}
 
 
-def check(model):
+def check(model, manifest=None):
     """Special-cased transaction numbers, journal column accounts, checkpoint accounts and
-    guidance coverage — everything this profile asserts about itself before it is trusted."""
+    guidance coverage — everything this profile asserts about itself before it is trusted.
+
+    ``manifest`` is the envelope's own inventory, which scripts/build_pack.py passes once a
+    company takes its document list from what was printed. GUIDANCE is keyed by the manifest's
+    own refs, so the two constants agreeing with each other proves only that they agree: renaming
+    or dropping a printed artefact leaves GUIDANCE pointing at a ref nothing prints, and only the
+    manifest can see that. Defaulted to None because build_source still calls check(model) for a
+    build with no envelope.
+    """
     numbers = {t["no"] for t in model.build(sorted(model.VARIANTS)[0])}
     missing = _SPECIAL_TRANSACTIONS - numbers
     if missing:
@@ -384,46 +342,15 @@ def check(model):
                 f"not in the chart. Nothing was written."
             )
 
-    # D16 and D23 print figures that are hardcoded literals in extra_fields -- D16's "Item
-    # returned" total, D23's "Invoice amount" and "Less credit memo CM-118" -- rather than
-    # derived from the model at build time. They are correct today and invariant across every
-    # variant, but D23's own "Remitted" *is* derived from the model, so if the model ever varied
-    # these two would stop adding up in front of a student with nothing downstream to notice:
-    # neither the checkpoint tests nor the reproducibility test depend on a document's printed
-    # text. The paper generator hardcodes the same literals
-    # (../practicesets/companies/riverbend.py:190-193) and its own gendocs.py already asserts
-    # D16's 640.00 against the books; this closes the online half of that same check.
-    returns_account = int(FACE_ACCOUNTS["returns"])
-    cash_account = int(FACE_ACCOUNTS["cash"])
-    for variant in sorted(model.VARIANTS):
-        txns = {t["no"]: t for t in model.build(variant)}
-        returned = next(
-            (debit for account, debit, _credit in txns[16]["lines"]
-             if account == returns_account and debit), None)
-        if returned is None or round(float(returned), 2) != 640.00:
-            raise SystemExit(
-                f"{COMPANY['slug']}: version {variant} transaction 16 debits account "
-                f"{returns_account} {returned!r}, which does not match the 640.00 'Item "
-                f"returned' extra_fields prints for D16. Nothing was written."
-            )
-        remitted = next(
-            debit for account, debit, _credit in txns[23]["lines"] if account == cash_account)
-        expected = 5120 - 640 - round((5120 - 640) * 0.02, 2)
-        if round(float(remitted), 2) != round(expected, 2):
-            raise SystemExit(
-                f"{COMPANY['slug']}: version {variant} transaction 23 remits {remitted!r}, "
-                f"which does not match 5,120.00 - 640.00 - 2% ({expected:.2f}) that "
-                f"extra_fields prints for D23. Nothing was written."
-            )
-
-    # extra_fields' Terms branch is keyed off model.DOCS["purchase_orders"]; if that ever went
-    # empty the branch would die exactly as silently as a dropped literal in _SPECIAL_TRANSACTIONS
-    # would, just one step removed from the set this function already guards.
-    if not model.DOCS.get("purchase_orders"):
-        raise SystemExit(
-            f"{COMPANY['slug']}: model.DOCS has no purchase_orders; extra_fields' sales-invoice "
-            f"Terms branch would never fire. Nothing was written."
-        )
+    # Two cross-checks stood here and went with the branches they guarded. One compared D16's
+    # hardcoded 640.00 "Item returned" total against the credit memo's own returns-account debit;
+    # the other compared D23's hardcoded 5,120.00 less 640.00 less 2% against the cash the model
+    # books. Both existed because extra_fields printed a literal beside a figure derived from the
+    # model, so the two could drift apart in front of a student. Neither figure is printed from
+    # here any more -- both documents state their own arithmetic on their face, and the paper's
+    # own gendocs.py already asserts D16's 640.00 against the books -- so there is no longer a
+    # second copy to keep in step with the first. A third checked that model.DOCS carried the
+    # purchase_orders the Terms branch was keyed off; that branch is gone too.
 
     # Every journal column that names an account must point at an account the chart actually
     # has, and its label must not contradict the chart's own name for it.
@@ -472,3 +399,17 @@ def check(model):
             f"{COMPANY['slug']}: GUIDANCE has text for document {sorted(stray)}, which is never "
             f"guided, so nobody would read it. Nothing was written."
         )
+
+    # Every guided ref must be a document the envelope actually contains. Without this, renaming
+    # or dropping a printed artefact leaves GUIDANCE pointing at a ref nothing prints, and
+    # GUIDANCE/GUIDED_SEQUENCES agreeing with each other would not catch it — they would just
+    # agree on the wrong thing. D02-2 is exactly the ref at risk: the invoice is the second
+    # artefact of transaction 2, so its ref is assigned by the envelope's own numbering.
+    if manifest is not None:
+        manifest_refs = {entry["ref"] for entry in manifest}
+        unprinted = set(GUIDED_SEQUENCES) - manifest_refs
+        if unprinted:
+            raise SystemExit(
+                f"{COMPANY['slug']}: GUIDANCE guides {sorted(unprinted)}, which the envelope's "
+                f"manifest does not contain. Nothing was written."
+            )

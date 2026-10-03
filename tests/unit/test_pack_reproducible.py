@@ -13,6 +13,8 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -21,6 +23,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PRACTICESETS = ROOT.parent / "practicesets"
 LIVE = ROOT / "packs" / "riverbend" / "source.json"
 ALLOW_NO_SETS = os.environ.get("PACK_TRANSLATOR_ALLOW_NO_SETS") == "1"
+
+# The versions the envelope is printed in. Riverbend has these three, and the figures on the
+# artefacts are the whole difference between them, so one set cannot stand in for the others.
+CODES = ("A", "B", "C")
 
 
 def _require_sets():
@@ -42,15 +48,40 @@ def _require_sets():
     )
 
 
-def _build(company, version=1):
+@pytest.fixture(scope="module")
+def envelope(tmp_path_factory):
+    """The printed envelope, three times over: one directory per version, as gendocs.py writes
+    it. Produced the same way tests/unit/test_document_manifest.py's own fixture produces the
+    clinic's, and module-scoped so the three versions are printed once for this whole file.
+
+    The committed pack's documents, its triage and the text a student reads all come off these
+    artefacts now, so a rebuild without them is not the same pack: it would be the retired
+    one-document-per-transaction pack, 28 documents against the committed 62, and this file's
+    comparison would report a difference it could do nothing about.
+    """
+    _require_sets()
+    out = tmp_path_factory.mktemp("riverbend-envelope")
+    for code in CODES:
+        env = dict(os.environ, PRACTICESET_COMPANY="riverbend",
+                   PRACTICESET_OUT=str(out / code))
+        subprocess.run([sys.executable, "generators/gendocs.py", code],
+                       cwd=PRACTICESETS, env=env, check=True, capture_output=True)
+    return out
+
+
+def _build(company, envelope, version=1):
     spec = importlib.util.spec_from_file_location(
         "build_pack", ROOT / "scripts" / "build_pack.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.build_source(company, PRACTICESETS, version=version)
+    # No images_dir, so none of the 186 photographs are rendered: nothing here compares a
+    # picture, and WeasyPrint and poppler are laptop-only tooling.
+    return module.build_source(
+        company, PRACTICESETS, documents_dir=envelope, version=version
+    )
 
 
-def test_regenerating_riverbend_reproduces_the_pack_in_service():
+def test_regenerating_riverbend_reproduces_the_pack_in_service(envelope):
     """If this fails, either the translator broke or the committed pack has content that no
     longer traces to the practice set. Both are worth stopping for.
 
@@ -62,15 +93,17 @@ def test_regenerating_riverbend_reproduces_the_pack_in_service():
     _require_sets()
     live = json.loads(LIVE.read_text())
 
-    assert _build("riverbend", version=live["version"]) == live
+    assert _build("riverbend", envelope, version=live["version"]) == live
 
 
-def test_the_corrected_money_figure_comes_from_the_model():
+def test_the_corrected_money_figure_comes_from_the_model(envelope):
     """The sharpest single test that the bridge works: this text was once patched into the JSON
     by hand, three times. The model has formatted it correctly for longer than the patch has
-    existed, so a working translator emits it unprompted."""
+    existed, so a working translator emits it unprompted. It reaches the pack off the printed
+    remittance advice now rather than out of the profile's own arithmetic, and it is still the
+    model's formatting either way."""
     _require_sets()
-    text = json.dumps(_build("riverbend"))
+    text = json.dumps(_build("riverbend", envelope))
 
     assert "4,390.40" in text
     assert "4390.4" not in text

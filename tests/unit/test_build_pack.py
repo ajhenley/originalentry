@@ -182,3 +182,32 @@ def test_a_pack_version_below_one_is_refused():
         _script().build_source("riverbend", PRACTICESETS, version=0)
 
     assert "Nothing was written." in str(refusal.value)
+
+
+# ── A build with no printed envelope ─────────────────────────────────────────────────────
+#
+# Neither shipping pack is built this way any more: both take their document list from their own
+# envelope's manifest. The arm stays for a company that has no printed envelope to take an
+# inventory from, and the case below is what keeps it honest, because nothing else exercises it.
+
+def test_a_build_with_no_envelope_still_guides_the_documents_the_profile_names():
+    """``_documents_by_transaction`` compared an int to GUIDED_SEQUENCES.
+
+    Guidance and GUIDED_SEQUENCES were keyed by received_seq when this arm was the only one.
+    When they moved onto the envelope's refs, this arm kept testing ``seq in
+    profile.GUIDED_SEQUENCES`` with ``seq`` an integer against a set of strings: every membership
+    test was quietly False, so every document came out unguided and the scaffolding the first two
+    documents exist to carry vanished with nothing failing. V10 caps guided documents at two, so
+    "no document is guided" is a perfectly valid pack.
+
+    Riverbend guides D01 and D02-2. Only D01 is reachable here — the second artefact of a
+    transaction exists only in an envelope — and asserting that the reachable one *is* guided is
+    what the int comparison could not satisfy.
+    """
+    _require_sets()
+    source = _script().build_source("riverbend", PRACTICESETS)
+
+    guided = {doc["ref"]: doc["guidance"] for doc in source["documents"] if doc["guided"]}
+
+    assert set(guided) == {"D01"}, guided
+    assert "cash going out" in guided["D01"]

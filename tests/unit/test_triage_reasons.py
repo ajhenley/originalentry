@@ -67,9 +67,23 @@ def test_every_packs_committed_reason_is_the_one_its_profile_authored(pack):
     test_the_reason_is_authored_once_and_not_per_version, which could not fail: `_triage_reasons`
     reads one `FILED_REASONS` and writes the same string into every version, so divergence across
     versions was unconstructable by any single-line change. This asserts against the author
-    instead of against itself, and it is the first thing in this file that covers the clinic."""
+    instead of against itself, and it is the first thing in this file that covers the clinic.
+
+    A profile may author by ref (the clinic's eleven, each its own sentence) or by kind
+    (Riverbend's thirty-four filed artefacts in nine kinds), so the expected sentence is resolved
+    the same two ways round -- but from the **committed pack's** own `kind` field rather than from
+    the envelope's manifest, which is what `_triage_reasons` reads. The two sources agree only if
+    the builder carried the kind into the document it wrote, so this still fails if a sentence is
+    substituted, truncated or attached to the wrong kind; it does not become a restatement of the
+    function it is checking.
+
+    A filed ref whose kind resolves to nothing is named rather than skipped: that is precisely the
+    hole -- an envelope kind nobody authored a sentence for -- that V17 would otherwise be left to
+    find on its own.
+    """
     slug, source, generated = pack
     profile = _load_profile(slug)
+    kind_of = {document["ref"]: document.get("kind") for document in source["documents"]}
 
     for code, key in generated.keys.items():
         filed = {ref for ref, needs_entry in key["triage"].items() if not needs_entry}
@@ -77,8 +91,14 @@ def test_every_packs_committed_reason_is_the_one_its_profile_authored(pack):
             f"{slug} {code}: refs carrying a reason do not match the refs filed"
         )
         for ref in filed:
-            assert key["triage_reasons"][ref] == profile.FILED_REASONS[ref], (
-                f"{slug} {code}: {ref}'s committed reason does not match FILED_REASONS[{ref!r}]"
+            authored = profile.FILED_REASONS.get(ref) or profile.FILED_REASONS.get(kind_of[ref])
+            assert authored, (
+                f"{slug} {code}: {ref} is a {kind_of[ref]!r} and FILED_REASONS authors a sentence "
+                f"for neither that ref nor that kind"
+            )
+            assert key["triage_reasons"][ref] == authored, (
+                f"{slug} {code}: {ref}'s committed reason does not match the one FILED_REASONS "
+                f"authors for it"
             )
 
 

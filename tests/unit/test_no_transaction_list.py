@@ -21,6 +21,30 @@ desc verbatim when no items are declared for it — a genuine finding, but not o
 mechanism can respect without false-flagging every clinic item table, and not one this task can
 fix: the generator that decides this is ../practicesets/generators/gendocs.py, read-only to this
 worktree.
+
+── Which of these can still fail, now that Riverbend reads off its envelope too ──
+
+Riverbend's text is scraped from the printed artefact's html by the same `_Reading`, so what was
+said of the clinic above is now said of both packs: nothing in this repository writes txn["desc"]
+into a document Riverbend ships, and the `_text_alternative` that used to is on a code path
+neither pack takes. It would be easy to call
+test_no_riverbend_document_carries_a_description_row unfalsifiable on that basis, and it is worth
+recording that it is **not**. The row comes back from one line in build_pack.py's manifest arm —
+appending ["Description", the transaction's own desc] to the reading — and both assertions in
+this file fail when it does; that was run, not reasoned about (see the task-5 report). So this is
+neither of the two unfalsifiable kinds. The defect's *original* mechanism is designed out; the
+defect itself is one line away, which is exactly the distance a regression travels, and that is
+why the assertion stays rather than being retired as proven impossible.
+
+test_no_riverbend_document_states_its_own_designed_error is the live one, and the move cost it two
+of its five phrases. "in full" (D04) and "FOB shipping point" (D07) are now printed on the paper
+itself: the customer's remittance advice says it is paying in full, and the vendor's invoice
+states its own freight terms. Neither is an answer. The freight terms are the *evidence* the
+freight entry is made from — asserting them absent would be asserting that the document be
+unreadable. So both were re-pointed at the part of the model's description that is genuinely the
+author talking and is nowhere on the artefact: the invoice date that puts D04 outside its
+discount period, and the ordered quantity D07's own summary counted out in words. Both are in
+txn["desc"] in all three versions and in no artefact's text in any of them.
 """
 
 from __future__ import annotations
@@ -41,11 +65,23 @@ PACKS = ("riverbend", "alderfinch")
 # against 38 received in A, 44/42 in B, 48/46 in C — so the phrase is the part that gives the
 # trap away whatever the quantities are. "receiving report shows 38 received" would have been
 # an assertion that could not fail for two versions out of three.
+#
+# Keyed on the artefact that is the *evidence* for the transaction, which is where a reinstated
+# Description row would land: the vendor invoice, not the purchase order that shares its
+# transaction. D07 and D22 are purchase orders in the envelope and were re-pointed at D07-2 and
+# D22-2 for that reason.
+#
+# D04's phrase was "in full" and D07's was "FOB shipping point"; see the module docstring for why
+# neither can be asserted absent now that the paper prints both. "Nov 24" is the invoice date
+# that makes D04's discount unearned, and it is the author's, not the remittance's — the advice
+# says only "Payment in full of the balance shown". "60 cassettes" is the summary counting out an
+# order the invoice itemises as "11-speed cassette", so it cannot be reached from the artefact
+# either, and unlike D22's quantities it does not rotate by version.
 GAVE_THE_ANSWER_AWAY = {
-    "D04": "in full",
-    "D07": "FOB shipping point",
+    "D04": "Nov 24",
+    "D07-2": "60 cassettes",
     "D18": "within 1/15 discount",
-    "D22": "receiving report shows",
+    "D22-2": "receiving report shows",
     "D23": "outside the discount period",
 }
 

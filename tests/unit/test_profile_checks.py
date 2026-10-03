@@ -34,18 +34,23 @@ PROFILES = ("riverbend", "alderfinch")
 # test_only_these_profiles_declare_payroll_labels keeps that gap visible rather than silent.
 PAYROLL_PROFILES = ("alderfinch",)
 
-# Only the clinic takes its document list from the envelope's manifest, so only its check()
-# accepts one and only it can cross-check GUIDANCE against what was printed. Riverbend is
-# deliberately still one document per transaction (it is live, and out of scope by the spec).
-# test_only_these_profiles_check_against_a_manifest keeps that gap visible too.
-MANIFEST_PROFILES = ("alderfinch",)
+# Both packs now take their document list from the envelope's manifest, so both check() functions
+# accept one and both cross-check GUIDANCE against what was printed. Riverbend was the gap this
+# tuple existed to keep visible, and it closed when its pack was rebuilt from its own envelope.
+# test_only_these_profiles_check_against_a_manifest still guards the shape: a profile that gains
+# the parameter without the cross-check is reported, and so is one that moves to the manifest
+# while this file still has no case for it. The order is PROFILES' own, which is what that test
+# compares against.
+MANIFEST_PROFILES = ("riverbend", "alderfinch")
 
 # A number no chart in this repository uses, and a sequence number no pack has a document for.
 ABSENT_ACCOUNT = "997"
 ABSENT_SEQUENCE = 997
-# The same, for a profile whose guidance is keyed by the manifest's own ref rather than by
-# received_seq. A sentinel of the wrong type works until a check sorts the two kinds of key
-# together, which `stray` does — and then the refusal comes out as a TypeError.
+# The same, for a profile whose guidance is keyed by the manifest's own ref. Both are keyed that
+# way today; the int sentinel is kept because _absent_guidance_key has to pick one and a profile
+# with no envelope would key by received_seq again. A sentinel of the wrong type works until a
+# check sorts the two kinds of key together, which `stray` does — and then the refusal comes out
+# as a TypeError.
 ABSENT_REF = "ZZ-not-printed"
 
 _counter = itertools.count()
@@ -113,7 +118,8 @@ def _refusal(profile, model) -> str:
 def _absent_guidance_key(profile):
     """A key no document has, of the kind this profile keys guidance by.
 
-    Riverbend keys by received_seq (ints); the clinic by the manifest's own ref (strings).
+    Both packs key by the manifest's own ref (strings) now that both are built from a printed
+    envelope. The int branch stays for a profile built without one, which keys by received_seq.
     """
     keys = set(profile.GUIDANCE) | set(profile.GUIDED_SEQUENCES)
     return ABSENT_REF if all(isinstance(key, str) for key in keys) else ABSENT_SEQUENCE
@@ -332,47 +338,15 @@ def test_only_these_profiles_check_against_a_manifest():
     )
 
 
-def _tamper_account(model, txn_no: int, account: int, by: float):
-    """A fresh model whose ``build`` reports one transaction's line for ``account`` nudged by
-    ``by``, everything else untouched. Each test's model is its own module (``_loaded`` reloads
-    it), so rebinding ``build`` here cannot leak into another test."""
-    real_build = model.build
-
-    def tampered(variant):
-        txns = real_build(variant)
-        for txn in txns:
-            if txn["no"] == txn_no:
-                txn["lines"] = [
-                    (a, debit + by if a == account and debit else debit, credit)
-                    for a, debit, credit in txn["lines"]
-                ]
-        return txns
-
-    model.build = tampered
-    return model
-
-
-def test_d16s_printed_returned_item_total_is_cross_checked_against_the_books():
-    """D16's 'Item returned' total (extra_fields' txn 16 branch) is a hardcoded literal, 640.00.
-    Nothing but this guard (F5/#5) would notice it drifting from what the credit memo's own
-    returns-account debit says."""
-    profile, model = _loaded("riverbend")
-    _tamper_account(model, 16, int(profile.FACE_ACCOUNTS["returns"]), 0.01)
-
-    message = _refusal(profile, model)
-
-    assert "transaction 16" in message, message
-    assert "Nothing was written" in message, message
-
-
-def test_d23s_printed_arithmetic_is_cross_checked_against_the_books():
-    """D23's 'Invoice amount' and 'Less credit memo CM-118' are hardcoded literals while its own
-    'Remitted' is derived from the model — so if the model's cash line ever moved, the document's
-    four printed figures would stop adding up in front of a student with nothing to notice."""
-    profile, model = _loaded("riverbend")
-    _tamper_account(model, 23, int(profile.FACE_ACCOUNTS["cash"]), 0.01)
-
-    message = _refusal(profile, model)
-
-    assert "transaction 23" in message, message
-    assert "Nothing was written" in message, message
+# Two cases stood here: test_d16s_printed_returned_item_total_is_cross_checked_against_the_books
+# and test_d23s_printed_arithmetic_is_cross_checked_against_the_books, with a _tamper_account
+# helper that nudged one line of one transaction so the guard they proved had something to
+# refuse. Both guards were deleted with the extra_fields branches they defended: D16's returned
+# item and D23's remittance arithmetic are no longer printed from the profile at all, so there is
+# no second copy of either figure for the model to drift away from.
+#
+# What those two cases were really defending -- a figure a student reads off a document
+# disagreeing with the figure the key expects for it -- is now
+# test_every_cash_document_prints_the_figure_the_key_expects in
+# tests/unit/test_riverbend_pack.py, which asserts it from the artefact's own text against the
+# committed answer key rather than from one profile literal against another.

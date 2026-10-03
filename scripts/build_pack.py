@@ -493,9 +493,10 @@ def _documents_by_transaction(model, profile) -> list[dict]:
     itself by its date, so that is what is added, and it is added to anything that repeats
     rather than to the tapes by name.
 
-    This is Riverbend's own path, kept exactly as it was: one document per transaction, found by
-    replaying the model, with no printed envelope to take an inventory from. The clinic has moved
-    to ``documents()`` below, which takes its list from the envelope's own manifest instead.
+    This is the path for a company with no printed envelope to take an inventory from: one
+    document per transaction, found by replaying the model. Both shipping packs have moved to
+    ``documents()`` below, which takes its list from the envelope's own manifest instead, so
+    nothing in the catalogue is built this way any more.
     """
     # Descriptions and metadata do not vary by version; which version is "base" does not matter,
     # so the lowest-sorting one stands in rather than a letter this profile might not have.
@@ -505,8 +506,9 @@ def _documents_by_transaction(model, profile) -> list[dict]:
     repeated = {doc for doc, count in Counter(t["doc"] for t in base).items() if count > 1}
     docs = []
     for seq, txn in enumerate(base, start=1):
+        ref = _ref(txn)
         docs.append({
-            "ref": _ref(txn),
+            "ref": ref,
             "display_ref": (f'{txn["doc"]}, {txn["date"]}' if txn["doc"] in repeated
                             else txn["doc"]),
             "type": "source_document",
@@ -516,11 +518,18 @@ def _documents_by_transaction(model, profile) -> list[dict]:
             # and why, never which accounts, and "sales on account" is not true of a service
             # practice with no sales. check() has already proven GUIDANCE covers exactly
             # GUIDED_SEQUENCES and nothing past it, so .get is safe here rather than a guess.
-            "guided": seq in profile.GUIDED_SEQUENCES,
-            "guidance": profile.GUIDANCE.get(seq),
+            #
+            # Keyed by ref, not by received_seq. Both were once sequence numbers, and when
+            # GUIDANCE moved onto refs this arm kept comparing an int to a set of strings: every
+            # membership test was quietly False and every document came out unguided, with the
+            # scaffolding the first two documents exist to carry silently absent.
+            "guided": ref in profile.GUIDED_SEQUENCES,
+            "guidance": profile.GUIDANCE.get(ref),
             "variants": {},
         })
-    for extra in profile.NO_ENTRY_DOCUMENTS:
+    # A company whose documents are all photographed declares none: the envelope's own filed
+    # artefacts are the distractors, so the constant is absent rather than empty.
+    for extra in getattr(profile, "NO_ENTRY_DOCUMENTS", []):
         docs.append({
             "ref": extra["ref"], "display_ref": extra["display_ref"],
             "type": "source_document", "date": extra["date"],
@@ -533,6 +542,13 @@ def _documents_by_transaction(model, profile) -> list[dict]:
 # What each printed artefact is called in a list of them, in the vocabulary the old labels used
 # ("Check 4101", "Invoice 7101"). Without it the list showed the bare printed reference — "4104",
 # "18", "J. Finch" — and a void cheque could not be told from the three real ones.
+#
+# A merchandiser's envelope carries four kinds a service practice has none of, so these arrived
+# with Riverbend: an order a *customer* sent us, which is not our own purchase order and must not
+# read as one ("Purchase order RB-1180" is ours to a supplier; "Customer purchase order CC-7741"
+# came in), the carrier's bill of lading, the warehouse's receiving report and an outgoing request
+# for quotation. _display_ref refuses a kind this has no name for, so the first build of
+# Riverbend's envelope stopped here rather than listing a quarter of it by bare reference.
 KIND_LABEL = {
     "sales_invoice": "Invoice",
     "vendor_invoice": "Vendor invoice",
@@ -541,6 +557,10 @@ KIND_LABEL = {
     "receipt": "Receipt",
     "register_tape": "Cash register tape",
     "purchase_order": "Purchase order",
+    "customer_po": "Customer purchase order",
+    "bill_of_lading": "Bill of lading",
+    "receiving_report": "Receiving report",
+    "request_for_quote": "Request for quotation",
     "cheque": "Check",
     "void_cheque": "Void cheque",
     "time_card": "Time card",
@@ -1029,12 +1049,13 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
                 "error_signatures": error_signatures(model, errors_mod, code, manifest),
             }
     else:
-        # Riverbend's path, untouched: one document per transaction plus the profile's own
-        # invented distractors.
-        # Only this arm reads the cheque stubs: the clinic's text comes off the artefact's own
-        # html, which already carries them.
+        # The path for a company with no printed envelope: one document per transaction, its text
+        # built from the transaction behind it, plus whatever distractors the profile invents.
+        # Neither shipping pack is built this way any more.
+        # Only this arm reads the cheque stubs: an artefact's own html already carries them.
         cheques = model.DOCS.get("cheques", {})
         docs = _documents_by_transaction(model, profile)
+        no_entry = getattr(profile, "NO_ENTRY_DOCUMENTS", [])
         # No-entry documents all land on the period's last day; formatted like the model's own
         # dates ("Dec 4"), which _iso_date then turns into a real one.
         period_end = date.fromisoformat(profile.PERIOD["end"])
@@ -1045,14 +1066,14 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
             for doc, txn in zip(docs[:len(txns)], txns, strict=True):
                 doc["variants"][code] = {
                     "text_alternative": _text_alternative(txn, model, cheques, profile)}
-            for doc, extra in zip(docs[len(txns):], profile.NO_ENTRY_DOCUMENTS, strict=True):
+            for doc, extra in zip(docs[len(txns):], no_entry, strict=True):
                 doc["variants"][code] = {"text_alternative":
                                          {"fields": [["Date", no_entry_date],
                                                      ["Document", extra["display_ref"]],
                                                      *extra["fields"]],
                                           "lines": extra["lines"]}}
             triage = ({_ref(t): True for t in txns}
-                      | {e["ref"]: False for e in profile.NO_ENTRY_DOCUMENTS})
+                      | {e["ref"]: False for e in no_entry})
             answers[code] = {
                 "triage": triage,
                 "triage_reasons": _triage_reasons(profile, triage),

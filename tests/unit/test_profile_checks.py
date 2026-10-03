@@ -330,3 +330,49 @@ def test_only_these_profiles_check_against_a_manifest():
         f"{tuple(accepting)} accept a manifest but only {MANIFEST_PROFILES} are checked here. "
         f"Add the profile once its check() cross-checks GUIDANCE against what was printed."
     )
+
+
+def _tamper_account(model, txn_no: int, account: int, by: float):
+    """A fresh model whose ``build`` reports one transaction's line for ``account`` nudged by
+    ``by``, everything else untouched. Each test's model is its own module (``_loaded`` reloads
+    it), so rebinding ``build`` here cannot leak into another test."""
+    real_build = model.build
+
+    def tampered(variant):
+        txns = real_build(variant)
+        for txn in txns:
+            if txn["no"] == txn_no:
+                txn["lines"] = [
+                    (a, debit + by if a == account and debit else debit, credit)
+                    for a, debit, credit in txn["lines"]
+                ]
+        return txns
+
+    model.build = tampered
+    return model
+
+
+def test_d16s_printed_returned_item_total_is_cross_checked_against_the_books():
+    """D16's 'Item returned' total (extra_fields' txn 16 branch) is a hardcoded literal, 640.00.
+    Nothing but this guard (F5/#5) would notice it drifting from what the credit memo's own
+    returns-account debit says."""
+    profile, model = _loaded("riverbend")
+    _tamper_account(model, 16, int(profile.FACE_ACCOUNTS["returns"]), 0.01)
+
+    message = _refusal(profile, model)
+
+    assert "transaction 16" in message, message
+    assert "Nothing was written" in message, message
+
+
+def test_d23s_printed_arithmetic_is_cross_checked_against_the_books():
+    """D23's 'Invoice amount' and 'Less credit memo CM-118' are hardcoded literals while its own
+    'Remitted' is derived from the model — so if the model's cash line ever moved, the document's
+    four printed figures would stop adding up in front of a student with nothing to notice."""
+    profile, model = _loaded("riverbend")
+    _tamper_account(model, 23, int(profile.FACE_ACCOUNTS["cash"]), 0.01)
+
+    message = _refusal(profile, model)
+
+    assert "transaction 23" in message, message
+    assert "Nothing was written" in message, message

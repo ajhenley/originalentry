@@ -371,6 +371,38 @@ def check(model):
                 f"not in the chart. Nothing was written."
             )
 
+    # D16 and D23 print figures that are hardcoded literals in extra_fields -- D16's "Item
+    # returned" total, D23's "Invoice amount" and "Less credit memo CM-118" -- rather than
+    # derived from the model at build time. They are correct today and invariant across every
+    # variant, but D23's own "Remitted" *is* derived from the model, so if the model ever varied
+    # these two would stop adding up in front of a student with nothing downstream to notice:
+    # neither the checkpoint tests nor the reproducibility test depend on a document's printed
+    # text. The paper generator hardcodes the same literals
+    # (../practicesets/companies/riverbend.py:190-193) and its own gendocs.py already asserts
+    # D16's 640.00 against the books; this closes the online half of that same check.
+    returns_account = int(FACE_ACCOUNTS["returns"])
+    cash_account = int(FACE_ACCOUNTS["cash"])
+    for variant in sorted(model.VARIANTS):
+        txns = {t["no"]: t for t in model.build(variant)}
+        returned = next(
+            (debit for account, debit, _credit in txns[16]["lines"]
+             if account == returns_account and debit), None)
+        if returned is None or round(float(returned), 2) != 640.00:
+            raise SystemExit(
+                f"{COMPANY['slug']}: version {variant} transaction 16 debits account "
+                f"{returns_account} {returned!r}, which does not match the 640.00 'Item "
+                f"returned' extra_fields prints for D16. Nothing was written."
+            )
+        remitted = next(
+            debit for account, debit, _credit in txns[23]["lines"] if account == cash_account)
+        expected = 5120 - 640 - round((5120 - 640) * 0.02, 2)
+        if round(float(remitted), 2) != round(expected, 2):
+            raise SystemExit(
+                f"{COMPANY['slug']}: version {variant} transaction 23 remits {remitted!r}, "
+                f"which does not match 5,120.00 - 640.00 - 2% ({expected:.2f}) that "
+                f"extra_fields prints for D23. Nothing was written."
+            )
+
     # extra_fields' Terms branch is keyed off model.DOCS["purchase_orders"]; if that ever went
     # empty the branch would die exactly as silently as a dropped literal in _SPECIAL_TRANSACTIONS
     # would, just one step removed from the set this function already guards.

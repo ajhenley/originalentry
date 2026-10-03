@@ -6,6 +6,13 @@ version's accounts, parties, documents and variants by their natural keys (numbe
 variant code). It is allowed only if every one of those a student has already used still exists
 in the new version — otherwise their work would be orphaned, and the migration is refused.
 
+Existing is not the same as unchanged. A pack rebuilt from its printed envelope can give the same
+base ref to a different artefact — the printed set hands a ref to whichever document arrived
+first, so a transaction's invoice can become a sibling and its purchase order can inherit the
+number. A ref a student used can therefore survive a rebuild while denoting something else
+entirely, which no amount of remapping fixes, so the migration is refused for that too unless
+``--accept-identity-changes`` says it was deliberate.
+
 Always dry-run first: the report says whether it is feasible and what it would touch. The real
 run remaps in one transaction (the composite foreign keys are deferrable, so the version and the
 id move together) and logs a staff action. Restricted to fixed-company assignments.

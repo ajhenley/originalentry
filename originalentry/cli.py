@@ -144,7 +144,21 @@ def register_cli(app: Flask) -> None:
                                    ("variants", report.missing_variants)]:
                 if missing:
                     click.echo(f"  missing {label}: {', '.join(missing)}", err=True)
-            raise click.ClickException("Not feasible: some content students used is gone.")
+            # Name the actual cause: missing content and a changed identity are different
+            # problems with different remedies, and an operator told "something is gone" when
+            # nothing is will go looking for deleted content that was never there.
+            content_missing = bool(report.missing_accounts or report.missing_parties
+                                    or report.missing_documents or report.missing_variants)
+            identity_blocks = bool(report.changed_identity) and not report.changed_identity_accepted
+            reasons = []
+            if content_missing:
+                reasons.append("some content students used is gone")
+            if identity_blocks:
+                reasons.append(
+                    "refs the student used now name different documents "
+                    "(--accept-identity-changes proceeds anyway)"
+                )
+            raise click.ClickException(f"Not feasible: {'; '.join(reasons)}.")
         if report.applied:
             db.session.commit()
             click.echo("Migrated.")

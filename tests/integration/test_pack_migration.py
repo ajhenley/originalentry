@@ -175,16 +175,21 @@ def test_a_dry_run_moves_nothing(session):
 
 # ── A ref that changes meaning ───────────────────────────────────────────────────────────
 
-def _import_renaming(session, slug, version, ref, display_ref):
-    """The same fixture pack, with one document renamed -- the shape an envelope rebuild
-    produces, where a ref survives and denotes a different artefact."""
+def _import_renaming(session, slug, version, *renames, drop=None):
+    """The same fixture pack, with the given documents renamed -- the shape an envelope rebuild
+    produces, where a ref survives and denotes a different artefact. Each of ``renames`` is a
+    ``(ref, display_ref)`` pair. ``drop`` behaves exactly as it does on `_import`, so a single call
+    can produce both a renamed ref and missing content in one reimport."""
     data = copy.deepcopy(testco_alpha.PACK)
     data["company"]["slug"] = slug
     data["company"]["name"] = slug
     data["version"] = version
+    if drop:
+        data["accounts"] = [a for a in data["accounts"] if a["number"] != drop]
+    renamed = dict(renames)
     for document in data["documents"]:
-        if document["ref"] == ref:
-            document["display_ref"] = display_ref
+        if document["ref"] in renamed:
+            document["display_ref"] = renamed[document["ref"]]
     return import_content(session, schema.load_pack(data), source_sha256=secrets.token_hex(32))
 
 
@@ -193,7 +198,7 @@ def test_migrate_refused_when_a_used_ref_names_a_different_document(session):
     the migration reported feasible while reattaching the student's work."""
     slug = f"ident-{secrets.token_hex(3)}"
     assignment, ws, used_ref = _setup(session, slug)
-    _import_renaming(session, slug, 2, used_ref, "Something else entirely")
+    _import_renaming(session, slug, 2, (used_ref, "Something else entirely"))
 
     report = migrate_assignment(session, assignment, 2)
 
@@ -207,7 +212,7 @@ def test_the_override_lets_a_deliberate_migration_through(session):
     overridden gets deleted by the next person in a hurry."""
     slug = f"ovr-{secrets.token_hex(3)}"
     assignment, ws, used_ref = _setup(session, slug)
-    _import_renaming(session, slug, 2, used_ref, "Something else entirely")
+    _import_renaming(session, slug, 2, (used_ref, "Something else entirely"))
 
     report = migrate_assignment(
         session, assignment, 2, dry_run=False, accept_identity_changes=True
@@ -241,3 +246,39 @@ def test_an_unchanged_rebuild_reports_no_identity_change(session):
 
     assert report.changed_identity == []
     assert report.feasible
+
+
+def test_identity_changes_are_scoped_to_refs_the_student_used(session):
+    """INV-2 is renamed too, but the student's entry only ever referenced INV-1 -- changed_identity
+    must report the ref they used and nothing about the one they didn't."""
+    slug = f"scope-{secrets.token_hex(3)}"
+    assignment, ws, used_ref = _setup(session, slug)
+    _import_renaming(
+        session, slug, 2,
+        (used_ref, "Something else entirely"),
+        ("INV-2", "Also renamed, but never touched by this student"),
+    )
+
+    report = migrate_assignment(session, assignment, 2)
+
+    assert [(c.ref, c.field) for c in report.changed_identity] == [(used_ref, "display_ref")]
+
+
+def test_the_override_still_refuses_when_content_is_also_gone(session):
+    """Pins the override to the identity axis alone: an identity change and missing content can
+    both be present in the same migration, and accepting the former must not excuse the latter."""
+    slug = f"both-{secrets.token_hex(3)}"
+    assignment, ws, used_ref = _setup(session, slug)
+    _import_renaming(
+        session, slug, 2, (used_ref, "Something else entirely"), drop=USED_ACCOUNT_NUMBER
+    )
+
+    report = migrate_assignment(
+        session, assignment, 2, dry_run=False, accept_identity_changes=True
+    )
+
+    assert report.missing_accounts == [USED_ACCOUNT_NUMBER]
+    assert report.changed_identity
+    assert report.changed_identity_accepted
+    assert not report.feasible
+    assert not report.applied

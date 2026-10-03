@@ -166,6 +166,63 @@ def register_cli(app: Flask) -> None:
             db.session.rollback()
             click.echo("Dry run only — re-run with --apply to migrate.")
 
+    @packs.command("diff")
+    @click.option("--company", "slug", required=True, help="Company slug, e.g. riverbend.")
+    @click.option("--from", "from_version", type=int, required=True)
+    @click.option("--to", "to_version", type=int, required=True)
+    def packs_diff(slug: str, from_version: int, to_version: int) -> None:
+        """What a migration between two versions would do to the refs students hold.
+
+        Read-only. `flask packs migrate` refuses when a ref a student used changed meaning; this
+        shows the whole picture before anyone is migrated, including refs nobody has touched yet.
+        """
+        from sqlalchemy import select as _select
+
+        from .models import ContentPack, PackVersion
+        from .packs.migrate import _documents_by_ref, _triage_by_variant
+        from .packs.version_diff import identity_changes
+
+        pack = db.session.scalars(
+            _select(ContentPack).where(ContentPack.slug == slug)
+        ).one_or_none()
+        if pack is None:
+            raise click.ClickException(f"No company {slug!r} in the catalogue.")
+
+        def _version(n: int) -> PackVersion:
+            pv = db.session.scalars(
+                _select(PackVersion).where(PackVersion.content_pack_id == pack.id,
+                                           PackVersion.version == n)
+            ).one_or_none()
+            if pv is None:
+                raise click.ClickException(f"{slug} has no version {n} in the catalogue.")
+            return pv
+
+        old_pv, new_pv = _version(from_version), _version(to_version)
+        old_docs = _documents_by_ref(db.session, old_pv)
+        new_docs = _documents_by_ref(db.session, new_pv)
+
+        added = sorted(set(new_docs) - set(old_docs))
+        removed = sorted(set(old_docs) - set(new_docs))
+        changes = identity_changes(
+            old_docs, new_docs,
+            _triage_by_variant(db.session, old_pv), _triage_by_variant(db.session, new_pv),
+        )
+
+        click.echo(f"{slug} v{from_version} -> v{to_version}: "
+                   f"{len(old_docs)} documents -> {len(new_docs)}")
+        if added:
+            click.echo(f"  added ({len(added)}): {', '.join(added)}")
+        if removed:
+            click.echo(f"  removed ({len(removed)}): {', '.join(removed)}")
+        if not changes:
+            click.echo("  no document changed what it denotes")
+            return
+        flipped = [c for c in changes if c.field == "triage"]
+        click.echo(f"  changed meaning: {len({c.ref for c in changes})} ref(s), "
+                   f"{len(flipped)} with a flipped triage answer")
+        for change in changes:
+            click.echo(f"    {change.ref} {change.field}: {change.was} -> {change.now}")
+
     @packs.command("validate")
     @click.argument("zip_path")
     def packs_validate(zip_path: str) -> None:

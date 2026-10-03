@@ -42,19 +42,27 @@ def _require_sets():
     )
 
 
-def _build(company):
+def _build(company, version=1):
     spec = importlib.util.spec_from_file_location(
         "build_pack", ROOT / "scripts" / "build_pack.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.build_source(company, PRACTICESETS)
+    return module.build_source(company, PRACTICESETS, version=version)
 
 
 def test_regenerating_riverbend_reproduces_the_pack_in_service():
     """If this fails, either the translator broke or the committed pack has content that no
-    longer traces to the practice set. Both are worth stopping for."""
+    longer traces to the practice set. Both are worth stopping for.
+
+    The pack's own declared version is read back rather than assumed: it is a fact about the
+    catalogue -- which version of this company is in service -- and nothing in the practice set
+    derives it, so a correction raises it and this test must not drift every time one does.
+    Everything else here is content, and content is what the translator is answerable for.
+    """
     _require_sets()
-    assert _build("riverbend") == json.loads(LIVE.read_text())
+    live = json.loads(LIVE.read_text())
+
+    assert _build("riverbend", version=live["version"]) == live
 
 
 def test_the_corrected_money_figure_comes_from_the_model():

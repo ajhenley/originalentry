@@ -146,3 +146,70 @@ def test_v17_reports_a_reason_that_is_only_whitespace():
 
     assert len(problems) == 1, problems
     assert "N06" in problems[0].message
+
+
+# ── Reasons authored by kind ─────────────────────────────────────────────────────────────
+
+def _profile_with(filed_reasons):
+    class P:
+        FILED_REASONS = filed_reasons
+    return P()
+
+
+def _bp():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("build_pack", ROOT / "scripts" / "build_pack.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+MANIFEST = [
+    {"ref": "N01", "kind": "time_card"},
+    {"ref": "N02", "kind": "time_card"},
+    {"ref": "N03", "kind": "price_list"},
+    {"ref": "D01", "kind": "cheque"},
+]
+TRIAGE = {"N01": False, "N02": False, "N03": False, "D01": True}
+
+
+def test_a_reason_keyed_by_kind_reaches_every_document_of_that_kind():
+    """Riverbend files 34 documents of nine kinds. Authoring 34 sentences would be nine
+    sentences and twenty-five copies of them."""
+    reasons = _bp()._triage_reasons(
+        _profile_with({"time_card": "Supporting record for the payroll cheque."}),
+        TRIAGE, manifest=MANIFEST,
+    )
+
+    assert reasons == {"N01": "Supporting record for the payroll cheque.",
+                       "N02": "Supporting record for the payroll cheque."}
+
+
+def test_a_reason_keyed_by_ref_wins_over_its_kind():
+    """One document of a kind sometimes needs its own sentence; the specific beats the general."""
+    reasons = _bp()._triage_reasons(
+        _profile_with({"time_card": "The general one.", "N02": "This one is different."}),
+        TRIAGE, manifest=MANIFEST,
+    )
+
+    assert reasons["N01"] == "The general one."
+    assert reasons["N02"] == "This one is different."
+
+
+def test_a_kind_reason_never_reaches_a_document_that_takes_an_entry():
+    """V17 forbids a reason on a document that needs an entry, so the expansion must respect
+    triage rather than paint every document of a kind."""
+    reasons = _bp()._triage_reasons(
+        _profile_with({"cheque": "Should not appear."}), TRIAGE, manifest=MANIFEST,
+    )
+
+    assert reasons == {}
+
+
+def test_without_a_manifest_only_ref_keys_resolve():
+    """Riverbend's own pack built before this change, and the clinic's, pass no manifest here."""
+    reasons = _bp()._triage_reasons(
+        _profile_with({"time_card": "By kind.", "N03": "By ref."}), TRIAGE,
+    )
+
+    assert reasons == {"N03": "By ref."}

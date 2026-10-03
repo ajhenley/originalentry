@@ -96,15 +96,26 @@ def _journals() -> list[dict]:
 JOURNALS = _journals()
 
 
-# Why each of these needs no entry. It used to be a "Description" row inside the document,
-# which handed the student the triage answer they were being marked on. It belongs with the
-# answer instead, and reaches the instructor through the answer key (V17).
+# Why each filed document needs no entry, authored by kind: the envelope files 34 documents and
+# they are nine kinds, so nine sentences and a mechanism beat thirty-four strings. V17 still
+# requires one reason per document; scripts/build_pack.py expands kind to ref.
 FILED_REASONS = {
-    "N01": "Order for 6 mountain bikes, not to ship before 15 January",
-    "N02": "An enquiry about wholesale terms for 25 and 50 units. No order is placed "
-           "and no goods are requested.",
-    "N03": "Notice of wholesale prices changing from 1 January. No goods have been "
-           "ordered or shipped against this notice.",
+    "customer_po": "The customer's own order. Nothing has been shipped or invoiced against it "
+                   "yet, so there is nothing to record; the invoice does that.",
+    "purchase_order": "Our order to a supplier. Nothing has arrived and nothing is owed; the "
+                      "vendor's invoice records the purchase when the goods do.",
+    "bill_of_lading": "The carrier's receipt for goods leaving the warehouse. It evidences the "
+                      "shipment behind an invoice, and the invoice is what is recorded.",
+    "receiving_report": "What the warehouse counted on arrival. It is the check against the "
+                        "vendor's invoice, not an entry of its own.",
+    "time_card": "Supporting record for the payroll cheque. The hours reach the books once, "
+                 "through the payroll entry, not card by card.",
+    "petty_cash_voucher": "A disbursement from the petty cash fund. Nothing is journalised until "
+                          "the fund is replenished.",
+    "void_cheque": "Spoiled and voided before use. No money moved; it is kept so the cheque "
+                   "sequence can be accounted for.",
+    "request_for_quote": "An enquiry about terms. No order is placed and no goods are requested.",
+    "price_list": "A supplier's price notice. Nothing has been ordered against it.",
 }
 
 # Documents that arrive and need nothing done with them. Triage is the first thing marked, and
@@ -151,8 +162,8 @@ STATEMENT_SECTIONS = ["current_assets", "non_current_assets", "current_liabiliti
 # accounts. Kept word for word from the translator's own former literals, so the pack's text does
 # not move.
 GUIDANCE = {
-    1: "A payment by cheque belongs in the journal built for cash going out.",
-    2: "Sales on account are recorded in the journal built for them.",
+    "D01": "A payment by cheque belongs in the journal built for cash going out.",
+    "D02-2": "Sales on account are recorded in the journal built for them.",
 }
 
 CHECKPOINTS = [
@@ -348,9 +359,11 @@ def _bare(text: str) -> str:
     return text.strip().lower()
 
 
-# The translator guides these two sequence numbers (``documents()`` in build_pack.py) and no
-# others; defined once here so the two checks below do not each repeat the literal.
-GUIDED_SEQUENCES = {1, 2}
+# Keyed by ref, as the manifest arm requires. Transaction 2 is three artefacts in the envelope --
+# D02 the customer's purchase order, D02-2 the invoice, D02-3 the bill of lading -- and the
+# scaffolding belongs on the invoice, which is the one that takes an entry. V10 caps guided
+# documents at two.
+GUIDED_SEQUENCES = {"D01", "D02-2"}
 
 
 def check(model):
@@ -442,10 +455,10 @@ def check(model):
                 f"is not in the chart. Nothing was written."
             )
 
-    # Every sequence number the translator guides must have words in GUIDANCE (an empty string
-    # counts as missing, which is why this tests truthiness rather than key presence), and
-    # GUIDANCE must hold nothing for a sequence that is never guided. A guided document with no
-    # guidance passed silently until this, the hole this round's own guidance fix opened.
+    # Every ref the translator guides must have words in GUIDANCE (an empty string counts as
+    # missing, which is why this tests truthiness rather than key presence), and GUIDANCE must
+    # hold nothing for a ref that is never guided. A guided document with no guidance passed
+    # silently until this, the hole this round's own guidance fix opened.
     missing = {seq for seq in GUIDED_SEQUENCES if not GUIDANCE.get(seq)}
     if missing:
         raise SystemExit(

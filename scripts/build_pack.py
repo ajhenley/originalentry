@@ -788,16 +788,27 @@ def _designated_journals(manifest, txns_by_no: dict, profile, code: str) -> dict
     return designated
 
 
-def _triage_reasons(profile, triage: dict[str, bool]) -> dict[str, str]:
-    """One authored sentence per ref, copied into this version's key for every document this
-    version files. Keyed per version because triage is, so a future set can file a document in
-    one version only; authored once because three copies would be three places to correct.
+def _triage_reasons(profile, triage: dict[str, bool], manifest=None) -> dict[str, str]:
+    """One authored sentence per filed document, from a mapping keyed by ref or by kind.
 
-    A ref that is filed and has no sentence is not defaulted to "" here. V17 reports it against
-    the pack, which names the pack and the version; a silent "" would make the pack valid.
+    Riverbend files 34 documents of nine kinds and the clinic eleven of nine; by-ref authoring is
+    right for the clinic and would be twenty-five copies for Riverbend. A ref key beats a kind key
+    so one document of a kind can say something of its own.
+
+    A ref that is filed and resolves to no sentence is absent from the result rather than defaulted
+    to "": V17 then reports it against the pack by name, where a silent "" would make an
+    incomplete pack valid.
     """
     authored = getattr(profile, "FILED_REASONS", {})
-    return {ref: authored[ref] for ref in triage if not triage[ref] and ref in authored}
+    kind_of = {entry["ref"]: entry.get("kind") for entry in (manifest or [])}
+    reasons = {}
+    for ref, needs_entry in triage.items():
+        if needs_entry:
+            continue
+        sentence = authored.get(ref) or authored.get(kind_of.get(ref))
+        if sentence:
+            reasons[ref] = sentence
+    return reasons
 
 
 def _render_manifest_images(set_dir: Path) -> dict[str, bytes]:
@@ -1010,7 +1021,7 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
             triage = {entry["ref"]: entry["entry_for"] is not None for entry in manifest}
             answers[code] = {
                 "triage": triage,
-                "triage_reasons": _triage_reasons(profile, triage),
+                "triage_reasons": _triage_reasons(profile, triage, manifest=manifest),
                 "designated_journal_documents": _designated_journals(
                     manifest, txns_by_no, profile, code),
                 "expected_entries": expected_entries(model, code, profile, manifest),

@@ -301,12 +301,10 @@ def instructor_sections(src: dict, version: str, key: dict) -> str:
         ref = d["ref"]
         entry = entries.get(ref)
         if entry is None:
-            # A reason read off the document's own text only exists for a pack whose no-entry
-            # documents were authored with one. A pack that takes its inventory from the printed
-            # envelope has no such sentence to read, and an empty reason here is indistinguishable
-            # from a reason nobody wrote: both print "no entry required" above a blank line, in
-            # the copy an instructor marks from.
-            why = dict(d["variants"][version]["text_alternative"]["fields"]).get("Description", "")
+            # From the answer key, where the reason lives (V17). It used to be read out of a
+            # "Description" row in the document's own text, which both handed the student the
+            # answer and left a pack built from a printed envelope with nothing to print.
+            why = (answer.get("triage_reasons") or {}).get(ref, "")
             if not why.strip():
                 unexplained.append(ref)
                 continue

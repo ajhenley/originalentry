@@ -84,22 +84,31 @@ def _walkthrough(src: dict, version: str, key: dict) -> str:
     return module.instructor_sections(src, version, key)
 
 
-def test_a_filed_document_with_no_recorded_reason_stops_the_instructor_copy(generated):
-    """Riverbend's walkthrough says why each of its three no-entry documents needs none, and
-    test_the_no_entry_documents_say_so_and_say_why holds it to that. The clinic takes its
-    documents from the printed envelope, which carries no such sentence, so the same code path
-    produced eleven blocks reading "no entry required" above an empty line.
-
-    An instructor cannot tell that from a document whose reason someone forgot to write, and the
-    comment in instructor_sections says deciding a document needs nothing "is itself marked". So
-    the missing reason has to stop the copy being built and name what is missing, the way every
-    other refusal in this translator does.
-    """
+def test_the_instructor_copy_says_why_each_filed_document_needs_no_entry(generated):
+    """It printed "no entry required" above a blank line eleven times, because it read the
+    reason from a "Description" field that a pack built from the printed envelope does not
+    have. The reason now comes from the answer key."""
     src = json.loads(SOURCE.read_text())
 
+    html = _walkthrough(src, "A", generated.keys["A"])
+
+    assert "voided before use" in html
+    assert "no replenishment cheque is drawn this period" in html
+    assert "not card by card" in html
+    assert "no entry required" in html
+
+
+def test_the_instructor_copy_still_refuses_when_a_reason_is_missing(generated):
+    """V17 should stop a pack like this reaching here at all. The refusal stays because the
+    walkthrough is run by hand against whatever source.json is on disk, which is exactly when
+    a blank would go unnoticed."""
+    src = json.loads(SOURCE.read_text())
+    key = json.loads(json.dumps(generated.keys["A"]))
+    key["triage_reasons"].pop("N06")
+
     with pytest.raises(SystemExit) as refusal:
-        _walkthrough(src, "A", generated.keys["A"])
+        _walkthrough(src, "A", key)
 
     message = str(refusal.value)
+    assert "N06" in message
     assert "Nothing was written." in message
-    assert "D03" in message and "N06" in message, message

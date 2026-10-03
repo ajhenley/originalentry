@@ -100,7 +100,12 @@ def register_cli(app: Flask) -> None:
     @click.option("--assignment", "assignment_pub", required=True, help="Assignment public id.")
     @click.option("--to-version", type=int, required=True)
     @click.option("--apply", "apply_it", is_flag=True, help="Apply (default is a dry run).")
-    def packs_migrate(assignment_pub: str, to_version: int, apply_it: bool) -> None:
+    @click.option("--accept-identity-changes", "accept_identity", is_flag=True,
+                  help="Proceed even though refs the student used now name different documents. "
+                       "Their recorded work will be reattached. Read `flask packs diff` first.")
+    def packs_migrate(
+        assignment_pub: str, to_version: int, apply_it: bool, accept_identity: bool
+    ) -> None:
         """Migrate a running assignment to a newer version of its company (dry-run by default)."""
         from sqlalchemy import select as _select
 
@@ -114,7 +119,8 @@ def register_cli(app: Flask) -> None:
             raise click.ClickException(f"No assignment {assignment_pub}.")
         try:
             report = migrate_assignment(
-                db.session, assignment, to_version, dry_run=not apply_it, actor=None
+                db.session, assignment, to_version, dry_run=not apply_it, actor=None,
+                accept_identity_changes=accept_identity,
             )
         except MigrationRefused as refused:
             db.session.rollback()
@@ -122,6 +128,14 @@ def register_cli(app: Flask) -> None:
 
         click.echo(f"v{report.from_version} → v{report.to_version}: "
                    f"{report.workspaces} workspace(s), {report.entry_lines} line(s).")
+        # Printed whether or not the override made the migration proceed: an accepted identity
+        # change is still something that happened, and the operator needs to see it either way —
+        # not only on the path where it still blocks.
+        for change in report.changed_identity:
+            prefix = "accepted" if report.changed_identity_accepted else "refused"
+            click.echo(f"  {prefix}: {change.ref} {change.field}: "
+                       f"{change.was} -> {change.now}",
+                       err=not report.changed_identity_accepted)
         if not report.feasible:
             db.session.rollback()
             for label, missing in [("accounts", report.missing_accounts),

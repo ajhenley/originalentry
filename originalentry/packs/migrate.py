@@ -31,7 +31,9 @@ from ..models import (
     Variant,
     Workspace,
 )
+from ..models import AnswerKey as AnswerKeyRow
 from ..services import staff_actions
+from .version_diff import IdentityChange, identity_changes
 
 
 class MigrationRefused(Exception):
@@ -50,6 +52,13 @@ class MigrationReport:
     missing_parties: list[str] = field(default_factory=list)
     missing_documents: list[str] = field(default_factory=list)
     missing_variants: list[str] = field(default_factory=list)
+    #: Refs the student used that denote a different document in the new version. Always populated:
+    #: accepting them does not make them untrue, and a caller reading this field must see what
+    #: happened whether or not the override was passed.
+    changed_identity: list[IdentityChange] = field(default_factory=list)
+    #: Set when --accept-identity-changes was given. Acceptance is recorded here rather than by
+    #: emptying the list above, so nothing has to read two fields to learn one thing.
+    changed_identity_accepted: bool = False
     applied: bool = False
 
     @property
@@ -57,6 +66,7 @@ class MigrationReport:
         return not (
             self.missing_accounts or self.missing_parties
             or self.missing_documents or self.missing_variants
+            or (self.changed_identity and not self.changed_identity_accepted)
         )
 
 
@@ -74,8 +84,34 @@ def _id_to_key(session, model, pv_id, key_attr):
     }
 
 
+def _documents_by_ref(session, pv) -> dict[str, dict]:
+    """display_ref and doc_type are columns; kind is not -- it lives in the manifest's jsonb,
+    so the two sources are joined here rather than in the comparison."""
+    kinds = {
+        entry["ref"]: entry.get("kind")
+        for entry in (pv.manifest or {}).get("documents", [])
+    }
+    return {
+        row.ref: {"display_ref": row.display_ref, "doc_type": row.doc_type,
+                  "kind": kinds.get(row.ref)}
+        for row in session.scalars(
+            select(SourceDocument).where(SourceDocument.pack_version_id == pv.id)
+        )
+    }
+
+
+def _triage_by_variant(session, pv) -> dict[str, dict[str, bool]]:
+    rows = session.execute(
+        select(Variant.code, AnswerKeyRow.payload)
+        .join(AnswerKeyRow, AnswerKeyRow.variant_id == Variant.id)
+        .where(AnswerKeyRow.pack_version_id == pv.id)
+    ).all()
+    return {code: (payload or {}).get("triage", {}) for code, payload in rows}
+
+
 def migrate_assignment(
-    session: Session, assignment: Assignment, to_version: int, *, dry_run: bool = True, actor=None
+    session: Session, assignment: Assignment, to_version: int, *, dry_run: bool = True,
+    actor=None, accept_identity_changes: bool = False,
 ) -> MigrationReport:
     if assignment.company_policy != "fixed" or assignment.fixed_pack_version_id is None:
         raise MigrationRefused("Only a fixed-company assignment can be migrated.")
@@ -148,13 +184,24 @@ def migrate_assignment(
     report.missing_parties = _missing(
         {line.party_id for line in lines if line.party_id}, par_old, par_new
     )
-    report.missing_documents = _missing(
-        {e.document_id for e in entries if e.document_id}
-        | {d.document_id for d in dispositions if d.document_id},
-        doc_old, doc_new,
-    )
+    used_documents = ({e.document_id for e in entries if e.document_id}
+                      | {d.document_id for d in dispositions if d.document_id})
+    report.missing_documents = _missing(used_documents, doc_old, doc_new)
     report.missing_variants = _missing({w.variant_id for w in workspaces if w.variant_id},
                                        var_old, var_new)
+
+    # What a ref meant against what it means now, for the refs this student actually used. The
+    # checks above ask whether content disappeared; this one asks whether it changed underneath
+    # the same name, which is what an envelope-derived rebuild does and what nothing caught.
+    used_refs = {doc_old[i] for i in used_documents if i in doc_old}
+    report.changed_identity = [
+        change for change in identity_changes(
+            _documents_by_ref(session, old_pv), _documents_by_ref(session, to_pv),
+            _triage_by_variant(session, old_pv), _triage_by_variant(session, to_pv),
+        )
+        if change.ref in used_refs
+    ]
+    report.changed_identity_accepted = accept_identity_changes
 
     if dry_run or not report.feasible:
         return report

@@ -128,17 +128,31 @@ def _has_derivable_amount(text_alt: dict) -> bool:
     form this pack prints it.
 
     Three routes, because the two packs print a figure differently and neither is "the" form:
-    a clean ``Amount`` label (Riverbend, and the clinic's three cleanly-labelled documents) is
+    a clean ``Amount`` label (originally the clinic's three cleanly-labelled documents) is
     checked first and always counts, even where its value is itself "None stated" — that is an
     explicit, authored statement that there is no figure, not an absence of one. Non-empty
     ``lines`` with a money-shaped cell covers a document whose figure is only in its item table
-    (its own total is what a student adds up). A blank label whose value is money-shaped is the
-    clinic's unlabelled html text ("Pay to the order of ... $ 2,200.00") — the only place a figure
-    can hide with no label to find it by. Riverbend never produces a blank label (checked: zero
-    across the whole pack), so this third route cannot rescue a Riverbend document whose one
-    clean ``Amount`` row was removed; a *labelled* breakdown field such as "Invoice amount" or
-    "Less 2% cash discount" does NOT count on its own, on purpose, so that a document carrying
-    only those and no ``Amount`` still fails here exactly as it should.
+    (its own total is what a student adds up). A blank label whose value is money-shaped was
+    written for the clinic's unlabelled html text ("Pay to the order of ... $ 2,200.00") — a
+    figure hiding with no label to find it by.
+
+    That was the picture before Riverbend read off its own printed envelope instead of a
+    synthesised summary. It no longer holds: measured on the committed v6 pack, Riverbend carries
+    **zero** ``Amount``-labelled fields (route 1 is dead here) and **1,488** blank-labelled
+    fields, of which 141 are money-shaped. Of the 84 entered document/version pairs, 36 find
+    their figure in the item table (route 2) and the other **48 reach it only through a blank
+    label** (route 3) — the opposite of what this docstring used to claim, and the reverse of
+    which route is load-bearing. The scraped artefact text simply doesn't carry a labelled
+    ``Amount`` row the way the old synthesised summaries did; the figures come off the
+    artefact's own printed lines (an item table's total, or a bare money-shaped line of text)
+    rather than a field authored to say "Amount".
+
+    The test still bites, which is the part worth keeping true: emptying ``lines`` fails 33
+    cases (the item-table route), and dropping ``fields`` fails 48 (the blank-label route) —
+    checked by mutation, not assumed. A *labelled* breakdown field such as "Invoice amount" or
+    "Less 2% cash discount" still does NOT count on its own, on purpose, so that a document
+    carrying only those and no money-shaped blank field or item line still fails here exactly as
+    it should.
     """
     fields = text_alt.get("fields") or []
     lines = text_alt.get("lines") or []

@@ -23,3 +23,6 @@ bin/tailwindcss
 
 # OS
 .DS_Store
+
+# Exported marks carry student names, emails and grades. Never commit them.
+marks-*.csv

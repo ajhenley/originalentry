@@ -2937,7 +2937,7 @@
        ],
        [
         "",
-        "Dated 28 November — the discount period has passed."
+        "Invoice dated 28 November."
        ],
        [
         "",
@@ -2988,7 +2988,7 @@
        ],
        [
         "",
-        "Dated 28 November — the discount period has passed."
+        "Invoice dated 28 November."
        ],
        [
         "",
@@ -3039,7 +3039,7 @@
        ],
        [
         "",
-        "Dated 28 November — the discount period has passed."
+        "Invoice dated 28 November."
        ],
        [
         "",
@@ -3900,11 +3900,7 @@
        ],
        [
         "",
-        "No treatment has been given and nothing is owed at this stage."
-       ],
-       [
-        "",
-        "Appointment request · no accounting entry"
+        "No treatment has been given."
        ]
       ],
       "lines": []
@@ -3935,11 +3931,7 @@
        ],
        [
         "",
-        "No treatment has been given and nothing is owed at this stage."
-       ],
-       [
-        "",
-        "Appointment request · no accounting entry"
+        "No treatment has been given."
        ]
       ],
       "lines": []
@@ -3970,11 +3962,7 @@
        ],
        [
         "",
-        "No treatment has been given and nothing is owed at this stage."
-       ],
-       [
-        "",
-        "Appointment request · no accounting entry"
+        "No treatment has been given."
        ]
       ],
       "lines": []
@@ -5746,10 +5734,6 @@
        [
         "",
         "Nothing has been ordered against this notice."
-       ],
-       [
-        "",
-        "Price list · no accounting entry"
        ]
       ],
       "lines": [
@@ -5800,10 +5784,6 @@
        [
         "",
         "Nothing has been ordered against this notice."
-       ],
-       [
-        "",
-        "Price list · no accounting entry"
        ]
       ],
       "lines": [
@@ -5854,10 +5834,6 @@
        [
         "",
         "Nothing has been ordered against this notice."
-       ],
-       [
-        "",
-        "Price list · no accounting entry"
        ]
       ],
       "lines": [

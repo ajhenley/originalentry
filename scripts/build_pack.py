@@ -115,8 +115,12 @@ def _ref(txn) -> str:
     return f"D{txn['no']:02d}"
 
 
-def _face_amount(txn, profile) -> int | None:
-    """What the document itself is for, in cents.
+def _face_amount_branch(txn, profile) -> tuple[str, int]:
+    """Which of the chain's branches resolves this document's face amount, and the figure from it.
+
+    ``_face_amount`` is a thin wrapper around this, so the two can never disagree about which
+    branch fired: naming a document's branch never means re-walking its lines by a second,
+    separate reading of the chain.
 
     Cash where cash moves, otherwise the receivable or the payable. Summing the debits would
     double-count a sale, which also posts cost of goods sold. Which accounts mean "cash",
@@ -129,6 +133,12 @@ def _face_amount(txn, profile) -> int | None:
     fallback's failure mode. A profile that declares no such account (most document sets have no
     sales returns at all) is unaffected: this adds a new, optional check, no companies gain lines
     they could not already produce.
+
+    "fallback" is the last resort, a plain sum of the debits — right only where a document's debits
+    carry no other account the chain already prices. tests/unit/test_face_amount_branches.py pins
+    which Riverbend documents reach it, because a document silently routed there is where a
+    fabricated figure comes from (D16 once reached it this way, before the "returns" branch
+    existed, and printed a number in nobody's books).
     """
     cash = int(profile.FACE_ACCOUNTS["cash"])
     receivable = int(profile.FACE_ACCOUNTS["receivable"])
@@ -137,19 +147,24 @@ def _face_amount(txn, profile) -> int | None:
     lines = txn["lines"]
     for account, debit, credit in lines:
         if account == cash:
-            return cents(debit or credit)
+            return "cash", cents(debit or credit)
     for account, debit, _credit in lines:
         if account == receivable and debit:
-            return cents(debit)
+            return "receivable", cents(debit)
     for account, _debit, credit in lines:
         if account == payable and credit:
-            return cents(credit)
+            return "payable", cents(credit)
     if returns is not None:
         returns = int(returns)
         for account, debit, _credit in lines:
             if account == returns and debit:
-                return cents(debit)
-    return cents(sum(d for _a, d, _c in lines))
+                return "returns", cents(debit)
+    return "fallback", cents(sum(d for _a, d, _c in lines))
+
+
+def _face_amount(txn, profile) -> int | None:
+    """What the document itself is for, in cents. See ``_face_amount_branch`` for the chain."""
+    return _face_amount_branch(txn, profile)[1]
 
 
 def _money(value: int) -> str:

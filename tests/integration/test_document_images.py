@@ -420,3 +420,39 @@ def test_a_pack_with_no_kind_still_says_what_its_documents_are(session, client, 
     body = client.get(f"/w/{workspace.public_id}/testco-alpha/documents").get_data(as_text=True)
 
     assert "sales invoice" in body
+
+
+def test_the_document_page_says_the_same_thing_the_list_did(session, client, instructor):
+    """The list's Type column was taught to print `kind`; the document's own page still printed
+    `doc_type`. So the same artefact was a "void cheque" in the list and a "source document" one
+    click later, and the two surfaces disagreed about what the student was holding — a
+    disagreement that did not exist before the column was fixed.
+
+    The fixture's `type` is sales_invoice and its `kind` is void_cheque, so this cannot pass by
+    reading the wrong field.
+    """
+    version = import_pack_zip(session, _zip(), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="samekind@example.edu")
+
+    body = client.get(
+        f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
+    ).get_data(as_text=True)
+
+    assert "void cheque" in body
+    assert "source document" not in body
+
+
+def test_a_document_page_with_no_kind_still_says_what_it_is(session, client, instructor):
+    """The fallback matters on the page as much as in the list: Riverbend's documents carry no
+    kind and must not head their page with a blank."""
+    pack = _screen_pack()
+    for document in pack["documents"]:
+        del document["kind"]
+    version = import_pack_zip(session, _zip(pack=pack), actor=instructor)
+    workspace, _ = _workspace_on(session, client, version, email="nokindpage@example.edu")
+
+    body = client.get(
+        f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
+    ).get_data(as_text=True)
+
+    assert "sales invoice" in body

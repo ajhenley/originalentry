@@ -2,7 +2,10 @@
 {% block heading %}{{ doc.display_ref }}{% endblock %}
 
 {% block workspace %}
-<p class="mb-4 text-sm text-muted">{{ doc.doc_type.replace('_', ' ') }} · {{ doc.doc_date.strftime('%B %-d, %Y') }}</p>
+{# Same rule as the list's Type column: the artefact's own kind where the envelope recorded one,
+   falling back to doc_type, which is the constant "source document". The two surfaces describe
+   the same artefact and must not disagree about what it is. #}
+<p class="mb-4 text-sm text-muted">{{ (kind or doc.doc_type).replace('_', ' ') }} · {{ doc.doc_date.strftime('%B %-d, %Y') }}</p>
 
 {% if guidance %}
 <div class="mb-4 callout text-sm" data-pack-content>

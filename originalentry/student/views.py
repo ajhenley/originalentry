@@ -489,6 +489,10 @@ def document(ref):
     return render_template(
         "student/document.html",
         doc=doc,
+        # What the artefact is, from the same place the list reads it. The SourceDocument row
+        # carries only doc_type, so without this the list called it a "void cheque" and its own
+        # page called it a "source document" one click later.
+        kind=manifest_doc.get("kind"),
         guidance=doc.guidance if doc.guided else None,
         alt_text=variant_doc.get("alt"),
         text_alt=text_alt,

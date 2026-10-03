@@ -91,9 +91,15 @@ def _id_to_key(session, model, pv_id, key_attr):
     }
 
 
-def _documents_by_ref(session, pv) -> dict[str, dict]:
+def documents_by_ref(session, pv) -> dict[str, dict]:
     """display_ref and doc_type are columns; kind is not -- it lives in the manifest's jsonb,
-    so the two sources are joined here rather than in the comparison."""
+    so the two sources are joined here rather than in the comparison.
+
+    No longer underscored: `cli.py`'s `packs diff` reads this too, which is a legitimate second
+    caller rather than a reason to move it. (Superseded ruling: the earlier plan was to promote
+    this and `triage_by_variant` into `version_diff.py`, but that module is pure on purpose -- no
+    session, no I/O -- and these two read the database, so moving them there would have destroyed
+    the property that makes `version_diff` testable without one.)"""
     kinds = {
         entry["ref"]: entry.get("kind")
         for entry in (pv.manifest or {}).get("documents", [])
@@ -107,7 +113,7 @@ def _documents_by_ref(session, pv) -> dict[str, dict]:
     }
 
 
-def _triage_by_variant(session, pv) -> dict[str, dict[str, bool]]:
+def triage_by_variant(session, pv) -> dict[str, dict[str, bool]]:
     rows = session.execute(
         select(Variant.code, AnswerKeyRow.payload)
         .join(AnswerKeyRow, AnswerKeyRow.variant_id == Variant.id)
@@ -203,8 +209,8 @@ def migrate_assignment(
     used_refs = {doc_old[i] for i in used_documents if i in doc_old}
     report.changed_identity = [
         change for change in identity_changes(
-            _documents_by_ref(session, old_pv), _documents_by_ref(session, to_pv),
-            _triage_by_variant(session, old_pv), _triage_by_variant(session, to_pv),
+            documents_by_ref(session, old_pv), documents_by_ref(session, to_pv),
+            triage_by_variant(session, old_pv), triage_by_variant(session, to_pv),
         )
         if change.ref in used_refs
     ]

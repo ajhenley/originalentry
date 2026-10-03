@@ -179,7 +179,7 @@ def register_cli(app: Flask) -> None:
         from sqlalchemy import select as _select
 
         from .models import ContentPack, PackVersion
-        from .packs.migrate import _documents_by_ref, _triage_by_variant
+        from .packs.migrate import documents_by_ref, triage_by_variant
         from .packs.version_diff import identity_changes
 
         pack = db.session.scalars(
@@ -198,14 +198,14 @@ def register_cli(app: Flask) -> None:
             return pv
 
         old_pv, new_pv = _version(from_version), _version(to_version)
-        old_docs = _documents_by_ref(db.session, old_pv)
-        new_docs = _documents_by_ref(db.session, new_pv)
+        old_docs = documents_by_ref(db.session, old_pv)
+        new_docs = documents_by_ref(db.session, new_pv)
 
         added = sorted(set(new_docs) - set(old_docs))
         removed = sorted(set(old_docs) - set(new_docs))
         changes = identity_changes(
             old_docs, new_docs,
-            _triage_by_variant(db.session, old_pv), _triage_by_variant(db.session, new_pv),
+            triage_by_variant(db.session, old_pv), triage_by_variant(db.session, new_pv),
         )
 
         click.echo(f"{slug} v{from_version} -> v{to_version}: "

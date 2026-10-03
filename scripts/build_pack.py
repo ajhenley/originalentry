@@ -121,10 +121,19 @@ def _face_amount(txn, profile) -> int | None:
     Cash where cash moves, otherwise the receivable or the payable. Summing the debits would
     double-count a sale, which also posts cost of goods sold. Which accounts mean "cash",
     "receivable" and "payable" is the profile's to say.
+
+    A credit memo moves none of the three: it reduces a receivable it never debits. Checked after
+    them and before the fallback, a debit to the profile's "returns" account (where one exists) is
+    the one remaining figure a document can print without double-counting — a sale's own debits
+    would still sum a revenue amount with the cost reversal behind it, which is exactly the
+    fallback's failure mode. A profile that declares no such account (most document sets have no
+    sales returns at all) is unaffected: this adds a new, optional check, no companies gain lines
+    they could not already produce.
     """
     cash = int(profile.FACE_ACCOUNTS["cash"])
     receivable = int(profile.FACE_ACCOUNTS["receivable"])
     payable = int(profile.FACE_ACCOUNTS["payable"])
+    returns = profile.FACE_ACCOUNTS.get("returns")
     lines = txn["lines"]
     for account, debit, credit in lines:
         if account == cash:
@@ -135,6 +144,11 @@ def _face_amount(txn, profile) -> int | None:
     for account, _debit, credit in lines:
         if account == payable and credit:
             return cents(credit)
+    if returns is not None:
+        returns = int(returns)
+        for account, debit, _credit in lines:
+            if account == returns and debit:
+                return cents(debit)
     return cents(sum(d for _a, d, _c in lines))
 
 

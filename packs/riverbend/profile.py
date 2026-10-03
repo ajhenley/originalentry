@@ -21,7 +21,12 @@ SUBSIDIARY = {"105": "customer", "201": "supplier"}
 # What a document is for, in cents: cash where cash moves, otherwise the receivable or the
 # payable. The clinic happens to use the same three numbers, which is exactly why leaving them
 # as literals in the translator would go unnoticed until a company that does not.
-FACE_ACCOUNTS = {"cash": "101", "receivable": "105", "payable": "201"}
+#
+# "returns" (Sales Returns and Allowances, 402) is Riverbend's alone: the one document that needs
+# it is the credit memo, CM-118, whose own lines move no cash, no receivable debit and no payable
+# credit. Left unset, the clinic is unaffected — _face_amount treats a missing key as "this
+# company has no such figure", not as an error.
+FACE_ACCOUNTS = {"cash": "101", "receivable": "105", "payable": "201", "returns": "402"}
 
 # A vendor who first appears during the month, so Riverbend never meant it to live in
 # generators/companies/riverbend.py's VENDORS. The clinic never traded with this supplier at
@@ -229,7 +234,11 @@ REFERENCE_PAGES = [
 # Transaction numbers extra_fields special-cases, kept apart from the literal ifs so check() can
 # confirm they still exist. Riverbend has 28 transactions; a company with fewer (the clinic has
 # 15) would make every one of these branches dead, silently, with nothing reporting it.
-_SPECIAL_TRANSACTIONS = {18, 24, 25, 26, 27}
+#
+# 14 and 23 are the two customer remittances whose own cash figure cannot be journalised without
+# the invoice it is paying off; 16 is the credit memo, whose returns-account face amount
+# (FACE_ACCOUNTS["returns"]) still needs the item and the invoice it was taken against.
+_SPECIAL_TRANSACTIONS = {14, 16, 18, 23, 24, 25, 26, 27}
 
 
 def extra_fields(txn, model, money, cents, *, stage):
@@ -248,6 +257,16 @@ def extra_fields(txn, model, money, cents, *, stage):
     if stage == "furniture":
         if txn["doc"] == "Cash register tape":
             return [["Register", "1"], ["Clerk", "04"]]
+        # Every sales invoice prints these terms on its own face (the paper generator's own
+        # invoice body, ../practicesets/generators/gendocs.py, "Terms 2/10, n/30"; the incoming
+        # customer purchase order corroborates the same figure). The model's meta dict never
+        # carries them -- "terms" there is only ever set for a vendor's own invoice -- so the
+        # generic furniture loop in build_pack.py, which reads meta["terms"], never sees a
+        # customer's. Scoped to the transactions that actually produce a sales invoice
+        # (model.DOCS["purchase_orders"]' own keys, the same set the paper generator invoices
+        # against) rather than "any document with ar", which would also catch the remittances.
+        if txn["no"] in model.DOCS.get("purchase_orders", {}):
+            return [["Terms", "2/10, n/30"]]
         return []
 
     # stage == "detail": the breakdowns a stub carries because the face amount alone cannot be
@@ -271,6 +290,42 @@ def extra_fields(txn, model, money, cents, *, stage):
                    ["State income tax payable", money(cents(640))]]
     if txn["no"] == 18:
         fields += [["Invoice", "N-8841, 7,860.00"], ["Discount taken", "1%, 78.60"]]
+    if txn["no"] == 14:
+        # Remittance 4871: the customer's own arithmetic, read off the printed remittance
+        # advice (../practicesets/companies/riverbend.py, DOCS["remittances"][14]'s body) --
+        # invoice 4871's gross, the 2% cash discount taken, and what was remitted. Derived from
+        # this variant's own booked lines rather than retyped, so it cannot drift from the entry
+        # it explains. "Paid within the discount period." is that advice's own note and is
+        # deliberately left off: it is the answer, not the arithmetic.
+        gross = next(credit for account, _debit, credit in txn["lines"] if account == 105)
+        discount = next(debit for account, debit, _credit in txn["lines"] if account == 403)
+        remitted = next(debit for account, debit, _credit in txn["lines"] if account == 101)
+        fields += [["Invoice", "4871"],
+                   ["Invoice amount", money(cents(gross))],
+                   ["Less 2% cash discount", f"({money(cents(discount))})"],
+                   ["Remitted", money(cents(remitted))]]
+    if txn["no"] == 16:
+        # Credit memo CM-118: the invoice it is credited against and the one item returned, both
+        # read off the printed memo (../practicesets/generators/gendocs.py's credit-memorandum
+        # section and DOCS["credit_memo"]). The 395.00 cost reversal is deliberately not here --
+        # it comes from the inventory reference page, which is the exercise.
+        fields += [["Against invoice", "4872"],
+                   ["Item returned", "1 Cascade 29er mountain bike, 640.00"]]
+    if txn["no"] == 23:
+        # Remittance 4872: invoice 4872's gross and the credit memo already taken against it are
+        # both fixed (S-02's price never varies by version), so the only figure that varies here
+        # is none at all -- but it is still read off this variant's own booked cash line rather
+        # than hand-typed, for the same reason as 14. The 2% deduction the customer was not
+        # entitled to is company arithmetic, not a confession; the paper remittance carries no
+        # note on this one (DOCS["remittances"][23]'s note is None) and neither does this.
+        balance = 5120 - 640
+        short = round(balance * 0.02, 2)
+        remitted = next(debit for account, debit, _credit in txn["lines"] if account == 101)
+        fields += [["Invoice", "4872"],
+                   ["Invoice amount", "5,120.00"],
+                   ["Less credit memo CM-118", "(640.00)"],
+                   ["Less 2% deducted", f"({money(cents(short))})"],
+                   ["Remitted", money(cents(remitted))]]
     if txn["no"] == 27:
         fields += [["Delivery", money(cents(190))], ["Office supplies", money(cents(275))],
                    ["Advertising", money(cents(155))]]
@@ -305,6 +360,25 @@ def check(model):
     missing = _SPECIAL_TRANSACTIONS - numbers
     if missing:
         raise SystemExit(f"{COMPANY['slug']}: no transaction numbered {sorted(missing)}.")
+
+    # FACE_ACCOUNTS entries must name an account the chart actually has -- "returns" included,
+    # since a typo there would make _face_amount's returns check silently never fire rather than
+    # raise, and the credit memo would go back to summing debits.
+    for role, account in FACE_ACCOUNTS.items():
+        if int(account) not in model.ACCT_NAME:
+            raise SystemExit(
+                f"{COMPANY['slug']}: FACE_ACCOUNTS[{role!r}] names account {account}, which is "
+                f"not in the chart. Nothing was written."
+            )
+
+    # extra_fields' Terms branch is keyed off model.DOCS["purchase_orders"]; if that ever went
+    # empty the branch would die exactly as silently as a dropped literal in _SPECIAL_TRANSACTIONS
+    # would, just one step removed from the set this function already guards.
+    if not model.DOCS.get("purchase_orders"):
+        raise SystemExit(
+            f"{COMPANY['slug']}: model.DOCS has no purchase_orders; extra_fields' sales-invoice "
+            f"Terms branch would never fire. Nothing was written."
+        )
 
     # Every journal column that names an account must point at an account the chart actually
     # has, and its label must not contradict the chart's own name for it.

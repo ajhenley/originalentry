@@ -938,6 +938,10 @@
         "Cascade Cyclery"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "4,080.00"
        ]
@@ -968,6 +972,10 @@
         "Cascade Cyclery"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "4,200.00"
        ]
@@ -996,6 +1004,10 @@
        [
         "Customer",
         "Cascade Cyclery"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
        ],
        [
         "Amount",
@@ -1268,6 +1280,10 @@
         "Trailhead Sports"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "5,120.00"
        ]
@@ -1298,6 +1314,10 @@
         "Trailhead Sports"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "5,120.00"
        ]
@@ -1326,6 +1346,10 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
        ],
        [
         "Amount",
@@ -1738,6 +1762,10 @@
         "Pedal & Post"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "3,620.00"
        ]
@@ -1774,6 +1802,10 @@
         "Pedal & Post"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "3,680.00"
        ]
@@ -1808,6 +1840,10 @@
        [
         "Customer",
         "Pedal & Post"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
        ],
        [
         "Amount",
@@ -1961,6 +1997,10 @@
         "Summit Wheelworks"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "3,255.00"
        ]
@@ -1997,6 +2037,10 @@
         "Summit Wheelworks"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "3,255.00"
        ]
@@ -2031,6 +2075,10 @@
        [
         "Customer",
         "Summit Wheelworks"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
        ],
        [
         "Amount",
@@ -2342,6 +2390,22 @@
         "Cascade Cyclery"
        ],
        [
+        "Invoice",
+        "4871"
+       ],
+       [
+        "Invoice amount",
+        "4,080.00"
+       ],
+       [
+        "Less 2% cash discount",
+        "(81.60)"
+       ],
+       [
+        "Remitted",
+        "3,998.40"
+       ],
+       [
         "Amount",
         "3,998.40"
        ]
@@ -2365,6 +2429,22 @@
         "Cascade Cyclery"
        ],
        [
+        "Invoice",
+        "4871"
+       ],
+       [
+        "Invoice amount",
+        "4,200.00"
+       ],
+       [
+        "Less 2% cash discount",
+        "(84.00)"
+       ],
+       [
+        "Remitted",
+        "4,116.00"
+       ],
+       [
         "Amount",
         "4,116.00"
        ]
@@ -2386,6 +2466,22 @@
        [
         "Customer",
         "Cascade Cyclery"
+       ],
+       [
+        "Invoice",
+        "4871"
+       ],
+       [
+        "Invoice amount",
+        "4,320.00"
+       ],
+       [
+        "Less 2% cash discount",
+        "(86.40)"
+       ],
+       [
+        "Remitted",
+        "4,233.60"
        ],
        [
         "Amount",
@@ -2535,8 +2631,16 @@
         "Trailhead Sports"
        ],
        [
+        "Against invoice",
+        "4872"
+       ],
+       [
+        "Item returned",
+        "1 Cascade 29er mountain bike, 640.00"
+       ],
+       [
         "Amount",
-        "1,035.00"
+        "640.00"
        ]
       ],
       "lines": []
@@ -2558,8 +2662,16 @@
         "Trailhead Sports"
        ],
        [
+        "Against invoice",
+        "4872"
+       ],
+       [
+        "Item returned",
+        "1 Cascade 29er mountain bike, 640.00"
+       ],
+       [
         "Amount",
-        "1,035.00"
+        "640.00"
        ]
       ],
       "lines": []
@@ -2581,8 +2693,16 @@
         "Trailhead Sports"
        ],
        [
+        "Against invoice",
+        "4872"
+       ],
+       [
+        "Item returned",
+        "1 Cascade 29er mountain bike, 640.00"
+       ],
+       [
         "Amount",
-        "1,035.00"
+        "640.00"
        ]
       ],
       "lines": []
@@ -2835,6 +2955,10 @@
         "Depot Bikes"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "3,060.00"
        ]
@@ -2865,6 +2989,10 @@
         "Depot Bikes"
        ],
        [
+        "Terms",
+        "2/10, n/30"
+       ],
+       [
         "Amount",
         "3,150.00"
        ]
@@ -2893,6 +3021,10 @@
        [
         "Customer",
         "Depot Bikes"
+       ],
+       [
+        "Terms",
+        "2/10, n/30"
        ],
        [
         "Amount",
@@ -3302,6 +3434,26 @@
         "Trailhead Sports"
        ],
        [
+        "Invoice",
+        "4872"
+       ],
+       [
+        "Invoice amount",
+        "5,120.00"
+       ],
+       [
+        "Less credit memo CM-118",
+        "(640.00)"
+       ],
+       [
+        "Less 2% deducted",
+        "(89.60)"
+       ],
+       [
+        "Remitted",
+        "4,390.40"
+       ],
+       [
         "Amount",
         "4,390.40"
        ]
@@ -3325,6 +3477,26 @@
         "Trailhead Sports"
        ],
        [
+        "Invoice",
+        "4872"
+       ],
+       [
+        "Invoice amount",
+        "5,120.00"
+       ],
+       [
+        "Less credit memo CM-118",
+        "(640.00)"
+       ],
+       [
+        "Less 2% deducted",
+        "(89.60)"
+       ],
+       [
+        "Remitted",
+        "4,390.40"
+       ],
+       [
         "Amount",
         "4,390.40"
        ]
@@ -3346,6 +3518,26 @@
        [
         "Customer",
         "Trailhead Sports"
+       ],
+       [
+        "Invoice",
+        "4872"
+       ],
+       [
+        "Invoice amount",
+        "5,120.00"
+       ],
+       [
+        "Less credit memo CM-118",
+        "(640.00)"
+       ],
+       [
+        "Less 2% deducted",
+        "(89.60)"
+       ],
+       [
+        "Remitted",
+        "4,390.40"
        ],
        [
         "Amount",

@@ -32,7 +32,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = ROOT / "packs" / "riverbend" / "source.json"
-DEFAULT_OUT = ROOT / "packs" / "riverbend" / "walkthrough.pdf"
 FONTS = ROOT / "originalentry" / "static" / "fonts"
 
 # The app's own tokens, so the paper matches the screen.
@@ -294,42 +293,65 @@ def instructor_sections(src: dict, version: str, key: dict) -> str:
 
     blocks = []
     unexplained = []
+    broken = []
     # Every document in the order it arrives, not only the ones that take an entry. A document
     # silently absent from this list is indistinguishable from one the converter dropped, and
     # deciding that a document needs nothing is itself marked.
     for d in sorted(src["documents"], key=lambda d: d["received_seq"]):
         ref = d["ref"]
         entry = entries.get(ref)
-        if entry is None:
-            # From the answer key, where the reason lives (V17). It used to be read out of a
-            # "Description" row in the document's own text, which both handed the student the
-            # answer and left a pack built from a printed envelope with nothing to print.
-            why = (answer.get("triage_reasons") or {}).get(ref, "")
-            if not why.strip():
-                unexplained.append(ref)
+        # The marked judgement (V17's own field), not entry presence: the two used to disagree.
+        # Removing D01's expected entry once made this read "entry is None" and print "no entry
+        # required" with V17 then refusing the very key that produced that page, because V17 asks
+        # key.triage and this asked something else. key_record.py's printable_key already uses
+        # this shape (triage, falling back to entry presence only where a key carries none).
+        takes_entry = bool((answer.get("triage") or {}).get(ref, entry is not None))
+        if takes_entry:
+            if entry is None:
+                # A broken pack, not a document needing no entry: triage says this one takes an
+                # entry and the key holds none. Rendering around it would be as wrong as the
+                # unexplained case below — a decision has to show, even when the decision is that
+                # the pack disagrees with itself.
+                broken.append(ref)
                 continue
+            rows = []
+            for line in entry["lines"]:
+                number = line["account"]
+                label = f'{number} {account_name.get(number, "")}'.strip()
+                if line.get("party"):
+                    label += f' &mdash; {esc(party_name.get(line["party"], line["party"]))}'
+                credit = bool(line.get("credit"))
+                rows.append(
+                    f'<tr><td class="{"indent" if credit else ""}">{esc(label)}</td>'
+                    f'<td class="fig">{money(line["debit"]) if line.get("debit") else ""}</td>'
+                    f'<td class="fig">{money(line["credit"]) if credit else ""}</td></tr>'
+                )
             blocks.append(
                 f'<div class="entry"><h3>{esc(d["display_ref"])}</h3>'
-                f'<p class="meta">{d["date"]} &middot; no entry required</p>'
-                f'<p style="margin:2pt 0 0">{esc(why)}</p></div>'
+                f'<p class="meta">{d["date"]} &middot; {esc(journal_name[entry["journal"]])}</p>'
+                f'<table class="lines">{"".join(rows)}</table></div>'
             )
             continue
-        rows = []
-        for line in entry["lines"]:
-            number = line["account"]
-            label = f'{number} {account_name.get(number, "")}'.strip()
-            if line.get("party"):
-                label += f' &mdash; {esc(party_name.get(line["party"], line["party"]))}'
-            credit = bool(line.get("credit"))
-            rows.append(
-                f'<tr><td class="{"indent" if credit else ""}">{esc(label)}</td>'
-                f'<td class="fig">{money(line["debit"]) if line.get("debit") else ""}</td>'
-                f'<td class="fig">{money(line["credit"]) if credit else ""}</td></tr>'
-            )
+        # From the answer key, where the reason lives (V17). It used to be read out of a
+        # "Description" row in the document's own text, which both handed the student the answer
+        # and left a pack built from a printed envelope with nothing to print.
+        why = (answer.get("triage_reasons") or {}).get(ref, "")
+        if not why.strip():
+            unexplained.append(ref)
+            continue
         blocks.append(
             f'<div class="entry"><h3>{esc(d["display_ref"])}</h3>'
-            f'<p class="meta">{d["date"]} &middot; {esc(journal_name[entry["journal"]])}</p>'
-            f'<table class="lines">{"".join(rows)}</table></div>'
+            f'<p class="meta">{d["date"]} &middot; no entry required</p>'
+            f'<p style="margin:2pt 0 0">{esc(why)}</p></div>'
+        )
+
+    if broken:
+        raise SystemExit(
+            f"{len(broken)} document(s) take an entry and the key records none: "
+            f"{', '.join(broken)}.\n"
+            "The key's own triage says each of these needs an entry, so the key is broken rather "
+            "than the document needing nothing.\n"
+            "Nothing was written."
         )
 
     if unexplained:
@@ -375,6 +397,19 @@ and never reach the student.</p>
 """
 
 
+def _output_path(source: Path, version: str | None) -> Path:
+    """Where this walkthrough is written: beside the pack ``source`` was read from, never a
+    fixed location.
+
+    Derived from the source argument rather than hardcoded, because a hardcoded output once sat
+    under ``packs/riverbend/`` regardless of which pack's source was given — so building the
+    clinic's instructor copy silently overwrote Riverbend's committed PDF with the clinic's
+    content. The filenames themselves are unchanged.
+    """
+    name = "walkthrough.pdf" if version is None else f"walkthrough-instructor-{version}.pdf"
+    return source.resolve().parent / name
+
+
 def main() -> None:
     args = sys.argv[1:]
     versions: list[str | None] = [None]
@@ -399,8 +434,7 @@ def main() -> None:
         keys = build_pack(src).keys
 
     for version in versions:
-        out = (DEFAULT_OUT if version is None
-               else DEFAULT_OUT.with_name(f"walkthrough-instructor-{version}.pdf"))
+        out = _output_path(source, version)
         out.parent.mkdir(parents=True, exist_ok=True)
         HTML(string=build_html(src, version, keys.get(version)),
              base_url=str(ROOT)).write_pdf(out)

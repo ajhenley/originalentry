@@ -359,6 +359,45 @@ def test_every_filed_document_has_a_reason(generated):
             assert key["triage_reasons"].get(ref, "").strip(), f"{code}: {ref}"
 
 
+# Ten of the thirty-four filed documents -- the customer and vendor orders -- have an entered
+# invoice sibling right in the same envelope: the rebuild hands the base ref to whichever
+# artefact arrived first (version_diff.py's own module docstring), so the order keeps "D02" and
+# its invoice becomes "D02-2". The ref pair is asserted directly rather than discovered, because
+# nothing committed in source.json records which document is whose sibling (the envelope's own
+# shared-transaction number doesn't survive into the pack); what IS checked dynamically is that
+# the named sibling really is in the pack and really is entered, so this fails the moment either
+# ref goes away or the envelope stops entering it (I-2).
+_ORDERS_WITH_AN_ENTERED_SIBLING = {
+    "D02": "D02-2", "D05": "D05-2", "D09": "D09-2", "D11": "D11-2", "D19": "D19-2",
+    "D03": "D03-2", "D07": "D07-2", "D13": "D13-2", "D22": "D22-2", "D28": "D28-2",
+}
+
+# What the old customer_po/purchase_order sentences wrongly claimed of these ten: that nothing
+# had happened *since* the order was placed. False for all ten -- the invoice is right there.
+_COUNTERFACTUAL_PHRASES = (
+    "nothing has been shipped", "nothing has arrived", "nothing is owed", "nothing owed",
+)
+
+
+def test_a_filed_orders_reason_is_not_contradicted_by_its_entered_sibling(generated):
+    """I-2: the sentence defending why an order is filed must not claim nothing has happened
+    since it was placed, when an invoice for it is entered three documents later in the same
+    envelope. N13 -- the one customer order with no invoice behind it -- is deliberately not in
+    this set: its sentence is allowed to be silent about siblings because it has none."""
+    for code, key in generated.keys.items():
+        for order_ref, invoice_ref in _ORDERS_WITH_AN_ENTERED_SIBLING.items():
+            assert key["triage"].get(invoice_ref) is True, (
+                f"{code}: {invoice_ref} is not entered, so it is not a sibling that proves "
+                f"anything about {order_ref}"
+            )
+            reason = key["triage_reasons"].get(order_ref, "").lower()
+            offenders = [p for p in _COUNTERFACTUAL_PHRASES if p in reason]
+            assert not offenders, (
+                f"{code}: {order_ref}'s reason {key['triage_reasons'][order_ref]!r} is "
+                f"contradicted by its entered sibling {invoice_ref}: {offenders}"
+            )
+
+
 def test_the_receiving_trap_is_two_documents_again(generated):
     """D22 printed Amount 1,748.00 -- the received quantity priced out, which is the answer --
     above a line reading 1,840.00. In the envelope the invoice bills 1,840.00 and a separate

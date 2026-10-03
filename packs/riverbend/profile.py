@@ -100,10 +100,16 @@ JOURNALS = _journals()
 # they are nine kinds, so nine sentences and a mechanism beat thirty-four strings. V17 still
 # requires one reason per document; scripts/build_pack.py expands kind to ref.
 FILED_REASONS = {
-    "customer_po": "The customer's own order. Nothing has been shipped or invoiced against it "
-                   "yet, so there is nothing to record; the invoice does that.",
-    "purchase_order": "Our order to a supplier. Nothing has arrived and nothing is owed; the "
-                      "vendor's invoice records the purchase when the goods do.",
+    # These two used to say nothing had happened *yet* -- shipped, invoiced, arrived, owed -- as
+    # though the reason were timing. It is not: ten of the sixteen customer_po/purchase_order
+    # documents have an entered invoice sibling already in the envelope, so that clause was false
+    # on most of its own members. What is actually true of every member of each kind, invoiced
+    # sibling or not, is that the order itself is never what gets journalised (I-2).
+    "customer_po": "The customer's own order. It is the request, not the sale, and records "
+                   "nothing of its own; the invoice issued against it is what is recorded.",
+    "purchase_order": "Our own order to a supplier. It commits to a purchase but records "
+                      "nothing of its own; the vendor's invoice is what is recorded when the "
+                      "goods arrive.",
     "bill_of_lading": "The carrier's receipt for goods leaving the warehouse. It evidences the "
                       "shipment behind an invoice, and the invoice is what is recorded.",
     "receiving_report": "What the warehouse counted on arrival. It is the check against the "

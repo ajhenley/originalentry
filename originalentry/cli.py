@@ -217,9 +217,9 @@ def register_cli(app: Flask) -> None:
         if not changes:
             click.echo("  no document changed what it denotes")
             return
-        flipped = [c for c in changes if c.field == "triage"]
-        click.echo(f"  changed meaning: {len({c.ref for c in changes})} ref(s), "
-                   f"{len(flipped)} with a flipped triage answer")
+        flipped_refs = {c.ref for c in changes if c.field == "triage"}
+        click.echo(f"  {len({c.ref for c in changes})} ref(s) changed meaning, "
+                   f"{len(flipped_refs)} of them flipping a triage answer")
         for change in changes:
             click.echo(f"    {change.ref} {change.field}: {change.was} -> {change.now}")
 

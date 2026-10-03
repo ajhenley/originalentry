@@ -308,6 +308,7 @@ def test_only_these_profiles_check_against_a_manifest():
     the manifest it is handed would pass a signature test."""
     _require_sets()
     accepting = []
+    ignoring = []
     for slug in PROFILES:
         profile, model = _loaded(slug)
         try:
@@ -317,7 +318,14 @@ def test_only_these_profiles_check_against_a_manifest():
         except SystemExit:
             accepting.append(slug)            # refused a manifest covering none of GUIDANCE
             continue
-        accepting.append(slug)
+        # Took the manifest and returned happily on one that covers none of GUIDANCE. That is
+        # the signature of a manifest check without the check, and counting it as "accepting"
+        # is what made this test the signature test its docstring disclaims.
+        ignoring.append(slug)
+    assert not ignoring, (
+        f"{tuple(ignoring)} accept a manifest argument and pass one that covers none of "
+        f"GUIDANCE. The parameter is there; the cross-check is not."
+    )
     assert tuple(accepting) == MANIFEST_PROFILES, (
         f"{tuple(accepting)} accept a manifest but only {MANIFEST_PROFILES} are checked here. "
         f"Add the profile once its check() cross-checks GUIDANCE against what was printed."

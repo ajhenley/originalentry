@@ -293,6 +293,7 @@ def instructor_sections(src: dict, version: str, key: dict) -> str:
     entries = {e["document"]: e for e in answer["expected_entries"]}
 
     blocks = []
+    unexplained = []
     # Every document in the order it arrives, not only the ones that take an entry. A document
     # silently absent from this list is indistinguishable from one the converter dropped, and
     # deciding that a document needs nothing is itself marked.
@@ -300,7 +301,15 @@ def instructor_sections(src: dict, version: str, key: dict) -> str:
         ref = d["ref"]
         entry = entries.get(ref)
         if entry is None:
+            # A reason read off the document's own text only exists for a pack whose no-entry
+            # documents were authored with one. A pack that takes its inventory from the printed
+            # envelope has no such sentence to read, and an empty reason here is indistinguishable
+            # from a reason nobody wrote: both print "no entry required" above a blank line, in
+            # the copy an instructor marks from.
             why = dict(d["variants"][version]["text_alternative"]["fields"]).get("Description", "")
+            if not why.strip():
+                unexplained.append(ref)
+                continue
             blocks.append(
                 f'<div class="entry"><h3>{esc(d["display_ref"])}</h3>'
                 f'<p class="meta">{d["date"]} &middot; no entry required</p>'
@@ -323,6 +332,15 @@ def instructor_sections(src: dict, version: str, key: dict) -> str:
             f'<div class="entry"><h3>{esc(d["display_ref"])}</h3>'
             f'<p class="meta">{d["date"]} &middot; {esc(journal_name[entry["journal"]])}</p>'
             f'<table class="lines">{"".join(rows)}</table></div>'
+        )
+
+    if unexplained:
+        raise SystemExit(
+            f"{len(unexplained)} document(s) need no entry and record no reason why: "
+            f"{', '.join(unexplained)}.\n"
+            "The instructor copy marks that judgement, so it cannot print the decision above a "
+            "blank line. Record a reason for each, where a student will not read it.\n"
+            "Nothing was written."
         )
 
     checkpoint_rows = "".join(

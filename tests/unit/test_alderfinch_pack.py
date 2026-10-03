@@ -69,3 +69,37 @@ def test_the_pack_warns_about_nothing(generated):
     pack = schema.load_pack(generated.pack)
 
     assert list(warn_pack(pack)) == []
+
+
+# ── The instructor copy must not go out with a blank where a reason belongs ──────────────
+
+def _walkthrough(src: dict, version: str, key: dict) -> str:
+    """Load the generator by path: scripts/ is not a package, as test_riverbend_pack.py does."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[2] / "scripts" / "build_walkthrough.py"
+    spec = importlib.util.spec_from_file_location("build_walkthrough_clinic", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.instructor_sections(src, version, key)
+
+
+def test_a_filed_document_with_no_recorded_reason_stops_the_instructor_copy(generated):
+    """Riverbend's walkthrough says why each of its three no-entry documents needs none, and
+    test_the_no_entry_documents_say_so_and_say_why holds it to that. The clinic takes its
+    documents from the printed envelope, which carries no such sentence, so the same code path
+    produced eleven blocks reading "no entry required" above an empty line.
+
+    An instructor cannot tell that from a document whose reason someone forgot to write, and the
+    comment in instructor_sections says deciding a document needs nothing "is itself marked". So
+    the missing reason has to stop the copy being built and name what is missing, the way every
+    other refusal in this translator does.
+    """
+    src = json.loads(SOURCE.read_text())
+
+    with pytest.raises(SystemExit) as refusal:
+        _walkthrough(src, "A", generated.keys["A"])
+
+    message = str(refusal.value)
+    assert "Nothing was written." in message
+    assert "D03" in message and "N06" in message, message

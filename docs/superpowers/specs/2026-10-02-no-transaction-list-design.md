@@ -54,9 +54,37 @@ them. The images work fixed this for the clinic as a side effect, which is how i
 
 This is the first of two steps, and the division is deliberate.
 
-**This step removes what the pack says that the paper does not.** It is safe to apply to a live
-pack mid-course: it removes hints and changes no figure, no document count, no answer and no
-rubric. A student who has already worked twelve documents loses nothing they did.
+**This step removes what the pack says that the paper does not.** That was the whole of it through
+the first round of fixes: it removed hints and changed no figure, no document count, no answer and
+no rubric. A student who had already worked twelve documents lost nothing they did.
+
+**Correction, dated 3 October 2026 (fix round 2).** That safety claim is no longer true in its
+original, unqualified form, and this is the file the import decision gets read from, so it has to
+say plainly what changed. Review found that deleting the `Description` row had gone too far on
+three documents: it was also the student's only route to a figure the row happened to carry
+correctly, with nothing else in the pack supplying it. Those three document bodies were restored —
+figures and rows that are on the paper artefact, never the sentence that states the transaction —
+and one of them changed what the document prints.
+
+**D16's `Amount` changed from a fabricated 1,035.00 to the 640.00 the paper artefact shows, and that
+old figure had been wrong since this pack was first built**, not introduced by this branch. The
+deleted `Description` row was the one place in the pack the correct figure could be read off, via
+`_face_amount`'s `sum of debits` fallback landing on 1,035.00 — summing a credit memo's revenue
+reversal with its inventory cost reversal, which double-counts exactly the way that fallback's own
+docstring warns it can. Removing the row with nothing to replace it would have shipped a document
+nobody could journalise correctly; restoring the credit memo's own invoice and item line (what the
+paper prints) let `_face_amount` resolve the figure through a new, dedicated branch instead, and
+that branch produces the right number. D14 and D23 also gained rows this round — again, rows the
+paper prints and the pack had stopped — with no change to either document's figure.
+
+So, in full: **`answers` is byte-identical to before this step for both packs, no document was
+added or removed, no checkpoint moved and no rubric moved. One printed figure changed, from a wrong
+number to a correct one, on one document.** A student who worked D16 off 1,035.00 before import
+could not have reached the key's entry regardless, because 1,035.00 was never the figure this pack's
+marking used — `answers` never carried it. After import, D16 reads differently than it did, which
+is the one way this step is no longer "changes no figure" in the strict sense: read the corrected
+figure as the stronger form of the same safety argument, not a retreat from it. Nobody's existing
+*work* is invalidated; the *document* for D16 is.
 
 **The second step migrates Riverbend to the envelope** — 31 summary documents to 62 printed
 artefacts with images, as the clinic now is. That changes what a student is marked on and gets its

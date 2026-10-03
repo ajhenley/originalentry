@@ -110,25 +110,18 @@ NO_ENTRY_DOCUMENTS = [
         "ref": "N01", "display_ref": "Purchase order RV-2210", "date": "2026-12-15",
         "fields": [["From", "Ridgeview Cycles"], ["Purchase order", "RV-2210"],
                    ["Required delivery", "18 January"], ["Terms", "2/10, n/30"],
-                   ["Description", "Order for 6 mountain bikes, not to ship before 15 January"],
                    ["Amount", "3,840.00"]],
         "lines": [["6", "Cascade 29er mountain bike", "640.00", "3,840.00"]],
     },
     {
         "ref": "N02", "display_ref": "Request for quotation RFQ-0041", "date": "2026-12-15",
         "fields": [["From", "Halden & Coe Outfitters"], ["Reference", "RFQ-0041"],
-                   ["Description",
-                    "An enquiry about wholesale terms for 25 and 50 units. No order is placed "
-                    "and no goods are requested."],
                    ["Amount", "None stated"]],
         "lines": [],
     },
     {
         "ref": "N03", "display_ref": "Price list from Ridgeline Tires", "date": "2026-12-15",
         "fields": [["From", "Ridgeline Tires"], ["Effective", "1 January"],
-                   ["Description",
-                    "Notice of wholesale prices changing from 1 January. No goods have been "
-                    "ordered or shipped against this notice."],
                    ["Amount", "None stated"]],
         "lines": [["", "Commuter tire, pair", "32.00", "34.00 from 1 Jan"]],
     },

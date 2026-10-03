@@ -420,9 +420,6 @@ def _text_alternative(txn, model, cheques: dict, profile) -> dict:
         fields.append(["Payee", payee])
         fields.append(["For", memo])
 
-    # What the document is about, in the words on the paper.
-    fields.append(["Description", txn["desc"]])
-
     fields += profile.extra_fields(txn, model, _money, cents, stage="detail")
 
     amount = _face_amount(txn, profile)

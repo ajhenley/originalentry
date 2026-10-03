@@ -850,10 +850,6 @@
         "December rent"
        ],
        [
-        "Description",
-        "Paid December rent"
-       ],
-       [
         "Amount",
         "3,000.00"
        ]
@@ -881,10 +877,6 @@
         "December rent"
        ],
        [
-        "Description",
-        "Paid December rent"
-       ],
-       [
         "Amount",
         "3,000.00"
        ]
@@ -910,10 +902,6 @@
        [
         "For",
         "December rent"
-       ],
-       [
-        "Description",
-        "Paid December rent"
        ],
        [
         "Amount",
@@ -950,10 +938,6 @@
         "Cascade Cyclery"
        ],
        [
-        "Description",
-        "Sale on account - Cascade Cyclery"
-       ],
-       [
         "Amount",
         "4,080.00"
        ]
@@ -984,10 +968,6 @@
         "Cascade Cyclery"
        ],
        [
-        "Description",
-        "Sale on account - Cascade Cyclery"
-       ],
-       [
         "Amount",
         "4,200.00"
        ]
@@ -1016,10 +996,6 @@
        [
         "Customer",
         "Cascade Cyclery"
-       ],
-       [
-        "Description",
-        "Sale on account - Cascade Cyclery"
        ],
        [
         "Amount",
@@ -1079,10 +1055,6 @@
         "Norsk Frame Works"
        ],
        [
-        "Description",
-        "Purchased 30 framesets, terms 1/15 n/30"
-       ],
-       [
         "Amount",
         "7,860.00"
        ]
@@ -1129,10 +1101,6 @@
         "Norsk Frame Works"
        ],
        [
-        "Description",
-        "Purchased 30 framesets, terms 1/15 n/30"
-       ],
-       [
         "Amount",
         "7,860.00"
        ]
@@ -1177,10 +1145,6 @@
        [
         "Supplier",
         "Norsk Frame Works"
-       ],
-       [
-        "Description",
-        "Purchased 30 framesets, terms 1/15 n/30"
        ],
        [
         "Amount",
@@ -1224,10 +1188,6 @@
         "Depot Bikes"
        ],
        [
-        "Description",
-        "Depot Bikes pays Nov 24 invoice in full"
-       ],
-       [
         "Amount",
         "6,180.00"
        ]
@@ -1251,10 +1211,6 @@
         "Depot Bikes"
        ],
        [
-        "Description",
-        "Depot Bikes pays Nov 24 invoice in full"
-       ],
-       [
         "Amount",
         "6,180.00"
        ]
@@ -1276,10 +1232,6 @@
        [
         "Customer",
         "Depot Bikes"
-       ],
-       [
-        "Description",
-        "Depot Bikes pays Nov 24 invoice in full"
        ],
        [
         "Amount",
@@ -1316,10 +1268,6 @@
         "Trailhead Sports"
        ],
        [
-        "Description",
-        "Sale on account - Trailhead Sports"
-       ],
-       [
         "Amount",
         "5,120.00"
        ]
@@ -1350,10 +1298,6 @@
         "Trailhead Sports"
        ],
        [
-        "Description",
-        "Sale on account - Trailhead Sports"
-       ],
-       [
         "Amount",
         "5,120.00"
        ]
@@ -1382,10 +1326,6 @@
        [
         "Customer",
         "Trailhead Sports"
-       ],
-       [
-        "Description",
-        "Sale on account - Trailhead Sports"
        ],
        [
         "Amount",
@@ -1433,10 +1373,6 @@
         "Utilities — November service"
        ],
        [
-        "Description",
-        "Paid utilities"
-       ],
-       [
         "Amount",
         "420.00"
        ]
@@ -1464,10 +1400,6 @@
         "Utilities — November service"
        ],
        [
-        "Description",
-        "Paid utilities"
-       ],
-       [
         "Amount",
         "420.00"
        ]
@@ -1493,10 +1425,6 @@
        [
         "For",
         "Utilities — November service"
-       ],
-       [
-        "Description",
-        "Paid utilities"
        ],
        [
         "Amount",
@@ -1553,10 +1481,6 @@
         "Cassette & Chain Co."
        ],
        [
-        "Description",
-        "60 cassettes + 40 chains, FOB shipping point, freight $140 prepaid and added"
-       ],
-       [
         "Amount",
         "2,980.00"
        ]
@@ -1619,10 +1543,6 @@
         "Cassette & Chain Co."
        ],
        [
-        "Description",
-        "60 cassettes + 40 chains, FOB shipping point, freight $140 prepaid and added"
-       ],
-       [
         "Amount",
         "2,980.00"
        ]
@@ -1683,10 +1603,6 @@
        [
         "Supplier",
         "Cassette & Chain Co."
-       ],
-       [
-        "Description",
-        "60 cassettes + 40 chains, FOB shipping point, freight $140 prepaid and added"
        ],
        [
         "Amount",
@@ -1742,10 +1658,6 @@
         "Kingman Cycle Works"
        ],
        [
-        "Description",
-        "Kingman Cycle Works pays Nov 28 invoice"
-       ],
-       [
         "Amount",
         "7,250.00"
        ]
@@ -1769,10 +1681,6 @@
         "Kingman Cycle Works"
        ],
        [
-        "Description",
-        "Kingman Cycle Works pays Nov 28 invoice"
-       ],
-       [
         "Amount",
         "7,250.00"
        ]
@@ -1794,10 +1702,6 @@
        [
         "Customer",
         "Kingman Cycle Works"
-       ],
-       [
-        "Description",
-        "Kingman Cycle Works pays Nov 28 invoice"
        ],
        [
         "Amount",
@@ -1832,10 +1736,6 @@
        [
         "Customer",
         "Pedal & Post"
-       ],
-       [
-        "Description",
-        "Sale on account - Pedal & Post"
        ],
        [
         "Amount",
@@ -1874,10 +1774,6 @@
         "Pedal & Post"
        ],
        [
-        "Description",
-        "Sale on account - Pedal & Post"
-       ],
-       [
         "Amount",
         "3,680.00"
        ]
@@ -1912,10 +1808,6 @@
        [
         "Customer",
         "Pedal & Post"
-       ],
-       [
-        "Description",
-        "Sale on account - Pedal & Post"
        ],
        [
         "Amount",
@@ -1973,10 +1865,6 @@
         "On account — November balance"
        ],
        [
-        "Description",
-        "Paid Norsk Frame Works November balance"
-       ],
-       [
         "Amount",
         "12,400.00"
        ]
@@ -2008,10 +1896,6 @@
         "On account — November balance"
        ],
        [
-        "Description",
-        "Paid Norsk Frame Works November balance"
-       ],
-       [
         "Amount",
         "12,400.00"
        ]
@@ -2041,10 +1925,6 @@
        [
         "For",
         "On account — November balance"
-       ],
-       [
-        "Description",
-        "Paid Norsk Frame Works November balance"
        ],
        [
         "Amount",
@@ -2081,10 +1961,6 @@
         "Summit Wheelworks"
        ],
        [
-        "Description",
-        "Sale on account - Summit Wheelworks"
-       ],
-       [
         "Amount",
         "3,255.00"
        ]
@@ -2121,10 +1997,6 @@
         "Summit Wheelworks"
        ],
        [
-        "Description",
-        "Sale on account - Summit Wheelworks"
-       ],
-       [
         "Amount",
         "3,255.00"
        ]
@@ -2159,10 +2031,6 @@
        [
         "Customer",
         "Summit Wheelworks"
-       ],
-       [
-        "Description",
-        "Sale on account - Summit Wheelworks"
        ],
        [
         "Amount",
@@ -2216,10 +2084,6 @@
         "04"
        ],
        [
-        "Description",
-        "Cash sale"
-       ],
-       [
         "Amount",
         "312.00"
        ]
@@ -2254,10 +2118,6 @@
         "04"
        ],
        [
-        "Description",
-        "Cash sale"
-       ],
-       [
         "Amount",
         "312.00"
        ]
@@ -2290,10 +2150,6 @@
        [
         "Clerk",
         "04"
-       ],
-       [
-        "Description",
-        "Cash sale"
        ],
        [
         "Amount",
@@ -2353,10 +2209,6 @@
         "Halcyon Components"
        ],
        [
-        "Description",
-        "18 brake sets, terms n/30"
-       ],
-       [
         "Amount",
         "1,584.00"
        ]
@@ -2403,10 +2255,6 @@
         "Halcyon Components"
        ],
        [
-        "Description",
-        "18 brake sets, terms n/30"
-       ],
-       [
         "Amount",
         "1,584.00"
        ]
@@ -2451,10 +2299,6 @@
        [
         "Supplier",
         "Halcyon Components"
-       ],
-       [
-        "Description",
-        "18 brake sets, terms n/30"
        ],
        [
         "Amount",
@@ -2498,10 +2342,6 @@
         "Cascade Cyclery"
        ],
        [
-        "Description",
-        "Cascade Cyclery pays inv 4871 within discount period"
-       ],
-       [
         "Amount",
         "3,998.40"
        ]
@@ -2525,10 +2365,6 @@
         "Cascade Cyclery"
        ],
        [
-        "Description",
-        "Cascade Cyclery pays inv 4871 within discount period"
-       ],
-       [
         "Amount",
         "4,116.00"
        ]
@@ -2550,10 +2386,6 @@
        [
         "Customer",
         "Cascade Cyclery"
-       ],
-       [
-        "Description",
-        "Cascade Cyclery pays inv 4871 within discount period"
        ],
        [
         "Amount",
@@ -2594,10 +2426,6 @@
         "04"
        ],
        [
-        "Description",
-        "Cash sale"
-       ],
-       [
         "Amount",
         "372.00"
        ]
@@ -2632,10 +2460,6 @@
         "04"
        ],
        [
-        "Description",
-        "Cash sale"
-       ],
-       [
         "Amount",
         "372.00"
        ]
@@ -2668,10 +2492,6 @@
        [
         "Clerk",
         "04"
-       ],
-       [
-        "Description",
-        "Cash sale"
        ],
        [
         "Amount",
@@ -2715,10 +2535,6 @@
         "Trailhead Sports"
        ],
        [
-        "Description",
-        "Trailhead Sports returns 1 mountain bike"
-       ],
-       [
         "Amount",
         "1,035.00"
        ]
@@ -2742,10 +2558,6 @@
         "Trailhead Sports"
        ],
        [
-        "Description",
-        "Trailhead Sports returns 1 mountain bike"
-       ],
-       [
         "Amount",
         "1,035.00"
        ]
@@ -2767,10 +2579,6 @@
        [
         "Customer",
         "Trailhead Sports"
-       ],
-       [
-        "Description",
-        "Trailhead Sports returns 1 mountain bike"
        ],
        [
         "Amount",
@@ -2811,10 +2619,6 @@
         "Advertising — December schedule"
        ],
        [
-        "Description",
-        "Paid advertising"
-       ],
-       [
         "Amount",
         "1,850.00"
        ]
@@ -2842,10 +2646,6 @@
         "Advertising — December schedule"
        ],
        [
-        "Description",
-        "Paid advertising"
-       ],
-       [
         "Amount",
         "1,850.00"
        ]
@@ -2871,10 +2671,6 @@
        [
         "For",
         "Advertising — December schedule"
-       ],
-       [
-        "Description",
-        "Paid advertising"
        ],
        [
         "Amount",
@@ -2919,10 +2715,6 @@
         "Invoice N-8841 less 1% discount"
        ],
        [
-        "Description",
-        "Paid Norsk inv N-8841 within 1/15 discount"
-       ],
-       [
         "Invoice",
         "N-8841, 7,860.00"
        ],
@@ -2962,10 +2754,6 @@
         "Invoice N-8841 less 1% discount"
        ],
        [
-        "Description",
-        "Paid Norsk inv N-8841 within 1/15 discount"
-       ],
-       [
         "Invoice",
         "N-8841, 7,860.00"
        ],
@@ -3003,10 +2791,6 @@
        [
         "For",
         "Invoice N-8841 less 1% discount"
-       ],
-       [
-        "Description",
-        "Paid Norsk inv N-8841 within 1/15 discount"
        ],
        [
         "Invoice",
@@ -3051,10 +2835,6 @@
         "Depot Bikes"
        ],
        [
-        "Description",
-        "Sale on account - Depot Bikes"
-       ],
-       [
         "Amount",
         "3,060.00"
        ]
@@ -3085,10 +2865,6 @@
         "Depot Bikes"
        ],
        [
-        "Description",
-        "Sale on account - Depot Bikes"
-       ],
-       [
         "Amount",
         "3,150.00"
        ]
@@ -3117,10 +2893,6 @@
        [
         "Customer",
         "Depot Bikes"
-       ],
-       [
-        "Description",
-        "Sale on account - Depot Bikes"
        ],
        [
         "Amount",
@@ -3164,10 +2936,6 @@
         "Summit Wheelworks"
        ],
        [
-        "Description",
-        "Summit Wheelworks pays Nov 30 invoice"
-       ],
-       [
         "Amount",
         "6,900.00"
        ]
@@ -3191,10 +2959,6 @@
         "Summit Wheelworks"
        ],
        [
-        "Description",
-        "Summit Wheelworks pays Nov 30 invoice"
-       ],
-       [
         "Amount",
         "6,900.00"
        ]
@@ -3216,10 +2980,6 @@
        [
         "Customer",
         "Summit Wheelworks"
-       ],
-       [
-        "Description",
-        "Summit Wheelworks pays Nov 30 invoice"
        ],
        [
         "Amount",
@@ -3260,10 +3020,6 @@
         "04"
        ],
        [
-        "Description",
-        "Cash sale"
-       ],
-       [
         "Amount",
         "72.00"
        ]
@@ -3298,10 +3054,6 @@
         "04"
        ],
        [
-        "Description",
-        "Cash sale"
-       ],
-       [
         "Amount",
         "72.00"
        ]
@@ -3334,10 +3086,6 @@
        [
         "Clerk",
         "04"
-       ],
-       [
-        "Description",
-        "Cash sale"
        ],
        [
         "Amount",
@@ -3405,10 +3153,6 @@
         "Brightline Accessories"
        ],
        [
-        "Description",
-        "Brightline bills 40 racks; receiving report shows 38 received"
-       ],
-       [
         "Amount",
         "1,748.00"
        ]
@@ -3461,10 +3205,6 @@
        [
         "Supplier",
         "Brightline Accessories"
-       ],
-       [
-        "Description",
-        "Brightline bills 44 racks; receiving report shows 42 received"
        ],
        [
         "Amount",
@@ -3521,10 +3261,6 @@
         "Brightline Accessories"
        ],
        [
-        "Description",
-        "Brightline bills 48 racks; receiving report shows 46 received"
-       ],
-       [
         "Amount",
         "2,116.00"
        ]
@@ -3566,10 +3302,6 @@
         "Trailhead Sports"
        ],
        [
-        "Description",
-        "Trailhead Sports remits 4,390.40 on a 4,480.00 balance, deducting 2% outside the discount period"
-       ],
-       [
         "Amount",
         "4,390.40"
        ]
@@ -3593,10 +3325,6 @@
         "Trailhead Sports"
        ],
        [
-        "Description",
-        "Trailhead Sports remits 4,390.40 on a 4,480.00 balance, deducting 2% outside the discount period"
-       ],
-       [
         "Amount",
         "4,390.40"
        ]
@@ -3618,10 +3346,6 @@
        [
         "Customer",
         "Trailhead Sports"
-       ],
-       [
-        "Description",
-        "Trailhead Sports remits 4,390.40 on a 4,480.00 balance, deducting 2% outside the discount period"
        ],
        [
         "Amount",
@@ -3662,10 +3386,6 @@
         "Semimonthly payroll 1–15 December"
        ],
        [
-        "Description",
-        "Semimonthly payroll, Dec 1-15"
-       ],
-       [
         "Gross pay",
         "6,800.00"
        ],
@@ -3717,10 +3437,6 @@
         "Semimonthly payroll 1–15 December"
        ],
        [
-        "Description",
-        "Semimonthly payroll, Dec 1-15"
-       ],
-       [
         "Gross pay",
         "6,800.00"
        ],
@@ -3770,10 +3486,6 @@
        [
         "For",
         "Semimonthly payroll 1–15 December"
-       ],
-       [
-        "Description",
-        "Semimonthly payroll, Dec 1-15"
        ],
        [
         "Gross pay",
@@ -3830,10 +3542,6 @@
         "Payroll register"
        ],
        [
-        "Description",
-        "Employer FICA on the Dec 15 payroll"
-       ],
-       [
         "Employer FICA",
         "520.20"
        ],
@@ -3857,10 +3565,6 @@
         "Payroll register"
        ],
        [
-        "Description",
-        "Employer FICA on the Dec 15 payroll"
-       ],
-       [
         "Employer FICA",
         "520.20"
        ],
@@ -3882,10 +3586,6 @@
        [
         "Document",
         "Payroll register"
-       ],
-       [
-        "Description",
-        "Employer FICA on the Dec 15 payroll"
        ],
        [
         "Employer FICA",
@@ -3930,10 +3630,6 @@
         "November payroll taxes remitted"
        ],
        [
-        "Description",
-        "Remitted November payroll taxes"
-       ],
-       [
         "FICA payable",
         "1,430.00"
        ],
@@ -3973,10 +3669,6 @@
         "November payroll taxes remitted"
        ],
        [
-        "Description",
-        "Remitted November payroll taxes"
-       ],
-       [
         "FICA payable",
         "1,430.00"
        ],
@@ -4014,10 +3706,6 @@
        [
         "For",
         "November payroll taxes remitted"
-       ],
-       [
-        "Description",
-        "Remitted November payroll taxes"
        ],
        [
         "FICA payable",
@@ -4070,10 +3758,6 @@
         "Reimbursement — vouchers 41–45"
        ],
        [
-        "Description",
-        "Reimbursed petty cash - vouchers 41-46"
-       ],
-       [
         "Delivery",
         "190.00"
        ],
@@ -4113,10 +3797,6 @@
         "Reimbursement — vouchers 41–45"
        ],
        [
-        "Description",
-        "Reimbursed petty cash - vouchers 41-46"
-       ],
-       [
         "Delivery",
         "190.00"
        ],
@@ -4154,10 +3834,6 @@
        [
         "For",
         "Reimbursement — vouchers 41–45"
-       ],
-       [
-        "Description",
-        "Reimbursed petty cash - vouchers 41-46"
        ],
        [
         "Delivery",
@@ -4218,10 +3894,6 @@
         "Kestrel Office Supply"
        ],
        [
-        "Description",
-        "Office supplies on account, Kestrel Office Supply"
-       ],
-       [
         "Amount",
         "340.00"
        ]
@@ -4264,10 +3936,6 @@
         "Kestrel Office Supply"
        ],
        [
-        "Description",
-        "Office supplies on account, Kestrel Office Supply"
-       ],
-       [
         "Amount",
         "340.00"
        ]
@@ -4308,10 +3976,6 @@
        [
         "Supplier",
         "Kestrel Office Supply"
-       ],
-       [
-        "Description",
-        "Office supplies on account, Kestrel Office Supply"
        ],
        [
         "Amount",
@@ -4367,10 +4031,6 @@
         "2/10, n/30"
        ],
        [
-        "Description",
-        "Order for 6 mountain bikes, not to ship before 15 January"
-       ],
-       [
         "Amount",
         "3,840.00"
        ]
@@ -4413,10 +4073,6 @@
         "2/10, n/30"
        ],
        [
-        "Description",
-        "Order for 6 mountain bikes, not to ship before 15 January"
-       ],
-       [
         "Amount",
         "3,840.00"
        ]
@@ -4457,10 +4113,6 @@
        [
         "Terms",
         "2/10, n/30"
-       ],
-       [
-        "Description",
-        "Order for 6 mountain bikes, not to ship before 15 January"
        ],
        [
         "Amount",
@@ -4508,10 +4160,6 @@
         "RFQ-0041"
        ],
        [
-        "Description",
-        "An enquiry about wholesale terms for 25 and 50 units. No order is placed and no goods are requested."
-       ],
-       [
         "Amount",
         "None stated"
        ]
@@ -4539,10 +4187,6 @@
         "RFQ-0041"
        ],
        [
-        "Description",
-        "An enquiry about wholesale terms for 25 and 50 units. No order is placed and no goods are requested."
-       ],
-       [
         "Amount",
         "None stated"
        ]
@@ -4568,10 +4212,6 @@
        [
         "Reference",
         "RFQ-0041"
-       ],
-       [
-        "Description",
-        "An enquiry about wholesale terms for 25 and 50 units. No order is placed and no goods are requested."
        ],
        [
         "Amount",
@@ -4612,10 +4252,6 @@
         "1 January"
        ],
        [
-        "Description",
-        "Notice of wholesale prices changing from 1 January. No goods have been ordered or shipped against this notice."
-       ],
-       [
         "Amount",
         "None stated"
        ]
@@ -4650,10 +4286,6 @@
         "1 January"
        ],
        [
-        "Description",
-        "Notice of wholesale prices changing from 1 January. No goods have been ordered or shipped against this notice."
-       ],
-       [
         "Amount",
         "None stated"
        ]
@@ -4686,10 +4318,6 @@
        [
         "Effective",
         "1 January"
-       ],
-       [
-        "Description",
-        "Notice of wholesale prices changing from 1 January. No goods have been ordered or shipped against this notice."
        ],
        [
         "Amount",

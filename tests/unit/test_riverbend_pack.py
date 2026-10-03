@@ -133,14 +133,20 @@ def test_the_subsidiary_ledgers_are_wired(generated):
 # and nothing in the pack rules would have caught it: it is a perfectly valid pack.
 
 @pytest.mark.parametrize("version", ["A", "B", "C"])
-def test_every_document_says_what_it_is_for_and_how_much(generated, version):
+def test_every_document_says_how_much_without_saying_what_happened(generated, version):
+    """The Amount half is unchanged. The Description half asserted the defect: it required
+    every document to carry the transaction's own description, which is the transaction list
+    the set is built not to give.
+    """
     pack = schema.load_pack(generated.pack)
 
     for document in pack.documents:
         text = document.variants[version].text_alternative
         labels = {label for label, _ in text.fields}
         assert "Amount" in labels, f"{document.display_ref} carries no amount"
-        assert "Description" in labels, f"{document.display_ref} says nothing about itself"
+        assert "Description" not in labels, (
+            f"{document.display_ref} describes the transaction to the student"
+        )
 
 
 @pytest.mark.parametrize("version", ["A", "B", "C"])

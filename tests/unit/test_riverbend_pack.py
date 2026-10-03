@@ -159,6 +159,50 @@ def test_every_cash_document_prints_the_figure_the_key_expects(generated, versio
     assert len(checked) == 16, checked
 
 
+@pytest.mark.parametrize("version", ["A", "B", "C"])
+def test_the_credit_memos_printed_total_is_the_returns_debit_the_key_expects(generated, version):
+    """D16 is the one document the test above cannot reach, and the one a deleted guard named.
+
+    test_every_cash_document_prints_the_figure_the_key_expects is scoped to account 101, and
+    D16's entry has no cash line at all -- 402 Dr 640.00, 105 Cr 640.00, 110 Dr 395.00, 501 Cr
+    395.00 -- so the credit memo sat outside it with nothing in this repository tying its printed
+    total to the figure a student is marked against. Upstream the two are independent literals in
+    ../practicesets/companies/riverbend.py: the memo's item line and the transaction's 402 debit.
+    The paper set does assert them equal in its own gendocs.py, but from here that is reachable
+    only through a subprocess fixture in another module, so a divergence would arrive as a
+    CalledProcessError with the message swallowed -- which is not proof of this property any more
+    than a fixture error was proof of the ones it was offered for.
+
+    Scoped to the returns account on purpose, and NOT by widening the cash test to every
+    FACE_ACCOUNTS entry, which would be the tidier-looking change and would be wrong: the key's
+    payable credit on D22-2 is 1,748.00 against a printed total of 1,840.00, because the receiving
+    report says 38 of 40 arrived. That gap is the designed error. A test requiring the two to
+    agree would demand the trap be removed.
+
+    The document is found by its own returns debit rather than named D16, and there must be
+    exactly one, so the case cannot quietly stop covering anything.
+    """
+    returns = "402"
+    entries = [entry for entry in generated.keys[version]["expected_entries"]
+               if any(line["account"] == returns and line.get("debit") for line in entry["lines"])]
+
+    assert len(entries) == 1, [entry["document"] for entry in entries]
+    entry = entries[0]
+    debited = next(line["debit"] for line in entry["lines"]
+                   if line["account"] == returns and line.get("debit"))
+
+    document = next(d for d in json.loads(SOURCE.read_text())["documents"]
+                    if d["ref"] == entry["document"])
+    rows = document["variants"][version]["text_alternative"]["lines"]
+    total = next((row[-1] for row in rows if row and row[0] == "Total"), None)
+
+    assert total is not None, f"{entry['document']} prints no Total row to read: {rows}"
+    assert total == f"{debited / 100:,.2f}", (
+        f"{entry['document']} prints a total of {total} and the key credits the customer "
+        f"{debited / 100:,.2f} against account {returns}"
+    )
+
+
 def test_the_subsidiary_ledgers_are_wired(generated):
     pack = schema.load_pack(generated.pack)
     controls = {a.number: a.subsidiary_kind for a in pack.accounts if a.subsidiary_kind}

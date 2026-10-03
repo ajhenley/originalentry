@@ -556,7 +556,7 @@ Subject: `Read the reason from the key the instructor marks against`.
 
 **Files:**
 - Modify: `scripts/build_pack.py` (delete the `Description` append, around line 424)
-- Modify: `packs/riverbend/profile.py` (delete the `Description` row from each of the three `NO_ENTRY_DOCUMENTS` entries, at lines 102, 109-111 and 118-120)
+- Modify: `packs/riverbend/profile.py` (delete the `Description` row from each of the three `NO_ENTRY_DOCUMENTS` entries — **find them by content, not by line number:** Task 1 inserts `FILED_REASONS` above them, so the line numbers in the spec and in any earlier draft of this plan have shifted)
 - Modify: `tests/unit/test_riverbend_pack.py:136-143` (`test_every_document_says_what_it_is_for_and_how_much`)
 - Create: `tests/unit/test_no_transaction_list.py`
 - Regenerate: `packs/riverbend/source.json`, `packs/alderfinch/source.json`
@@ -681,7 +681,9 @@ The comment was the false belief that kept this in place — the words are the t
 
 - [ ] **Step 5: Stop the profile authoring it**
 
-In `packs/riverbend/profile.py`, delete the `["Description", ...]` element from each of the three `NO_ENTRY_DOCUMENTS` entries (N01 at line 102, N02 at 109-111, N03 at 118-120). The sentences already live in `FILED_REASONS` from Task 1; do not delete them from there.
+In `packs/riverbend/profile.py`, delete the `["Description", ...]` element from each of the three `NO_ENTRY_DOCUMENTS` entries — N01, N02 and N03. Locate them with `grep -n '"Description"' packs/riverbend/profile.py` rather than by line number: Task 1 added `FILED_REASONS` above this block and moved everything down. Note that `grep` will also match a `"Description"` column header in `REFERENCE_PAGES` further down the file, which is a table heading on a printed reference page and must be left alone — check what you are deleting is inside a `NO_ENTRY_DOCUMENTS` entry.
+
+The sentences already live in `FILED_REASONS` from Task 1; do not delete them from there.
 
 - [ ] **Step 6: Invert the test that required the row**
 
@@ -722,17 +724,33 @@ import json
 before = json.load(open("/tmp/riverbend-before.json"))
 after = json.load(open("packs/riverbend/source.json"))
 
+# Every top-level key, derived from the data rather than listed, so the check cannot go stale
+# or pass vacuously. The first draft of this plan listed "transactions", which riverbend's
+# source.json does not have: before.get(...) == after.get(...) compared None to None and the
+# assertion could not fail. Only `documents` is expected to differ, and only in its text.
+assert set(before) == set(after), f"top-level keys changed: {set(before) ^ set(after)}"
+for field in sorted(set(before) - {"documents"}):
+    assert before[field] == after[field], f"{field} changed and must not have"
+
+# Documents: same refs in the same order, and every part of each document identical except the
+# text a student reads, which is the only thing this task is allowed to touch.
 assert [d["ref"] for d in before["documents"]] == [d["ref"] for d in after["documents"]], "documents moved"
-for field in ("accounts", "parties", "journals", "checkpoints", "rubric", "variants", "transactions"):
-    assert before.get(field) == after.get(field), f"{field} changed"
-for code, a in before["answers"].items():
-    b = after["answers"][code]
-    for field in ("triage", "designated_journal_documents", "expected_entries",
-                  "adjustments", "error_signatures"):
-        assert a.get(field) == b.get(field), f"answers.{code}.{field} changed"
-print("identical")
+for old, new in zip(before["documents"], after["documents"], strict=True):
+    assert set(old) == set(new), f"{old['ref']}: document keys changed"
+    for field in sorted(set(old) - {"variants"}):
+        assert old[field] == new[field], f"{old['ref']}.{field} changed"
+    assert set(old["variants"]) == set(new["variants"]), f"{old['ref']}: versions changed"
+    for code in old["variants"]:
+        a, b = old["variants"][code], new["variants"][code]
+        assert set(a) == set(b), f"{old['ref']}/{code}: variant keys changed"
+        for field in sorted(set(a) - {"text_alternative"}):
+            assert a[field] == b[field], f"{old['ref']}/{code}.{field} changed"
+
+print("identical apart from the text, as intended")
 PY
 ```
+
+Then prove that check can fail, so it is not another vacuous one: edit one account name in `/tmp/riverbend-before.json`, re-run, and confirm it reports `accounts changed`. Undo the edit. Record the result in your report.
 
 If any assertion fires, stop and report it. A change here means the removal touched marking, which this work must not do.
 

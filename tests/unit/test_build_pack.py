@@ -154,3 +154,31 @@ def test_an_entry_for_the_model_has_no_transaction_for_is_named():
     assert f"{manifest[0]['ref']} is the evidence for transaction 997" in message, message
     assert "no transaction numbered" in message, message
     assert "Nothing was written" in message, message
+
+
+# ── The pack's own version number ────────────────────────────────────────────────────────
+
+def test_the_pack_version_defaults_to_one():
+    """Unchanged behaviour for every existing caller: a build with no version is version 1."""
+    source = _script().build_source("riverbend", PRACTICESETS)
+
+    assert source["version"] == 1
+
+
+def test_the_pack_version_can_be_raised_for_a_correction():
+    """A pack version is immutable once a workspace pins it, so a correction to a pack already in
+    the catalogue has to arrive as a NEWER version -- rule V14 refuses it otherwise. The number was
+    hardcoded, so no correction to either live pack could be imported at all.
+    """
+    source = _script().build_source("riverbend", PRACTICESETS, version=2)
+
+    assert source["version"] == 2
+
+
+def test_a_pack_version_below_one_is_refused():
+    """Versions count up from one. A zero or a negative would validate as a pack and then be
+    unimportable for a reason nobody could read off the archive."""
+    with pytest.raises(SystemExit) as refusal:
+        _script().build_source("riverbend", PRACTICESETS, version=0)
+
+    assert "Nothing was written." in str(refusal.value)

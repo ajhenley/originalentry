@@ -894,12 +894,26 @@ def _agreed_dates(readings: dict[str, dict[str, dict]], profile) -> dict[str, st
 
 
 def build_source(company: str, practicesets: Path, slug: str | None = None,
-                  documents_dir: Path | None = None, images_dir: Path | None = None) -> dict:
+                  documents_dir: Path | None = None, images_dir: Path | None = None,
+                  version: int = 1) -> dict:
     """``documents_dir``, when given, holds one directory per version (``A/``, ``B/``, ``C/``),
     each the output of ``gendocs.py`` for that version. ``images_dir``, when given, is where the
     photographs are written, one subdirectory per version; without it none are rendered, which is
     what lets a test build the pack without WeasyPrint and poppler doing 78 renders.
+
+    ``version`` is the **pack's** version in the catalogue, not a variant letter and not this
+    script's version. It was hardcoded to 1, which meant a correction to a pack already imported
+    could not be imported at all: a pack version is immutable once a workspace pins it, so rule
+    V14 refuses an archive whose version is not newer than the highest already in the catalogue.
+    Raising it is therefore a deliberate act, which is why it is an argument rather than a count
+    of anything.
     """
+    if version < 1:
+        raise SystemExit(
+            f"A pack version counts up from 1 and this one says {version}. Such a pack would "
+            f"validate and then be unimportable, with nothing in the archive to say why.\n"
+            f"Nothing was written."
+        )
     generators = require_practicesets(practicesets)
     model, errors_mod = load_model(generators, company)
     profile = load_profile(slug or company)
@@ -1041,7 +1055,7 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
     return {
         "format_version": 1,
         "company": profile.COMPANY,
-        "version": 1,
+        "version": version,
         "period": profile.PERIOD,
         "statement_sections": profile.STATEMENT_SECTIONS,
         "accounts": accounts,
@@ -1065,6 +1079,10 @@ if __name__ == "__main__":
     parser.add_argument("company", help="the practicesets company module, e.g. alderfinch")
     parser.add_argument("--practicesets", type=Path, default=DEFAULT_PRACTICESETS,
                         help="path to the practicesets checkout")
+    parser.add_argument("--version", type=int, default=1, metavar="N",
+                        help="the pack's version in the catalogue (default 1). A pack version is "
+                             "immutable once a workspace pins it, so a correction to a pack "
+                             "already imported must be a higher number than the one in service")
     parser.add_argument("--slug", default=None,
                         help="the pack slug, if different from COMPANY (default: COMPANY)")
     parser.add_argument("--documents", type=Path, default=None, dest="documents_dir",
@@ -1082,6 +1100,6 @@ if __name__ == "__main__":
         images_dir = (Path(__file__).resolve().parents[1] / "packs"
                      / (args.slug or args.company) / "documents")
     json.dump(build_source(args.company, args.practicesets, args.slug, args.documents_dir,
-                           images_dir),
+                           images_dir, version=args.version),
               sys.stdout, indent=1, ensure_ascii=False)
     print()

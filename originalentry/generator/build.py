@@ -116,6 +116,7 @@ def _build_key(
     key_dict = {
         "variant": code,
         "triage": answer.get("triage", {}),
+        "triage_reasons": answer.get("triage_reasons", {}),
         "designated_journal_documents": answer.get("designated_journal_documents", {}),
         "expected_entries": answer.get("expected_entries", []),
         "adjustments": answer.get("adjustments", []),

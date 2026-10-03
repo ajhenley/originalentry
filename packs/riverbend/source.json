@@ -4894,6 +4894,11 @@
     "N02": false,
     "N03": false
    },
+   "triage_reasons": {
+    "N01": "Order for 6 mountain bikes, not to ship before 15 January",
+    "N02": "An enquiry about wholesale terms for 25 and 50 units. No order is placed and no goods are requested.",
+    "N03": "Notice of wholesale prices changing from 1 January. No goods have been ordered or shipped against this notice."
+   },
    "designated_journal_documents": {
     "D01": "cash_payments",
     "D02": "sales",
@@ -5565,6 +5570,11 @@
     "N02": false,
     "N03": false
    },
+   "triage_reasons": {
+    "N01": "Order for 6 mountain bikes, not to ship before 15 January",
+    "N02": "An enquiry about wholesale terms for 25 and 50 units. No order is placed and no goods are requested.",
+    "N03": "Notice of wholesale prices changing from 1 January. No goods have been ordered or shipped against this notice."
+   },
    "designated_journal_documents": {
     "D01": "cash_payments",
     "D02": "sales",
@@ -6235,6 +6245,11 @@
     "N01": false,
     "N02": false,
     "N03": false
+   },
+   "triage_reasons": {
+    "N01": "Order for 6 mountain bikes, not to ship before 15 January",
+    "N02": "An enquiry about wholesale terms for 25 and 50 units. No order is placed and no goods are requested.",
+    "N03": "Notice of wholesale prices changing from 1 January. No goods have been ordered or shipped against this notice."
    },
    "designated_journal_documents": {
     "D01": "cash_payments",

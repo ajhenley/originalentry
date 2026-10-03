@@ -762,6 +762,18 @@ def _designated_journals(manifest, txns_by_no: dict, profile, code: str) -> dict
     return designated
 
 
+def _triage_reasons(profile, triage: dict[str, bool]) -> dict[str, str]:
+    """One authored sentence per ref, copied into this version's key for every document this
+    version files. Keyed per version because triage is, so a future set can file a document in
+    one version only; authored once because three copies would be three places to correct.
+
+    A ref that is filed and has no sentence is not defaulted to "" here. V17 reports it against
+    the pack, which names the pack and the version; a silent "" would make the pack valid.
+    """
+    authored = getattr(profile, "FILED_REASONS", {})
+    return {ref: authored[ref] for ref in triage if not triage[ref] and ref in authored}
+
+
 def _render_manifest_images(set_dir: Path) -> dict[str, bytes]:
     """``scripts/render_documents.py``'s ``render_manifest``, loaded by path.
 
@@ -953,10 +965,12 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
                 # image/alt are left unset: generator.build()'s _attach_images fills them in,
                 # using the photograph of this version supplied from images_dir.
                 doc["variants"][code] = {"text_alternative": readings[code][doc["ref"]]}
+            # entry_for, not txn: a purchase order and its vendor invoice share a txn, and
+            # only the invoice is the evidence a student journalises from.
+            triage = {entry["ref"]: entry["entry_for"] is not None for entry in manifest}
             answers[code] = {
-                # entry_for, not txn: a purchase order and its vendor invoice share a txn, and
-                # only the invoice is the evidence a student journalises from.
-                "triage": {entry["ref"]: entry["entry_for"] is not None for entry in manifest},
+                "triage": triage,
+                "triage_reasons": _triage_reasons(profile, triage),
                 "designated_journal_documents": _designated_journals(
                     manifest, txns_by_no, profile, code),
                 "expected_entries": expected_entries(model, code, profile, manifest),
@@ -986,9 +1000,11 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
                                                      ["Document", extra["display_ref"]],
                                                      *extra["fields"]],
                                           "lines": extra["lines"]}}
+            triage = ({_ref(t): True for t in txns}
+                      | {e["ref"]: False for e in profile.NO_ENTRY_DOCUMENTS})
             answers[code] = {
-                "triage": ({_ref(t): True for t in txns}
-                           | {e["ref"]: False for e in profile.NO_ENTRY_DOCUMENTS}),
+                "triage": triage,
+                "triage_reasons": _triage_reasons(profile, triage),
                 "designated_journal_documents": {_ref(t): profile.JOURNAL_OF[t["cycle"]]
                                                   for t in txns},
                 "expected_entries": expected_entries(model, code, profile),

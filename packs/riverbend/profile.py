@@ -91,6 +91,17 @@ def _journals() -> list[dict]:
 JOURNALS = _journals()
 
 
+# Why each of these needs no entry. It used to be a "Description" row inside the document,
+# which handed the student the triage answer they were being marked on. It belongs with the
+# answer instead, and reaches the instructor through the answer key (V17).
+FILED_REASONS = {
+    "N01": "Order for 6 mountain bikes, not to ship before 15 January",
+    "N02": "An enquiry about wholesale terms for 25 and 50 units. No order is placed "
+           "and no goods are requested.",
+    "N03": "Notice of wholesale prices changing from 1 January. No goods have been "
+           "ordered or shipped against this notice.",
+}
+
 # Documents that arrive and need nothing done with them. Triage is the first thing marked, and
 # without these every document in the set would need an entry, which would make it no exercise
 # at all. Taken from the paper set's own "documents requiring no entry".

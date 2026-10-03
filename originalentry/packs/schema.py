@@ -213,6 +213,10 @@ class ErrorSignature(_Model):
 class AnswerKey(_Model):
     variant: str
     triage: dict[str, bool] = {}
+    #: Why a document needs no entry, by ref — the justification for the triage answer, so it
+    #: lives with the answer and never on the document. V17 requires one for every document
+    #: this key files and forbids one on a document that takes an entry.
+    triage_reasons: dict[str, str] = {}
     designated_journal_documents: dict[str, str] = {}
     expected_entries: list[ExpectedEntry] = []
     adjustments: list[Adjustment] = []

@@ -106,6 +106,33 @@ GUIDANCE = {
     "D02": "Fees charged on account are recorded in the journal built for them.",
 }
 
+# Why each filed document needs no entry, for the instructor copy (V17). The clinic's documents
+# come from the printed envelope, which carries no such sentence — so unlike Riverbend's, these
+# are authored here and nowhere else. Checked against the printed solution set.
+FILED_REASONS = {
+    "D03": "An order placed; nothing received and nothing owed yet. The vendor's invoice "
+           "records the purchase when the goods arrive.",
+    "D11": "An order placed; nothing received and nothing owed yet. The vendor's invoice "
+           "records the purchase when the goods arrive.",
+    "N01": "Spoiled and voided before use. No money moved; it is kept so the cheque sequence "
+           "can be accounted for.",
+    "N02": "Supporting record for the payroll cheque. The hours reach the books once, through "
+           "the payroll entry, not card by card.",
+    "N03": "Supporting record for the payroll cheque. The hours reach the books once, through "
+           "the payroll entry, not card by card.",
+    "N04": "Supporting record for the payroll cheque. The hours reach the books once, through "
+           "the payroll entry, not card by card.",
+    "N05": "Supporting record for the payroll cheque. The hours reach the books once, through "
+           "the payroll entry, not card by card.",
+    "N06": "A disbursement from the petty cash fund. Nothing is journalised until the fund is "
+           "replenished, and no replenishment cheque is drawn this period.",
+    "N07": "A disbursement from the petty cash fund. Nothing is journalised until the fund is "
+           "replenished, and no replenishment cheque is drawn this period.",
+    "N08": "A request to book a future appointment. No service has been given and nothing "
+           "is owed.",
+    "N09": "The clinic's own fee schedule. Not a transaction.",
+}
+
 CHECKPOINTS = [
     {"key": "cp1", "ordinal": 1, "stage": "posted",
      "prompt": "Accounts Receivable control balance at 7 December",

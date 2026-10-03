@@ -77,9 +77,10 @@ Takes a company slug and the path to `practicesets`, imports `generators/model.p
 and invents none, which is the contract inherited from the script it replaces.
 
 It locates `practicesets` by argument, defaulting to the sibling checkout, and **fails loudly with
-a message naming what is missing** when it cannot find it. `docket/engine_bridge.py` in the
-practicesets repo is the established pattern: a missing dependency must stop the run with an
-explanation, never degrade quietly. The old script's silent rot is the argument for it.
+a message naming what is missing** when it cannot find it. A missing dependency must stop the run
+with an explanation, never degrade quietly. The old script's silent rot is the argument for it.
+(The pattern was taken from `docket/engine_bridge.py` in the practicesets repo, which was removed
+with the paralegal set on 3 October 2026. The principle stands without the example.)
 
 ### `packs/<slug>/profile.py` — what is about the pack, not about the company
 

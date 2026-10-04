@@ -385,7 +385,7 @@ def test_a_row_that_really_has_a_label_is_still_a_definition_row(session, client
         f"/w/{workspace.public_id}/testco-alpha/documents/INV-1"
     ).get_data(as_text=True)
 
-    assert "<dt class=\"font-medium\">Customer</dt><dd>Firstborn Supply</dd>" in body
+    assert "<dt class=\"font-semibold\">Customer</dt><dd>Firstborn Supply</dd>" in body
     assert body.index("TESTCO ALPHA") < body.index("Firstborn Supply") < body.index("CUSTOMER COPY")
 
 

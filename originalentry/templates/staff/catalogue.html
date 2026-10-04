@@ -50,7 +50,7 @@
 {% else %}
 {% for company in companies %}
 <section class="mb-6" aria-labelledby="company-{{ company.slug }}">
-  <h2 id="company-{{ company.slug }}" class="mb-2 font-semibold">{{ company.company_name }}</h2>
+  <h2 id="company-{{ company.slug }}" class="mb-2">{{ company.company_name }}</h2>
   <div class="panel overflow-x-auto" role="region"
        aria-label="{{ company.company_name }} versions" tabindex="0">
     <table class="data-table">

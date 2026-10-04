@@ -13,7 +13,7 @@
 </p>
 
 <section class="mb-8" aria-labelledby="designed-errors">
-  <h2 id="designed-errors" class="mb-2 font-semibold">The errors this company was built around</h2>
+  <h2 id="designed-errors" class="mb-2">The errors this company was built around</h2>
   {% if not diagnostics.signatures %}
   <p class="text-muted">This company declares no designed errors.</p>
   {% else %}
@@ -51,7 +51,7 @@
 </section>
 
 <section class="mb-8" aria-labelledby="triage">
-  <h2 id="triage" class="mb-2 font-semibold">Documents handled differently from the key</h2>
+  <h2 id="triage" class="mb-2">Documents handled differently from the key</h2>
   {% set misses = diagnostics.triage | selectattr('total') | list %}
   {% if not misses %}
   <p class="text-muted">Every document was handled as the key has it.</p>
@@ -84,7 +84,7 @@
 </section>
 
 <section aria-labelledby="time">
-  <h2 id="time" class="mb-2 font-semibold">Time on task</h2>
+  <h2 id="time" class="mb-2">Time on task</h2>
   <p class="mb-2 text-sm">
     Median {{ '%.0f' | format(diagnostics.time_on_task.median_minutes) }} minutes across
     {{ diagnostics.time_on_task.students }} student{{ '' if diagnostics.time_on_task.students == 1 else 's' }}

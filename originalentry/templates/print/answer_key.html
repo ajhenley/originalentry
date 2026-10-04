@@ -12,7 +12,7 @@
 </div>
 
 <header class="mb-6">
-  <h1 class="text-xl font-semibold">{{ key.company_name }} · answer key</h1>
+  <h1 class="text-xl">{{ key.company_name }} · answer key</h1>
   <p class="text-sm text-muted">
     Variant {{ key.variant }} · version {{ version.version }} ·
     {{ version.period_start.strftime('%-d %b %Y') }} – {{ version.period_end.strftime('%-d %b %Y') }}
@@ -20,7 +20,7 @@
 </header>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Documents</h2>
+  <h2 class="mb-2">Documents</h2>
   <table class="data-table">
     <caption class="sr-only">The entry each document takes</caption>
     <thead>
@@ -66,7 +66,7 @@
 </section>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Adjustments</h2>
+  <h2 class="mb-2">Adjustments</h2>
   {% if key.adjustments %}
   <table class="data-table">
     <caption class="sr-only">Adjusting entries</caption>
@@ -108,7 +108,7 @@
 </section>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Checkpoint figures</h2>
+  <h2 class="mb-2">Checkpoint figures</h2>
   {% if key.checkpoints %}
   <table class="data-table">
     <caption class="sr-only">The figure each checkpoint is looking for</caption>
@@ -132,7 +132,7 @@
 </section>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Closing balances</h2>
+  <h2 class="mb-2">Closing balances</h2>
   {% if key.closing_balances %}
   <table class="data-table">
     <caption class="sr-only">Where each account should end the period</caption>

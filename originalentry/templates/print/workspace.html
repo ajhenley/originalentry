@@ -9,12 +9,12 @@
 </div>
 
 <header class="mb-6">
-  <h1 class="text-xl font-semibold">{{ company.name }}</h1>
+  <h1 class="text-xl">{{ company.name }}</h1>
   <p class="text-sm text-muted">{{ company.period_label }} · complete record</p>
 </header>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Documents</h2>
+  <h2 class="mb-2">Documents</h2>
   {% if record.dispositions %}
   <ul class="text-sm">
     {% for d in record.dispositions %}
@@ -27,9 +27,9 @@
 </section>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Journals</h2>
+  <h2 class="mb-2">Journals</h2>
   {% for j in record.journals %}
-  <h3 class="mt-3 text-sm font-semibold">{{ j.name }}</h3>
+  <h3 class="mt-3 text-sm">{{ j.name }}</h3>
   <table class="data-table">
     <caption class="sr-only">{{ j.name }} entries</caption>
     <thead><tr>
@@ -68,7 +68,7 @@
 </section>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Postings</h2>
+  <h2 class="mb-2">Postings</h2>
   {% if record.postings %}
   <ul class="text-sm">
     {% for p in record.postings %}
@@ -79,12 +79,12 @@
 </section>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">General ledger</h2>
+  <h2 class="mb-2">General ledger</h2>
   {{ balance_table(record.general_ledger, "General ledger balances") }}
 </section>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Trial balances</h2>
+  <h2 class="mb-2">Trial balances</h2>
   <div class="space-y-4">
     {{ trial_balance_table(record.trial_balances['unadjusted'], "Unadjusted trial balance") }}
     {{ trial_balance_table(record.trial_balances['adjusted'], "Adjusted trial balance") }}
@@ -94,7 +94,7 @@
 
 {% if record.subsidiary %}
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Subsidiary proof</h2>
+  <h2 class="mb-2">Subsidiary proof</h2>
   <div class="space-y-4">
     {% for proof in record.subsidiary %}
     {{ subsidiary_proof(proof, proof.subsidiary_kind ~ " subsidiary ledger") }}
@@ -104,7 +104,7 @@
 {% endif %}
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Checkpoints</h2>
+  <h2 class="mb-2">Checkpoints</h2>
   {% if record.checkpoints %}
   <ul class="text-sm">
     {% for c in record.checkpoints %}
@@ -115,7 +115,7 @@
 </section>
 
 <section class="mb-8">
-  <h2 class="mb-2 font-semibold">Timeline</h2>
+  <h2 class="mb-2">Timeline</h2>
   {% if record.timeline %}
   <ul class="text-sm text-muted">
     {% for t in record.timeline %}

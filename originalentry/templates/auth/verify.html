@@ -2,7 +2,7 @@
 {% block title %}Sign in · Original Entry{% endblock %}
 
 {% block auth %}
-<h1 class="text-lg font-semibold">You're one step from signing in</h1>
+<h1 class="text-lg">You're one step from signing in</h1>
 <p class="mt-3 text-muted">Select the button to finish signing in on this device.</p>
 <form method="post" action="{{ url_for('auth.verify') }}" class="mt-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

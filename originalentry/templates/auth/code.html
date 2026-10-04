@@ -2,7 +2,7 @@
 {% block title %}Enter your code · Original Entry{% endblock %}
 
 {% block auth %}
-<h1 class="text-lg font-semibold">Enter your sign-in code</h1>
+<h1 class="text-lg">Enter your sign-in code</h1>
 <form method="post" action="{{ url_for('auth.code') }}" class="mt-4 space-y-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div>

@@ -3,7 +3,7 @@
 
 {% block main %}
 <div class="flex items-baseline justify-between">
-  <h1 class="text-xl font-semibold">Your workspaces</h1>
+  <h1 class="text-xl">Your workspaces</h1>
   <a href="{{ url_for('auth.sign_out') }}" class="text-sm underline">Sign out</a>
 </div>
 <p class="mt-1 text-sm text-muted">Signed in as {{ current_user.email }}.</p>
@@ -51,7 +51,7 @@
 
 {% if waiting %}
 <section class="mt-8 max-w-prose" aria-labelledby="waiting">
-  <h2 id="waiting" class="mb-2 text-sm font-semibold">Later in the course</h2>
+  <h2 id="waiting" class="mb-2 text-sm">Later in the course</h2>
   <ul class="space-y-1 text-sm text-muted">
     {% for item in waiting %}
     <li>{{ item.title }} opens once you have handed in

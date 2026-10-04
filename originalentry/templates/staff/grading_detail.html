@@ -96,7 +96,7 @@
 
 {% if result and (result.signatures or result.unexplained) %}
 <section class="mt-6" aria-labelledby="diagnosis">
-  <h2 id="diagnosis" class="mb-2 text-sm font-semibold">What the differences look like</h2>
+  <h2 id="diagnosis" class="mb-2 text-sm">What the differences look like</h2>
   <ul class="space-y-1 text-sm">
     {% for signature in result.signatures %}
     <li>{% if signature.confident %}{{ signature.label }}{% else %}Possibly: {{ signature.label }}{% endif %}</li>
@@ -109,7 +109,7 @@
 {% endif %}
 
 <section class="mt-6 max-w-prose" aria-labelledby="comment">
-  <h2 id="comment" class="mb-2 text-sm font-semibold">Comment for the student</h2>
+  <h2 id="comment" class="mb-2 text-sm">Comment for the student</h2>
   <form method="post"
         action="{{ url_for('staff.grading_comment', assignment=assignment.public_id,
                            workspace=workspace.public_id) }}">
@@ -128,7 +128,7 @@
    into the wrong company, usually says so long before anything has been graded. #}
 {% if workspace.status == 'submitted' %}
 <section class="mt-6 max-w-prose" aria-labelledby="reopen">
-  <h2 id="reopen" class="mb-2 text-sm font-semibold">Give it back?</h2>
+  <h2 id="reopen" class="mb-2 text-sm">Give it back?</h2>
   <p class="mb-2 text-sm text-muted">
     Handed in {{ workspace.submitted_at.strftime('%-d %b %H:%M') }}. Reopening lets them work on
     it again; that they handed it in, and when, stays on the record. If the deadline has passed,
@@ -149,7 +149,7 @@
 {% endif %}
 
 <section class="mt-6 max-w-prose" aria-labelledby="archive">
-  <h2 id="archive" class="mb-2 text-sm font-semibold">Wrong books?</h2>
+  <h2 id="archive" class="mb-2 text-sm">Wrong books?</h2>
   <p class="mb-2 text-sm text-muted">
     Archive this workspace and start a fresh one for this student. Nothing is destroyed: the
     archived books stay viewable.

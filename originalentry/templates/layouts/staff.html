@@ -11,12 +11,7 @@
 {% block chrome %}
 <header class="bg-ink text-paper">
   <div data-shell class="mx-auto flex {{ shell_width }} flex-wrap items-center gap-4 px-4 py-3">
-    <p class="mr-auto flex items-baseline gap-2">
-      <img class="h-6 w-auto"
-           src="{{ url_for('static', filename='img/original-entry-white.svg') }}"
-           width="502" height="106" alt="Original Entry">
-      <span class="label-meta text-paper/70">console</span>
-    </p>
+    <p class="mr-auto font-display text-lg">Original Entry <span class="label-meta text-paper/70">console</span></p>
     <nav aria-label="Console" class="flex flex-wrap gap-1">
       <a href="{{ url_for('staff.index') }}" class="nav-link"
          {% if request.path == url_for('staff.index') %}aria-current="page"{% endif %}>Assignments</a>

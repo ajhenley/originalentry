@@ -7,11 +7,11 @@
    first thing a hurried click lands on. On a shared or lab computer it is the whole point of
    the menu, which is why it appears on every page rather than only on the home screen.
 
-   `tone` is "dark" where the menu sits on navy chrome, so the summary can be read against it. #}
+   `tone` is "dark" where the menu sits on the ink chrome, so the summary can be read against it. #}
 {% if current_user.is_authenticated %}
 {% set dark = tone == 'dark' %}
 <details class="relative text-sm">
-  {# Two tones, because `.nav-link` is white at 75% for the navy chrome and would be invisible
+  {# Two tones, because `.nav-link` is white at 75% for the ink chrome and would be invisible
      on cream. The caret is the only sign this opens at all, since list-none removes the marker
      the browser would otherwise draw. #}
   <summary class="inline-flex cursor-pointer list-none items-center gap-1.5 rounded

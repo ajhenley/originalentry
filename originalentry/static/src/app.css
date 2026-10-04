@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 
 /* Scan templates and JS so utility classes are emitted. Class names are always written out in
    full in templates (never assembled from strings), so the scanner sees them (T10.1). */

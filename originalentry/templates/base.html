@@ -5,10 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Original Entry{% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="description"
+        content="Original Entry is practice in double-entry bookkeeping from source documents —
+                 invoices, cheques and remittances — rather than a prepared list of transactions.">
   {# The faces are served from here, not a font CDN: a student opening a ledger should not also
      be announcing themselves to a third party. #}
   <link rel="preload" as="font" type="font/woff2" crossorigin
-        href="{{ url_for('static', filename='fonts/outfit-400.woff2') }}">
+        href="{{ url_for('static', filename='fonts/SourceSans3-Regular.woff2') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon-32.png') }}" sizes="32x32">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/favicon-180.png') }}">
+  <meta property="og:title" content="Original Entry">
+  <meta property="og:description" content="Bookkeeping practice from the source documents.">
+  <meta property="og:image" content="{{ url_for('static', filename='img/social-1200x630.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="{{ url_for('static', filename='img/social-1200x630.png', _external=True) }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='dist/app.css') }}">
 </head>
 <body class="min-h-screen bg-cream text-ink">

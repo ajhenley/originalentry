@@ -276,7 +276,7 @@
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-muted);
     border-radius: var(--radius-DEFAULT);
-    background: var(--color-paper);
+    background: var(--color-white);
     color: var(--color-ink);
     font-family: inherit;
     font-size: 0.9rem;

@@ -284,3 +284,25 @@ def test_no_token_is_declared_twice():
     duplicates = {name: n for name, n in counts.items() if n > 1}
 
     assert not duplicates, f"declared more than once: {duplicates}"
+
+
+def test_a_field_does_not_share_the_page_background():
+    """A control whose background matches the page has no surface of its own.
+
+    `--color-paper` meant #ffffff before this palette and #faf8f4 after, so every rule written as
+    `background: var(--color-paper)` silently changed from "white" to "the same as the page". The
+    design material sets inputs to white explicitly. Nothing else in this file would notice.
+    """
+    css = _css_text()
+    field_block = css[css.index(".field {") : css.index(".field:focus")]
+    page_block = css[css.index("  html {") : css.index("  h1,")]
+
+    field_bg = re.search(r"background:\s*var\(--color-([a-z0-9-]+)\)", field_block)
+    page_bg = re.search(r"background:\s*var\(--color-([a-z0-9-]+)\)", page_block)
+
+    assert field_bg, f"`.field` declares no background: {field_block}"
+    assert page_bg, f"`html` declares no background: {page_block}"
+    assert field_bg.group(1) != page_bg.group(1), (
+        f"`.field` and the page share a background ({field_bg.group(1)}), "
+        "so the control has no visible surface"
+    )

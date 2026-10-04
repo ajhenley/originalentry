@@ -15,6 +15,7 @@ Blind spots. `_utilities_used` only extracts names that exist in `@theme`, so a 
 roots.
 """
 
+import collections
 import pathlib
 import re
 import sys
@@ -23,11 +24,19 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 CSS = ROOT / "originalentry" / "static" / "src" / "app.css"
 DIST = ROOT / "originalentry" / "static" / "dist" / "app.css"
 
-#: Tailwind utility prefixes that can take a colour.
+#: Tailwind utility prefixes that can take a colour. The compound forms matter: a side-specific
+#: utility like `border-t-amber` puts `t-` between the prefix and the colour name, so a list of
+#: bare prefixes misses it — and a missed utility is one Tailwind emits no rule for at all.
 PALETTE_PREFIXES = (
     "bg", "text", "border", "ring", "from", "to", "via", "decoration",
     "outline", "divide", "placeholder", "accent", "caret", "fill", "stroke", "shadow",
+    "border-t", "border-b", "border-l", "border-r", "border-x", "border-y",
+    "divide-x", "divide-y", "ring-offset", "outline-offset",
 )
+
+#: Longest-first, so `border-t` is tried before `border` and `border-t-amber` is read as
+#: prefix `border-t` + token `amber` rather than failing to match at all.
+_PREFIX_ALT = "|".join(sorted(map(re.escape, PALETTE_PREFIXES), key=lambda p: (-len(p), p)))
 
 
 def _css_text() -> str:
@@ -80,7 +89,7 @@ def _utilities_used(token_names: set[str]) -> set[str]:
     """
     pattern = re.compile(
         r"\b(?:%s)-(?:%s)(?![\w-])"
-        % ("|".join(PALETTE_PREFIXES), "|".join(sorted(map(re.escape, token_names), key=lambda n: (-len(n), n))))
+        % (_PREFIX_ALT, "|".join(sorted(map(re.escape, token_names), key=lambda n: (-len(n), n))))
     )
     used: set[str] = set()
     for path in _scanned_files():
@@ -223,3 +232,43 @@ def test_a_field_borders_with_muted_not_the_divider_colour():
     assert "--color-rule" not in field_block, (
         ".field must not border with --color-rule (1.41:1), which leaves no visible edge"
     )
+
+
+#: Retired with the CityReady palette. Nothing stops a later edit writing `text-navy`; Tailwind
+#: would emit no rule for it and the text would lose its colour with no error anywhere. Navy
+#: itself survives, but only as --color-company.
+RETIRED = (
+    "navy-deep", "navy-mid", "navy", "teal-bright", "teal-deep", "teal",
+    "amber-deep", "amber", "coral", "cream", "cloud", "silver", "gray", "attention",
+)
+
+
+def test_no_retired_colour_name_survives():
+    """Longest-first, so `navy-deep` is never reported as a bare `navy`."""
+    pattern = re.compile(r"\b(?:%s)-(?:%s)\b" % (_PREFIX_ALT, "|".join(RETIRED)))
+    offences = []
+    for path in _scanned_files():
+        for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for hit in pattern.findall(line):
+                offences.append(f"{path.relative_to(ROOT)}:{n} {hit}")
+
+    assert not offences, "retired colour names in markup: " + "; ".join(offences)
+
+
+def test_no_retired_token_is_still_defined():
+    defined = set(_defined_tokens())
+    lingering = sorted(defined & set(RETIRED))
+
+    assert not lingering, "retired tokens still in @theme: " + ", ".join(lingering)
+
+
+def test_no_token_is_declared_twice():
+    """A duplicate declaration wins silently and makes the first one a lie.
+
+    `_defined_tokens` is a dict, so a second `--color-paper` is invisible to every other guard
+    in this file: the tests all pass while half the stylesheet means something else.
+    """
+    counts = collections.Counter(re.findall(r"--color-([a-z0-9-]+)\s*:", _css_text()))
+    duplicates = {name: n for name, n in counts.items() if n > 1}
+
+    assert not duplicates, f"declared more than once: {duplicates}"

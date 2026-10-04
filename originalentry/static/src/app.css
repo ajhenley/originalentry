@@ -31,27 +31,6 @@
   --color-failure: #a12b2b;
   --color-tint: #eae6de;      /* the material's own #EAE6DE, unnamed there; hover and quiet fills */
 
-  --color-navy: #1b3a5c;
-  --color-navy-deep: #0f2440;
-  --color-navy-mid: #244b6e;
-  /* CityReady's teal, kept for rules, focus and anything that carries no text. White on it is
-     3.32:1, so a button or a label that must be read uses teal-deep at 5.16:1 instead. */
-  --color-teal: #2a9d8f;
-  --color-teal-bright: #34c4b3;
-  --color-teal-deep: #1f7a6e;
-  --color-amber: #e9c46a;
-  --color-amber-deep: #8a5a00; /* darkened from #D4A843 to hold 4.5:1 on cream (A11y) */
-  --color-coral: #c0462a;      /* darkened from #E76F51 for the same reason */
-
-  --color-cream: #faf8f4;
-  --color-cloud: #f4f6f9;
-  --color-silver: #e2e6ee;
-  --color-gray: #6b7688;       /* darkened from #8892A4 so mono labels stay legible */
-
-  /* Kept under its old name so existing markup and the mechanical-state rule still read true:
-     attention is amber, and it never means anything about whether work is any good (A7). */
-  --color-attention: #8a5a00;
-
   --radius-DEFAULT: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
@@ -91,8 +70,8 @@
   html {
     font-family: var(--font-sans);
     color: var(--color-ink);
-    background: var(--color-cream);
-    line-height: 1.6;
+    background: var(--color-paper);
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -100,16 +79,17 @@
   h2,
   h3 {
     font-family: var(--font-display);
-    color: var(--color-navy);
+    color: var(--color-ink);
     line-height: 1.2;
     font-weight: 400;
   }
 
-  /* Focus is teal everywhere, including over the company's own colour, so it is never lost
-     against a dark accent bar (T10.5). */
+  /* Focus is the notice colour everywhere, including over a company's own accent bar, so it is
+     never lost against a dark stripe (T10.5). At 6.46:1 on paper it is more visible than the
+     teal ring it replaces. */
   :focus-visible {
-    outline: 2px solid var(--color-teal);
-    outline-offset: 2px;
+    outline: 3px solid var(--color-notice);
+    outline-offset: 3px;
     border-radius: 2px;
   }
 
@@ -119,8 +99,8 @@
   }
 
   ::selection {
-    background: var(--color-teal);
-    color: #fff;
+    background: var(--color-notice);
+    color: var(--color-paper);
   }
 
   @media (prefers-reduced-motion: reduce) {

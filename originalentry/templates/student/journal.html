@@ -133,7 +133,7 @@
   <li class="flex flex-wrap items-center gap-3 p-3 text-sm">
     <span class="mr-auto">
       {{ run.target | capitalize }} posting {{ run.ordinal }}:
-      <span class="font-medium">{{ covered }}</span>
+      <span class="font-semibold">{{ covered }}</span>
       <span class="label-meta block">
         {{ run.entries }} {{ 'entry' if run.entries == 1 else 'entries' }} ·
         {{ run.posted_at.strftime('%-d %b %H:%M') }}

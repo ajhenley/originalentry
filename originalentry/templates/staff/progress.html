@@ -81,7 +81,7 @@
         </td>
         <td class="text-xs">
           {% if row.accommodation %}
-          <span class="block font-medium text-notice">Extended</span>
+          <span class="block font-semibold text-notice">Extended</span>
           <span class="block">{{ (row.accommodation.late_until or row.accommodation.due_at).strftime('%-d %b %H:%M') }}</span>
           <span class="block text-muted">{{ row.accommodation.reason }}</span>
           {% endif %}

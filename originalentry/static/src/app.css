@@ -10,7 +10,6 @@
 @theme {
   --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
   --font-sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   /* ── The Original Entry palette ───────────────────────────────────────────────────────
      Ink carries the chrome, the headings and every action. Notice marks the mechanical states
@@ -70,6 +69,10 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  body {
+    font-size: 1.0625rem; /* 17px */
+  }
+
   h1,
   h2,
   h3 {
@@ -78,6 +81,21 @@
     line-height: 1.2;
     font-weight: 400;
   }
+
+  /* Public pages take the editorial scale; the workspace and console take an app scale. The
+     material modulates its own examples the same way (.landing h3 at 48px, .journal h3 at 23px).
+     `data-scale` is set on <body> by the layout, so no page has to remember. */
+  [data-scale="page"] h1 {
+    font-size: clamp(2.625rem, 6vw, 4.75rem);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+  [data-scale="page"] h2 { font-size: 2.25rem; line-height: 1.15; }
+  [data-scale="page"] h3 { font-size: 1.5625rem; line-height: 1.25; }
+
+  [data-scale="app"] h1 { font-size: 1.75rem; }
+  [data-scale="app"] h2 { font-size: 1.4375rem; }
+  [data-scale="app"] h3 { font-size: 1.1875rem; }
 
   /* Focus is the notice colour everywhere, including over a company's own accent bar, so it is
      never lost against a dark stripe (T10.5). It holds 6.46:1 on paper. */
@@ -111,30 +129,31 @@
    Named here rather than spelled out in every template, so one decision about how a table
    header or a refusal looks holds everywhere. */
 @layer components {
-  /* A small mono label: the kind that names a column or a group. Sentence case, not shouted. */
+  /* The ledger's own word for a cross-reference. Small, tracked, uppercase in the semibold
+     face, set in muted ink so it names without shouting. */
   .label-meta {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    color: var(--color-gray);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-muted);
   }
 
-  /* CityReady's section label: mono, tracked, teal. Used where a section genuinely needs naming,
-     not above every heading. */
+  /* Names a section that genuinely needs naming, not one that sits above every heading. Wider
+     tracking than .label-meta and set in the notice colour, so it reads as a signpost. */
   .label-section {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 500;
+    font-size: 0.75rem;
+    font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--color-teal-deep);
+    color: var(--color-notice);
   }
 
-  /* Figures and account numbers: mono and tabular, so columns line up as a ledger should. */
+  /* Figures and account numbers. No face of its own: Source Sans 3's digits are equal-width by
+     default (497/1000 em), so columns line up without a monospace face. The declaration stays as
+     a statement of intent, and becomes load-bearing if a face is ever re-subset with tnum. */
   .figure {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
   }
 
   .panel {
@@ -158,13 +177,13 @@
   }
 
   .data-table thead th {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    color: var(--color-gray);
-    background: var(--color-cloud);
-    border-bottom: 2px solid var(--color-silver);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    background: var(--color-paper);
+    border-bottom: 1px solid var(--color-ink);
     text-align: left;
   }
 
@@ -262,8 +281,7 @@
   }
 
   .field--figure {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     text-align: right;
   }
 
@@ -292,11 +310,11 @@
   }
 
   .callout__label {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    font-weight: 500;
+    font-size: 0.7rem;
+    font-weight: 600;
     letter-spacing: 0.1em;
-    color: var(--color-teal-deep);
+    text-transform: uppercase;
+    color: var(--color-muted);
     display: block;
     margin-bottom: 0.2rem;
   }

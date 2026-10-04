@@ -10,7 +10,7 @@
     <ul class="panel divide-y divide-rule overflow-hidden text-sm">
       {% for s in sections %}
       <li>
-        <a class="block px-4 py-2 hover:bg-tint {% if section and s.key == section.key %}bg-paper font-medium{% endif %}"
+        <a class="block px-4 py-2 hover:bg-tint {% if section and s.key == section.key %}bg-paper font-semibold{% endif %}"
            {% if section and s.key == section.key %}aria-current="page"{% endif %}
            href="{{ url_for('student.reference', workspace=workspace.public_id,
                             company_slug=company.slug, section=s.key) }}">{{ s.title }}</a>

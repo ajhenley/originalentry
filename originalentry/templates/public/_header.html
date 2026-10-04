@@ -13,7 +13,7 @@
 
   <nav class="ml-auto flex flex-wrap items-center gap-x-5 gap-y-1 text-sm"
        aria-label="About this software">
-    <a class="underline{% if here == 'public.how_it_works' %} font-medium text-ink{% endif %}"
+    <a class="underline{% if here == 'public.how_it_works' %} font-semibold text-ink{% endif %}"
        href="{{ url_for('public.how_it_works') }}"
        {% if here == 'public.how_it_works' %}aria-current="page"{% endif %}>How it works</a>
     {% if current_user.is_authenticated %}

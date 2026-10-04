@@ -28,7 +28,7 @@
 Five things the spec implies that no task above would otherwise test. Each has a test assigned to the task that owns the code.
 
 1. **A pack accent invisible on the new ink chrome.** V13 checks `accent_hex` against **white only** (`validate.py:_v13_contrast` → `_contrast_against_white`). A pack shipping an accent near `#292824` passes V13 and renders a `bg-company` stripe indistinguishable from the `bg-ink` header beside it — destroying the one signal that tells a student whose books they are in (M3.2). Test in **Task 8**.
-2. **A control boundary below 3:1.** `border-paper/25` on the "Switch company" summary is **2.21:1** on ink, and **2.12:1** on today's navy — a pre-existing WCAG 1.4.11 failure on a line this work edits anyway. Fixed and pinned in **Task 8**.
+2. **A control boundary below 3:1.** `border-paper/25` on **two** controls (the account-menu trigger and the "Switch company" summary) is **2.21:1** on ink, and **2.12:1** on today's navy — a pre-existing WCAG 1.4.11 failure on a line this work edits anyway. Fixed and pinned in **Task 8**.
 3. **A token referenced but undefined.** Tailwind emits no rule; the surface silently disappears. This is the plan's own central risk at Task 5. Test in **Task 1**.
 4. **A missing font file falling back silently.** A renamed or absent woff2 drops to Georgia with no error. Test in **Task 1**.
 5. **A retired colour name creeping back.** Nothing stops a future edit writing `text-navy`; it would emit nothing and lose the text colour. Test in **Task 5**.
@@ -544,34 +544,42 @@ field with no visible edge."
 
 - [ ] **Step 1: Apply the renames**
 
-Order matters: `bg-paper` → `bg-white` **must run before** `bg-cloud` → `bg-paper`, or the nine converted `bg-cloud` sites would be swept into `bg-white` too.
+**Use perl, not sed.** Two things make `sed` silently useless here, and both were verified on this machine:
+
+- **BSD sed has no `\b`.** `sed 's/\bbg-paper\b/XX/g'` leaves the input unchanged and exits 0 — zero substitutions, no error. BSD's own boundaries are `[[:<:]]`/`[[:>:]]`, which GNU sed rejects.
+- **zsh does not word-split unquoted variables.** `FILES=$(find …)` then `sed … $FILES` passes the whole newline-joined list as one filename: `File name too long`.
+
+Either defect alone renames nothing while reporting success. `perl` honours `\b`, and `\Q…\E` quotes the search literal so a hyphen cannot be read as a range.
+
+Order matters: `bg-paper` → `bg-white` **must run before** `bg-cloud` → `bg-paper`, or the nine converted `bg-cloud` sites would be swept into `bg-white` too. Likewise `hover:bg-cloud` before the bare `bg-cloud`.
 
 ```bash
 cd originalentry
-FILES=$(find templates static/js -type f \( -name '*.html' -o -name '*.js' \))
-
-# 1. bg-paper -> bg-white FIRST (3 uses: white panels)
-sed -i '' 's/\bbg-paper\b/bg-white/g' $FILES
-# 2. border-paper -> border-white (2 uses, same reasoning)
-sed -i '' 's/\bborder-paper\b/border-white/g' $FILES
-# 3. the hover variant before the bare one (11 uses)
-sed -i '' 's/\bhover:bg-cloud\b/hover:bg-tint/g' $FILES
-# 4. remaining bg-cloud -> bg-paper (9 uses)
-sed -i '' 's/\bbg-cloud\b/bg-paper/g' $FILES
-# 5. the rest
-sed -i '' 's/\bborder-silver\b/border-rule/g' $FILES
-sed -i '' 's/\bdivide-silver\b/divide-rule/g' $FILES
-sed -i '' 's/\btext-navy\b/text-ink/g' $FILES
-sed -i '' 's/\bbg-navy\b/bg-ink/g' $FILES
-sed -i '' 's/\bborder-navy\b/border-ink/g' $FILES
-sed -i '' 's/\bbg-cream\b/bg-paper/g' $FILES
-sed -i '' 's/\btext-attention\b/text-notice/g' $FILES
-sed -i '' 's/\bbg-attention\b/bg-notice/g' $FILES
-sed -i '' 's/\btext-amber-deep\b/text-notice/g' $FILES
+ren() {
+  find templates static/js -type f \( -name '*.html' -o -name '*.js' \) -print0 \
+    | xargs -0 perl -pi -e "s/\b\Q$1\E\b/$2/g"
+}
+ren 'bg-paper'        'bg-white'      # 3 uses: white panels. MUST be first.
+ren 'hover:bg-cloud'  'hover:bg-tint' # 11 uses. Before the bare bg-cloud.
+ren 'bg-cloud'        'bg-paper'      # the remaining 9
+ren 'border-silver'   'border-rule'   # 25
+ren 'divide-silver'   'divide-rule'   # 1
+ren 'text-navy'       'text-ink'      # 9
+ren 'bg-navy'         'bg-ink'        # 7
+ren 'border-navy'     'border-ink'    # 1
+ren 'bg-cream'        'bg-paper'      # 1
+ren 'text-attention'  'text-notice'   # 17
+ren 'bg-attention'    'bg-notice'     # 1
+ren 'text-amber-deep' 'text-notice'   # 2
 cd ..
 ```
 
-`text-paper` (8 uses) is **deliberately left alone**: cream text on ink chrome is what the material's `.cover` specifies, so the new value makes those uses more correct, not less.
+Verified on a scratch copy, these are the resulting counts: `bg-white` 3, `hover:bg-tint` 11, `bg-paper` 10, `border-rule` 27, `divide-rule` 4, `text-ink` 16, `bg-ink` 7, `border-ink` 1, `text-notice` 19, `bg-notice` 1. (Several exceed the rename count because the target name was already in use.)
+
+**Two names are deliberately left alone**, both for the same reason — they sit on ink chrome, where the material's `.cover` specifies `background:ink; color:paper`, so cream is right and white would be wrong:
+
+- `text-paper` (8 uses).
+- `border-paper` (2 uses). **Do not rename it.** Both uses are `border-paper/25`, and Task 8 searches for that literal string to fix a contrast failure; renaming it here would break that.
 
 Then delete the console's teal stripe. It cannot wait for Task 8: `teal` is a retired name, and Task 5's guard fails on any that survive. In `originalentry/templates/layouts/staff.html`, remove this line entirely:
 
@@ -866,11 +874,18 @@ In `base.html`, add a block-overridable attribute to `<body>`:
 
 - [ ] **Step 5: Replace `font-medium` and the `font-mono` call sites**
 
+Use `perl`, for the same two reasons Task 4 does: BSD sed silently ignores `\b` (zero substitutions, exit 0), and zsh does not word-split `$FILES`.
+
 ```bash
 cd originalentry
-FILES=$(find templates static/js -type f \( -name '*.html' -o -name '*.js' \))
-sed -i '' 's/\bfont-medium\b/font-semibold/g' $FILES
-sed -i '' 's/ *\bfont-mono\b//g' $FILES
+ren() {
+  find templates static/js -type f \( -name '*.html' -o -name '*.js' \) -print0 \
+    | xargs -0 perl -pi -e "s/\b\Q$1\E\b/$2/g"
+}
+ren 'font-medium' 'font-semibold'   # 16 uses
+# font-mono is deleted outright, with the space that precedes it
+find templates static/js -type f \( -name '*.html' -o -name '*.js' \) -print0 \
+  | xargs -0 perl -pi -e 's/ *\bfont-mono\b//g'
 cd ..
 ```
 
@@ -1189,19 +1204,23 @@ The `bg-company` stripe stays exactly as it is — it is the one thing that is n
      books they are in at a glance (M3.2). #}
 ```
 
-Then fix the pre-existing contrast failure on the "Switch company" control. Change:
+Then fix the pre-existing contrast failure. **There are two sites, not one** — both carry `border-paper/25` on ink chrome:
 
-```html
-      <summary class="nav-link cursor-pointer list-none border border-paper/25">Switch company</summary>
+```bash
+find originalentry/templates -type f -name '*.html' -print0 \
+  | xargs -0 perl -pi -e 's/\bborder-paper\/25\b/border-paper\/40/g'
 ```
 
-to:
+That changes exactly these two lines:
 
-```html
-      <summary class="nav-link cursor-pointer list-none border border-paper/40">Switch company</summary>
-```
+- `originalentry/templates/_account_menu.html:18` — `{% if dark %}nav-link border border-paper/25`
+- `originalentry/templates/layouts/workspace.html:28` — `<summary class="nav-link cursor-pointer list-none border border-paper/25">Switch company</summary>`
 
-`paper/25` on ink is 2.21:1 — below the 3:1 WCAG 1.4.11 requires for a control's boundary. It fails today against navy too, at 2.12:1, so this is a pre-existing defect on a line this work touches. `paper/40` is 3.50:1. (`/35` is 3.01:1, too close to the line to leave.)
+Confirm with `grep -rn 'border-paper/' originalentry/templates` that both now read `/40` and none reads `/25`.
+
+`paper/25` on ink is 2.21:1 — below the 3:1 WCAG 1.4.11 requires for a control's boundary. It fails today against navy too, at 2.12:1, so this is a pre-existing defect on lines this work touches. `paper/40` is 3.50:1. (`/35` is 3.01:1, too close to the line to leave.)
+
+Both are genuine controls: the first is the account-menu trigger in dark chrome, the second the "Switch company" disclosure. Neither has any other visible boundary, so the border is load-bearing rather than decorative — which is why 1.4.11 applies and `--color-rule` would be wrong here.
 
 - [ ] **Step 4: Write the failing V13 test**
 

@@ -23,7 +23,7 @@
 {% endif %}
 
 {% if workspaces %}
-<ul class="mt-6 divide-y divide-rule rounded border border-silver">
+<ul class="mt-6 divide-y divide-rule rounded border border-rule">
   {% for w in workspaces %}
   <li class="flex flex-wrap items-center gap-3 p-4">
     <div class="mr-auto">
@@ -33,7 +33,7 @@
       </a>
       <p class="text-sm text-muted">{{ w.assignment_title }}</p>
     </div>
-    <span class="label-meta rounded bg-cloud px-2 py-1">{{ w.status_label }}</span>
+    <span class="label-meta rounded bg-paper px-2 py-1">{{ w.status_label }}</span>
   </li>
   {% endfor %}
 </ul>

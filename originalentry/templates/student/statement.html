@@ -96,10 +96,10 @@
                 {% endfor %}
               </select>
               {% if errors.get('row-' ~ i ~ '-account') %}
-              <p class="mt-1 text-xs text-attention">{{ errors.get('row-' ~ i ~ '-account') }}</p>
+              <p class="mt-1 text-xs text-notice">{{ errors.get('row-' ~ i ~ '-account') }}</p>
               {% endif %}
               {% if errors.get('row-' ~ i ~ '-subtotal_type') %}
-              <p class="mt-1 text-xs text-attention">
+              <p class="mt-1 text-xs text-notice">
                 {{ errors.get('row-' ~ i ~ '-subtotal_type') }}</p>
               {% endif %}
             </td>
@@ -109,7 +109,7 @@
                      value="{{ row.label if row and row.label else '' }}"
                      class="field">
               {% if errors.get('row-' ~ i ~ '-label') %}
-              <p class="mt-1 text-xs text-attention">{{ errors.get('row-' ~ i ~ '-label') }}</p>
+              <p class="mt-1 text-xs text-notice">{{ errors.get('row-' ~ i ~ '-label') }}</p>
               {% endif %}
             </td>
             <td>
@@ -128,7 +128,7 @@
                      value="{{ row.amount if row else '' }}"
                      class="field field--figure w-32">
               {% if errors.get('row-' ~ i ~ '-amount') %}
-              <p class="mt-1 text-xs text-attention">{{ errors.get('row-' ~ i ~ '-amount') }}</p>
+              <p class="mt-1 text-xs text-notice">{{ errors.get('row-' ~ i ~ '-amount') }}</p>
               {% endif %}
             </td>
           </tr>

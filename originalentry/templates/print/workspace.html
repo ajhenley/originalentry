@@ -41,7 +41,7 @@
     </tr></thead>
     <tbody>
       {% for e in j.entries %}
-      <tr class="border-b border-silver/60 align-top {% if e.voided %}text-muted line-through{% endif %}">
+      <tr class="border-b border-rule/60 align-top {% if e.voided %}text-muted line-through{% endif %}">
         <td>{{ e.seq }}</td>
         <td>{{ e.date.strftime('%b %-d') }}{% if e.voided %} (void){% endif %}</td>
         <td>

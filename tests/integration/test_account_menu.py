@@ -177,4 +177,4 @@ def test_the_menu_reads_as_a_control_on_the_public_pages(client, people):
     summary = body[body.index("<summary"):body.index("</summary>")]
 
     assert "border" in summary          # a bordered control, not another link
-    assert "text-navy" in summary       # and legible on cream
+    assert "text-ink" in summary       # and legible on cream

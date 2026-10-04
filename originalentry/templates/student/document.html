@@ -18,7 +18,7 @@
 {# Screen mode: the document itself, zoomable. The text alternative below is not a fallback —
    it is there for everyone, always (S2.8). #}
 <figure class="mb-6" data-zoom>
-  <div class="overflow-auto rounded border border-silver bg-rule/10 p-2" role="region" tabindex="0"
+  <div class="overflow-auto rounded border border-rule bg-rule/10 p-2" role="region" tabindex="0"
        aria-label="{{ doc.display_ref }}, zoomable">
     <img src="{{ url_for('student.document_image', workspace=workspace.public_id,
                          company_slug=company.slug, ref=doc.ref) }}"

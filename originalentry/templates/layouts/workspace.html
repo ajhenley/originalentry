@@ -9,7 +9,7 @@
 {% block chrome %}
 <style nonce="{{ csp_nonce }}">:root { --company-accent: {{ company.accent_hex }}; }</style>
 
-<header class="bg-navy text-paper">
+<header class="bg-ink text-paper">
   {# The company's own colour is the one thing that is not navy: it is how a student knows whose
      books they are in at a glance (M3.2). #}
   <div class="h-1.5 bg-company"></div>
@@ -29,7 +29,7 @@
       <ul class="panel absolute right-0 z-10 mt-1 min-w-48 overflow-hidden text-ink shadow-lg">
         {% for t in switch_targets %}
         <li>
-          <a class="block px-3 py-2 hover:bg-cloud"
+          <a class="block px-3 py-2 hover:bg-tint"
              href="{{ url_for('student.overview', workspace=t.public_id, company_slug=t.slug) }}">
             {{ t.name }}</a>
         </li>

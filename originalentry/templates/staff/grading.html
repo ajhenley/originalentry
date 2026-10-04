@@ -80,7 +80,7 @@
         </td>
         <td>{{ (row.submission_status or '—') | replace('_', ' ') }}</td>
         <td>{% if row.marks and row.marks.needs_review %}
-          <span class="text-attention">Yes</span>{% else %}—{% endif %}</td>
+          <span class="text-notice">Yes</span>{% else %}—{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

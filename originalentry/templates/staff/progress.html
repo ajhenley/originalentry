@@ -42,7 +42,7 @@
         <td>
           {{ row.stage }}
           {% if row.not_started_flag %}
-          <span class="block text-xs text-attention">Not started, and the deadline is close</span>
+          <span class="block text-xs text-notice">Not started, and the deadline is close</span>
           {% endif %}
           {# A manual-variant assignment: until this is handed out they cannot record (I1.3). #}
           {% if not row.variant_id and variant_codes %}
@@ -50,7 +50,7 @@
                 action="{{ url_for('staff.progress_variant', assignment=assignment.public_id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="workspace" value="{{ row.workspace_public_id }}">
-            <span class="block w-full text-xs text-attention">Waiting for a variant</span>
+            <span class="block w-full text-xs text-notice">Waiting for a variant</span>
             <label class="sr-only" for="variant-{{ row.workspace_public_id }}">
               Variant for {{ row.student_name }}</label>
             <select id="variant-{{ row.workspace_public_id }}" name="variant" class="field text-xs">
@@ -66,7 +66,7 @@
         <td class="text-xs">{{ row.last_activity_at.strftime('%-d %b %H:%M') if row.last_activity_at else '—' }}</td>
         <td class="text-xs">
           {% for lockout in row.locked_checkpoints %}
-          <span class="block text-attention">
+          <span class="block text-notice">
             Locked out of {{ lockout.checkpoint_key }} after
             {{ lockout.figures | map('money') | join(', ') }}
           </span>
@@ -81,7 +81,7 @@
         </td>
         <td class="text-xs">
           {% if row.accommodation %}
-          <span class="block font-medium text-amber-deep">Extended</span>
+          <span class="block font-medium text-notice">Extended</span>
           <span class="block">{{ (row.accommodation.late_until or row.accommodation.due_at).strftime('%-d %b %H:%M') }}</span>
           <span class="block text-muted">{{ row.accommodation.reason }}</span>
           {% endif %}

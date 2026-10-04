@@ -43,7 +43,7 @@
     </thead>
     <tbody>
       {% for e in entries %}
-      <tr class="border-b border-silver/60 align-top {% if e.voided %}text-muted line-through{% endif %}">
+      <tr class="border-b border-rule/60 align-top {% if e.voided %}text-muted line-through{% endif %}">
         <td>{{ journal.ref_prefix if journal.ref_prefix }}{{ e.seq }}</td>
         <td>{{ e.date.strftime('%b %-d') }}</td>
         <td>
@@ -127,7 +127,7 @@
 
 {% if runs %}
 <h2 class="mt-6 mb-2 font-semibold">Postings</h2>
-<ul class="divide-y divide-rule rounded border border-silver">
+<ul class="divide-y divide-rule rounded border border-rule">
   {% for run in runs %}
   {% set covered = run.refs | join(', ') if run.refs else 'no entries' %}
   <li class="flex flex-wrap items-center gap-3 p-3 text-sm">

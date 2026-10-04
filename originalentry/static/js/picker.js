@@ -63,7 +63,7 @@ function initPicker(select) {
   list.id = `${id}-list`;
   list.setAttribute("role", "listbox");
   list.className =
-    "absolute z-10 mt-1 hidden max-h-60 w-full overflow-auto rounded border border-rule bg-paper text-sm shadow";
+    "absolute z-10 mt-1 hidden max-h-60 w-full overflow-auto rounded border border-rule bg-white text-sm shadow";
 
   wrap.append(input, list);
   select.after(wrap);

@@ -92,13 +92,13 @@ function render(status, debitCell, creditCell, indices, grid) {
   creditCell.textContent = formatCents(t.creditCents);
   if (t.balanced) {
     status.textContent = "In balance";
-    status.classList.remove("text-attention");
+    status.classList.remove("text-notice");
     status.classList.add("text-muted");
   } else if (t.debitCents === 0 && t.creditCents === 0) {
     status.textContent = "";
   } else {
     status.textContent = `Out of balance by $${formatCents(t.differenceCents)}`;
-    status.classList.add("text-attention");
+    status.classList.add("text-notice");
     status.classList.remove("text-muted");
   }
 }

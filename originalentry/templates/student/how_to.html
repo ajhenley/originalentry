@@ -82,7 +82,7 @@
       'body': 'Submitting makes everything read-only. If you hand in early by accident, your
                instructor can give the books back to you.',
     }] %}
-  <li class="border-l-2 border-silver pl-4">
+  <li class="border-l-2 border-rule pl-4">
     <p class="label-meta">Step {{ loop.index }}</p>
     <h2 class="mt-1 text-xl">{{ step.title }}</h2>
     <p class="mt-1 max-w-prose text-muted">{{ step.body | safe }}</p>
@@ -91,7 +91,7 @@
   {% endfor %}
 </ol>
 
-<section class="mt-10 max-w-prose border-t border-silver pt-6">
+<section class="mt-10 max-w-prose border-t border-rule pt-6">
   <h2 class="text-xl">What the app does and does not do</h2>
   <dl class="mt-3 space-y-3 text-muted">
     <div>

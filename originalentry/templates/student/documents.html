@@ -26,7 +26,7 @@
           <a class="underline"
              href="{{ url_for('student.document', workspace=workspace.public_id,
                               company_slug=company.slug, ref=d.ref) }}">{{ d.display_ref }}</a>
-          {% if d.guided %}<span class="ml-1 rounded bg-cloud px-1 text-xs">guided</span>{% endif %}
+          {% if d.guided %}<span class="ml-1 rounded bg-paper px-1 text-xs">guided</span>{% endif %}
         </td>
         {# The artefact's own kind where the envelope recorded one; doc_type is the constant
            "source document" for every row of a manifest-built pack. #}
@@ -35,7 +35,7 @@
         <td>
           {% if d.status == 'record' %}Recorded
           {% elif d.status == 'no_entry' %}No entry required
-          {% else %}<span class="text-attention">Not handled</span>{% endif %}
+          {% else %}<span class="text-notice">Not handled</span>{% endif %}
         </td>
       </tr>
       {% endfor %}

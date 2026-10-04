@@ -31,7 +31,7 @@
     </tfoot>
   </table>
 </div>
-<p class="mt-2 text-sm {% if not tb.in_balance %}text-attention{% else %}text-muted{% endif %}">
+<p class="mt-2 text-sm {% if not tb.in_balance %}text-notice{% else %}text-muted{% endif %}">
   {% if tb.in_balance %}In balance{% else %}Out of balance by {{ tb.difference_cents | dollars }}{% endif %}
 </p>
 {% endmacro %}
@@ -95,7 +95,7 @@
     </tfoot>
   </table>
 </div>
-<p class="mt-2 text-sm {% if not proof.agrees %}text-attention{% else %}text-muted{% endif %}">
+<p class="mt-2 text-sm {% if not proof.agrees %}text-notice{% else %}text-muted{% endif %}">
   {% if proof.agrees %}Agrees{% else %}Does not agree: difference {{ proof.difference_cents | dollars }}{% endif %}
 </p>
 {% endmacro %}

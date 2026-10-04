@@ -89,7 +89,7 @@ function say(text, tone = "muted") {
   if (!region) return;
   region.textContent = text;
   region.className = text
-    ? `px-4 py-2 text-sm ${tone === "attention" ? "bg-attention/10 text-attention" : "text-muted"}`
+    ? `px-4 py-2 text-sm ${tone === "attention" ? "bg-notice/10 text-notice" : "text-muted"}`
     : "";
 }
 

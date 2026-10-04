@@ -9,28 +9,28 @@
 </p>
 
 <div class="mt-6 grid gap-4 sm:grid-cols-3">
-  <a class="panel p-4 hover:bg-cloud"
+  <a class="panel p-4 hover:bg-tint"
      href="{{ url_for('student.documents', workspace=workspace.public_id, company_slug=company.slug) }}">
     <p class="font-semibold">Documents</p>
     <p class="text-sm text-muted">{{ triaged }} of {{ total }} handled.</p>
   </a>
-  <a class="panel p-4 hover:bg-cloud"
+  <a class="panel p-4 hover:bg-tint"
      href="{{ url_for('student.journals', workspace=workspace.public_id, company_slug=company.slug) }}">
     <p class="font-semibold">Journals</p>
     <p class="text-sm text-muted">Record and post entries.</p>
   </a>
-  <a class="panel p-4 hover:bg-cloud"
+  <a class="panel p-4 hover:bg-tint"
      href="{{ url_for('student.trial_balance', workspace=workspace.public_id, company_slug=company.slug) }}">
     <p class="font-semibold">Trial balance</p>
     <p class="text-sm text-muted">Unadjusted, adjusted and post-closing.</p>
   </a>
-  <a class="panel p-4 hover:bg-cloud"
+  <a class="panel p-4 hover:bg-tint"
      href="{{ url_for('student.general_ledger', workspace=workspace.public_id, company_slug=company.slug) }}">
     <p class="font-semibold">General ledger</p>
     <p class="text-sm text-muted">Account balances from your postings.</p>
   </a>
   {% for kind in company.subsidiary_kinds %}
-  <a class="panel p-4 hover:bg-cloud"
+  <a class="panel p-4 hover:bg-tint"
      href="{{ url_for('student.subsidiary', workspace=workspace.public_id, company_slug=company.slug, kind=kind) }}">
     <p class="font-semibold">{{ kind | kind_label }}</p>
     <p class="text-sm text-muted">Subsidiary ledger and its proof.</p>

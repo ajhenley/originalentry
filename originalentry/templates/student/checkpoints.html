@@ -22,9 +22,9 @@
     {% if c.state.passed %}
     <p class="mt-2 text-sm text-muted">Checkpoint passed.</p>
     {% elif c.closed %}
-    <p class="mt-2 text-sm text-amber-deep">This checkpoint has closed. Please see your instructor.</p>
+    <p class="mt-2 text-sm text-notice">This checkpoint has closed. Please see your instructor.</p>
     {% elif c.state.locked %}
-    <p class="mt-2 text-sm text-attention">This checkpoint is locked. Please see your instructor.</p>
+    <p class="mt-2 text-sm text-notice">This checkpoint is locked. Please see your instructor.</p>
     {% elif not read_only %}
     <form method="post" class="mt-2 flex flex-wrap items-end gap-2"
           action="{{ url_for('student.checkpoint_submit', workspace=workspace.public_id,

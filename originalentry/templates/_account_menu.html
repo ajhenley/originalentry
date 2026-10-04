@@ -16,37 +16,37 @@
      the browser would otherwise draw. #}
   <summary class="inline-flex cursor-pointer list-none items-center gap-1.5 rounded
                   {% if dark %}nav-link border border-paper/25
-                  {% else %}border border-silver bg-paper px-3 py-1 font-medium text-navy
-                            hover:border-navy{% endif %}">
+                  {% else %}border border-rule bg-white px-3 py-1 font-medium text-ink
+                            hover:border-ink{% endif %}">
     {{ account_label }}<span aria-hidden="true" class="text-[0.6rem] leading-none">&#9662;</span>
   </summary>
   <ul class="panel absolute right-0 z-20 mt-1 min-w-56 overflow-hidden text-ink shadow-lg">
-    <li class="border-b border-silver bg-cloud px-3 py-2">
+    <li class="border-b border-rule bg-paper px-3 py-2">
       <span class="label-meta block">Signed in as</span>
       <span class="block truncate">{{ current_user.email }}</span>
     </li>
     {% if my_workspaces %}
-    <li class="label-meta border-b border-silver px-3 pt-2 pb-1">Your workspaces</li>
+    <li class="label-meta border-b border-rule px-3 pt-2 pb-1">Your workspaces</li>
     {% for w in my_workspaces %}
     <li>
-      <a class="block px-3 py-2 hover:bg-cloud"
+      <a class="block px-3 py-2 hover:bg-tint"
          href="{{ url_for('student.overview', workspace=w.public_id, company_slug=w.slug) }}">
         {{ w.name }}</a>
     </li>
     {% endfor %}
     {% elif current_user.role in ('instructor', 'grader') %}
     <li>
-      <a class="block px-3 py-2 hover:bg-cloud" href="{{ url_for('staff.index') }}">Console</a>
+      <a class="block px-3 py-2 hover:bg-tint" href="{{ url_for('staff.index') }}">Console</a>
     </li>
     {% else %}
     <li class="px-3 py-2 text-muted">No books open yet.</li>
     <li>
-      <a class="block px-3 py-2 hover:bg-cloud" href="{{ url_for('auth.join_form') }}">
+      <a class="block px-3 py-2 hover:bg-tint" href="{{ url_for('auth.join_form') }}">
         Join with a class code</a>
     </li>
     {% endif %}
-    <li class="border-t border-silver">
-      <a class="block px-3 py-2 hover:bg-cloud" href="{{ url_for('auth.sign_out') }}">Sign out</a>
+    <li class="border-t border-rule">
+      <a class="block px-3 py-2 hover:bg-tint" href="{{ url_for('auth.sign_out') }}">Sign out</a>
     </li>
   </ul>
 </details>

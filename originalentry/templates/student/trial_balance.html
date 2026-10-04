@@ -8,7 +8,7 @@
   {% set href = url_for('student.trial_balance', workspace=workspace.public_id,
                         company_slug=company.slug, stage=s.key) %}
   <a href="{{ href }}"
-     class="field {% if s.key == stage %}bg-cloud font-semibold{% endif %}"
+     class="field {% if s.key == stage %}bg-paper font-semibold{% endif %}"
      {% if s.key == stage %}aria-current="page"{% endif %}>{{ s.label }}</a>
   {% endfor %}
 </nav>

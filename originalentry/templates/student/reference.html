@@ -7,10 +7,10 @@
 {% block workspace %}
 <div class="flex flex-col gap-6 lg:flex-row-reverse">
   <nav aria-label="Reference sections" class="lg:w-64">
-    <ul class="panel divide-y divide-silver overflow-hidden text-sm">
+    <ul class="panel divide-y divide-rule overflow-hidden text-sm">
       {% for s in sections %}
       <li>
-        <a class="block px-4 py-2 hover:bg-cloud {% if section and s.key == section.key %}bg-cloud font-medium{% endif %}"
+        <a class="block px-4 py-2 hover:bg-tint {% if section and s.key == section.key %}bg-paper font-medium{% endif %}"
            {% if section and s.key == section.key %}aria-current="page"{% endif %}
            href="{{ url_for('student.reference', workspace=workspace.public_id,
                             company_slug=company.slug, section=s.key) }}">{{ s.title }}</a>

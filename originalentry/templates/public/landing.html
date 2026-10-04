@@ -2,7 +2,7 @@
 {% block title %}Original Entry: the accounting cycle, checked to the cent{% endblock %}
 
 {# The landing has no app bars; a single accent hairline sits at the very top. #}
-{% block appbars %}<div class="h-1.5 w-full bg-navy" aria-hidden="true"></div>{% endblock %}
+{% block appbars %}<div class="h-1.5 w-full bg-ink" aria-hidden="true"></div>{% endblock %}
 
 {% block main %}
 {% include "public/_header.html" with context %}
@@ -36,7 +36,7 @@
 
   {# A ledger in miniature — the promise made visible. Decorative, so hidden from assistive tech. #}
   <aside aria-hidden="true" class="panel overflow-hidden shadow-sm">
-    <p class="label-meta border-b border-silver bg-cloud px-5 py-3">Adjusted trial balance</p>
+    <p class="label-meta border-b border-rule bg-paper px-5 py-3">Adjusted trial balance</p>
     <div class="p-5">
     <table class="w-full text-sm figure">
       <tbody>
@@ -68,23 +68,23 @@
   </aside>
 </section>
 
-<section class="border-t border-silver py-12">
+<section class="border-t border-rule py-12">
   <dl class="grid gap-8 sm:grid-cols-3">
     <div>
-      <dt class="font-display text-xl text-navy">A full cycle</dt>
+      <dt class="font-display text-xl text-ink">A full cycle</dt>
       <dd class="mt-1 text-sm text-muted">
         Documents → journals → ledgers → trial balances → statements → close.
       </dd>
     </div>
     <div>
-      <dt class="font-display text-xl text-navy">Marked on your own figures</dt>
+      <dt class="font-display text-xl text-ink">Marked on your own figures</dt>
       <dd class="mt-1 text-sm text-muted">
         Every step earns its marks from the work you actually did, so one early slip does not
         cascade through the rest.
       </dd>
     </div>
     <div>
-      <dt class="font-display text-xl text-navy">Nothing is lost</dt>
+      <dt class="font-display text-xl text-ink">Nothing is lost</dt>
       <dd class="mt-1 text-sm text-muted">
         Entries are kept as you type them, and the ledgers are derived, never transcribed.
       </dd>
@@ -92,7 +92,7 @@
   </dl>
 </section>
 
-<footer class="flex flex-wrap items-center justify-between gap-2 border-t border-silver py-6 text-sm text-muted">
+<footer class="flex flex-wrap items-center justify-between gap-2 border-t border-rule py-6 text-sm text-muted">
   <span>Original Entry · Principles of Financial Accounting.</span>
   <span>Teaching with it?
     <a class="underline" href="{{ url_for('auth.sign_in_form') }}">Sign in to set up a section.</a>

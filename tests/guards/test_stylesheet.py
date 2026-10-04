@@ -1,16 +1,23 @@
 """The stylesheet's own guards.
 
-Tailwind v4 emits **nothing** for an undefined utility. `bg-papr` produces no rule, no build
-error and no console warning: the surface simply loses its colour, and a person reading the page
-sees a layout that looks finished and is wrong. The same silence covers a missing font file,
-which falls back to Georgia without complaint.
+Tailwind v4 emits **nothing** for an undefined utility: no rule, no build error, no console
+warning. If a token is deleted or renamed in `@theme` while markup still says `text-muted`, the
+surface simply loses its colour and the page looks finished and is wrong. The same silence covers
+a missing font file, which falls back to Georgia without complaint.
 
-These guards exist because a restyle is otherwise unverifiable by test. They do not judge whether
-the design is good; they catch the three ways it can be silently broken.
+There are two guards (every palette utility the markup uses is emitted by the build; every
+`@font-face` file exists) plus one meta-test pinning the first guard's own logic. They do not
+judge whether the design is good.
+
+Blind spots. `_utilities_used` only extracts names that exist in `@theme`, so a typo such as
+`bg-papr` is invisible to it. It also cannot see class names assembled in Jinja or Python
+(`bg-{{ x }}`), `.py` files (not scanned), or anything outside the `templates/` and `static/js/`
+roots.
 """
 
 import pathlib
 import re
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 CSS = ROOT / "originalentry" / "static" / "src" / "app.css"
@@ -72,7 +79,7 @@ def _utilities_used(token_names: set[str]) -> set[str]:
     burden full of false positives. This finds references to names we actually own.
     """
     pattern = re.compile(
-        r"\b(?:%s)-(?:%s)\b"
+        r"\b(?:%s)-(?:%s)(?![\w-])"
         % ("|".join(PALETTE_PREFIXES), "|".join(sorted(map(re.escape, token_names), key=lambda n: (-len(n), n))))
     )
     used: set[str] = set()
@@ -89,6 +96,11 @@ def _emitted(utility: str, built: str) -> bool:
     variant-prefixed utility, and the markup uses three of them. Accepting either a leading `.`
     or a variant's `\\:` matches both forms, and the trailing lookahead stops `border-navy`
     matching inside `.border-navy-deep`.
+
+    Limitation: this verifies the utility is emitted *in some form*. `_utilities_used` discards
+    any variant or opacity, so `.hover\\:text-muted` or `.bg-rule\\/50` satisfies a bare
+    `text-muted` or `bg-rule`. The specific variant or opacity is not checked; the guard's job is
+    to catch a token deleted while markup still names it.
     """
     return re.search(r"(?:\.|\\:)" + re.escape(utility) + r"(?![\w-])", built) is not None
 
@@ -97,7 +109,7 @@ def test_every_palette_class_used_reaches_the_built_css():
     """A token deleted from `@theme` while a template still names it loses the surface.
 
     The built stylesheet is the evidence: if `text-muted` is used and `.text-muted` is absent
-    from `dist/app.css`, 162 elements render with no colour.
+    from `dist/app.css`, every element using it renders with no colour.
     """
     tokens = set(_defined_tokens())
     used = _utilities_used(tokens)
@@ -133,5 +145,15 @@ def test_the_emission_check_understands_variants_and_boundaries():
     assert not _emitted("border-navy", ".border-navy-deep{border-color:red}")
     assert not _emitted("bg-papr", ".bg-paper{background:red}")
 
-    names = sorted(map(re.escape, {"amber", "amber-deep"}), key=lambda n: (-len(n), n))
-    assert names[0] == re.escape("amber-deep"), "longer token names must be tried first"
+
+
+def test_utilities_used_prefers_the_longest_token_name(tmp_path, monkeypatch):
+    """`text-amber-deep` must not also yield a phantom `text-amber`."""
+    page = tmp_path / "page.html"
+    page.write_text('<p class="text-amber-deep">x</p>', encoding="utf-8")
+    monkeypatch.setattr(sys.modules[__name__], "_scanned_files", lambda: [page])
+
+    used = _utilities_used({"amber", "amber-deep"})
+
+    assert used == {"text-amber-deep"}, used
+    assert "text-amber" not in used

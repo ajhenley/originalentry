@@ -38,10 +38,6 @@ PALETTE_PREFIXES = (
     "divide-x", "divide-y", "ring-offset", "outline-offset",
 )
 
-#: Longest-first only for legibility. The order does not affect matching — Python's `re`
-#: backtracks across the alternation — but listing the compound forms at all is essential:
-#: without `border-t` in the list, `border-t-amber` does not match anything, because the `t-`
-#: sits between the prefix and the colour name.
 #: The palette this stylesheet is supposed to define. Pinned because the emission guard below
 #: builds its scan set *from* the defined tokens: deleting a token silently removes it from
 #: scrutiny rather than failing anything. This assertion is what makes a deletion loud.
@@ -50,6 +46,10 @@ EXPECTED_TOKENS = (
     "notice", "wash", "failure", "tint", "company",
 )
 
+#: Longest-first only for legibility. The order does not affect matching — Python's `re`
+#: backtracks across the alternation — but listing the compound forms at all is essential:
+#: without `border-t` in the list, `border-t-amber` does not match anything, because the `t-`
+#: sits between the prefix and the colour name.
 _PREFIX_ALT = "|".join(sorted(map(re.escape, PALETTE_PREFIXES), key=lambda p: (-len(p), p)))
 
 

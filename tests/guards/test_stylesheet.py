@@ -157,3 +157,69 @@ def test_utilities_used_prefers_the_longest_token_name(tmp_path, monkeypatch):
 
     assert used == {"text-amber-deep"}, used
     assert "text-amber" not in used
+
+
+def _relative_luminance(hex_colour: str) -> float:
+    h = hex_colour.lstrip("#")
+    channels = []
+    for i in (0, 2, 4):
+        c = int(h[i : i + 2], 16) / 255
+        channels.append(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4)
+    r, g, b = channels
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _contrast(a: str, b: str) -> float:
+    la, lb = _relative_luminance(a), _relative_luminance(b)
+    hi, lo = max(la, lb), min(la, lb)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+#: Every pair the interface actually renders, and the floor it must hold. 4.5 is AA for text;
+#: 3.0 is AA for a control's boundary (WCAG 1.4.11). `rule` is absent on purpose: at 1.41:1 it
+#: is a decorative divider, which 1.4.11 exempts, and a control that used it would be invisible.
+CONTRAST_FLOORS = [
+    ("ink", "paper", 4.5),
+    ("ink", "white", 4.5),
+    ("muted", "paper", 4.5),
+    ("muted", "white", 4.5),
+    ("notice", "wash", 4.5),
+    ("notice", "paper", 4.5),
+    ("failure", "white", 4.5),
+    ("failure", "paper", 4.5),
+    ("company", "paper", 4.5),
+    ("paper", "ink", 4.5),
+    ("white", "ink", 4.5),
+]
+
+
+def test_the_palette_holds_its_contrast_floors():
+    """Lightening a token until text stops being readable must fail here, not in review."""
+    tokens = _defined_tokens()
+    failures = []
+    for fg, bg, floor in CONTRAST_FLOORS:
+        assert fg in tokens, f"--color-{fg} is not defined"
+        assert bg in tokens, f"--color-{bg} is not defined"
+        ratio = _contrast(_token_hex(fg), _token_hex(bg))
+        if ratio < floor:
+            failures.append(f"{fg} on {bg} is {ratio:.2f}:1, below {floor}:1")
+
+    assert not failures, "; ".join(failures)
+
+
+def test_a_field_borders_with_muted_not_the_divider_colour():
+    """`rule` is 1.41:1 on paper: a field bordered with it has no visible edge.
+
+    Asserted positively as well as negatively. "Does not mention rule" passes on a `.field` that
+    mentions no colour at all — including one where the border was deleted outright — so the
+    absence alone proves nothing.
+    """
+    css = _css_text()
+    field_block = css[css.index(".field {") : css.index(".field:focus")]
+
+    assert "--color-muted" in field_block, (
+        ".field must border with --color-muted (5.80:1); found: " + field_block
+    )
+    assert "--color-rule" not in field_block, (
+        ".field must not border with --color-rule (1.41:1), which leaves no visible edge"
+    )

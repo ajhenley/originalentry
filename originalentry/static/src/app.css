@@ -17,6 +17,20 @@
   --font-sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
+  /* ── The Original Entry palette ───────────────────────────────────────────────────────
+     Ink carries the chrome, the headings and every action. Notice marks the mechanical states
+     a student must see; failure is the app admitting its own trouble and never anything the
+     student did; company marks whose books these are (A7, M3.2). */
+  --color-ink: #292824;
+  --color-paper: #faf8f4;
+  --color-white: #ffffff;
+  --color-muted: #65615a;
+  --color-rule: #d8d3c9;      /* decorative dividers only — 1.41:1, never a control border */
+  --color-notice: #805000;    /* also the focus ring: the material's focus colour is this hex */
+  --color-wash: #fff2d5;
+  --color-failure: #a12b2b;
+  --color-tint: #eae6de;      /* the material's own #EAE6DE, unnamed there; hover and quiet fills */
+
   --color-navy: #1b3a5c;
   --color-navy-deep: #0f2440;
   --color-navy-mid: #244b6e;
@@ -30,16 +44,12 @@
   --color-coral: #c0462a;      /* darkened from #E76F51 for the same reason */
 
   --color-cream: #faf8f4;
-  --color-paper: #ffffff;
   --color-cloud: #f4f6f9;
   --color-silver: #e2e6ee;
   --color-gray: #6b7688;       /* darkened from #8892A4 so mono labels stay legible */
-  --color-ink: #1e2532;
-  --color-muted: #4a5568;
 
   /* Kept under its old name so existing markup and the mechanical-state rule still read true:
      attention is amber, and it never means anything about whether work is any good (A7). */
-  --color-rule: #e2e6ee;
   --color-attention: #8a5a00;
 
   --radius-DEFAULT: 8px;
@@ -263,7 +273,7 @@
   .field {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    border: 1.5px solid var(--color-silver);
+    border: 1px solid var(--color-muted);
     border-radius: var(--radius-DEFAULT);
     background: var(--color-paper);
     color: var(--color-ink);

@@ -5,12 +5,7 @@
 @source "../../templates";
 @source "../js";
 
-/* ── The CityReady palette and type (design.html) ───────────────────────────────────────
-   Navy carries the chrome and the headings, teal every action, amber the mechanical states a
-   student must notice. Coral is kept for the app's own trouble — a save that will not go
-   through — and never for anything a student did.
-
-   The fonts are served from this app rather than a font CDN: a student loading a ledger should
+/* The fonts are served from this app rather than a font CDN: a student loading a ledger should
    not also be announcing themselves to a third party. */
 @theme {
   --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
@@ -38,7 +33,7 @@
 
 /* The company accent comes from the pack (validated hex, V13) and is set as --company-accent in a
    nonce'd <style> block in the workspace layout — never in a style attribute. It marks whose
-   books these are (M3.2); everything structural stays navy and teal. */
+   books these are (M3.2); everything structural stays ink. */
 @theme inline {
   --color-company: var(--company-accent, #1b3a5c);
 }
@@ -85,8 +80,7 @@
   }
 
   /* Focus is the notice colour everywhere, including over a company's own accent bar, so it is
-     never lost against a dark stripe (T10.5). At 6.46:1 on paper it is more visible than the
-     teal ring it replaces. */
+     never lost against a dark stripe (T10.5). It holds 6.46:1 on paper. */
   :focus-visible {
     outline: 3px solid var(--color-notice);
     outline-offset: 3px;

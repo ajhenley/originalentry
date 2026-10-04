@@ -5,14 +5,18 @@ warning. If a token is deleted or renamed in `@theme` while markup still says `t
 surface simply loses its colour and the page looks finished and is wrong. The same silence covers
 a missing font file, which falls back to Georgia without complaint.
 
-There are two guards (every palette utility the markup uses is emitted by the build; every
-`@font-face` file exists) plus one meta-test pinning the first guard's own logic. They do not
-judge whether the design is good.
+The guards: every palette utility the markup uses is emitted by the build; every `@font-face`
+file exists; the palette holds its contrast floors; a field borders with muted, not the divider
+colour; no retired colour name survives in markup or in `@theme`; and no token is declared
+twice. Two meta-tests pin the first guard's own logic (variant and boundary handling, and
+longest-token-first matching). They do not judge whether the design is good.
 
 Blind spots. `_utilities_used` only extracts names that exist in `@theme`, so a typo such as
 `bg-papr` is invisible to it. It also cannot see class names assembled in Jinja or Python
 (`bg-{{ x }}`), `.py` files (not scanned), or anything outside the `templates/` and `static/js/`
-roots.
+roots. The retired-name scan reads only those same roots. It matches a retired name followed by
+a word boundary, so a hypothetical `text-gray-500` is reported as `text-gray`: the right call,
+but the reported name is the stem rather than the class as written.
 """
 
 import collections
@@ -34,8 +38,10 @@ PALETTE_PREFIXES = (
     "divide-x", "divide-y", "ring-offset", "outline-offset",
 )
 
-#: Longest-first, so `border-t` is tried before `border` and `border-t-amber` is read as
-#: prefix `border-t` + token `amber` rather than failing to match at all.
+#: Longest-first only for legibility. The order does not affect matching — Python's `re`
+#: backtracks across the alternation — but listing the compound forms at all is essential:
+#: without `border-t` in the list, `border-t-amber` does not match anything, because the `t-`
+#: sits between the prefix and the colour name.
 _PREFIX_ALT = "|".join(sorted(map(re.escape, PALETTE_PREFIXES), key=lambda p: (-len(p), p)))
 
 

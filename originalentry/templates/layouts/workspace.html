@@ -10,9 +10,6 @@
 <style nonce="{{ csp_nonce }}">:root { --company-accent: {{ company.accent_hex }}; }</style>
 
 <header class="bg-ink text-paper">
-  {# The company's own colour is the one thing that is not navy: it is how a student knows whose
-     books they are in at a glance (M3.2). #}
-  <div class="h-1.5 bg-company"></div>
   <div data-shell class="mx-auto flex {{ shell_width }} flex-wrap items-center gap-4 px-4 py-3">
     <span aria-hidden="true"
           class="grid h-10 w-10 place-items-center rounded bg-company font-display text-base text-paper">
@@ -25,7 +22,7 @@
     </div>
     {% if switch_targets %}
     <details class="relative text-sm">
-      <summary class="nav-link cursor-pointer list-none border border-paper/25">Switch company</summary>
+      <summary class="nav-link cursor-pointer list-none border border-paper/40">Switch company</summary>
       <ul class="panel absolute right-0 z-10 mt-1 min-w-48 overflow-hidden text-ink shadow-lg">
         {% for t in switch_targets %}
         <li>
@@ -71,6 +68,12 @@
   <div class="callout callout--attention rounded-none border-l-0 border-t border-t-notice px-4 py-2"
        role="status">{{ read_only_message }}</div>
   {% endif %}
+  {# The company's own colour, on the edge where the chrome meets the page. Against cream it is
+     always visible; against ink it is not — a dark accent such as #1B3A5C is 1.27:1 on ink and
+     10.96:1 on paper. V13 already requires an accent to clear 4.5:1 against white, so sitting on
+     this edge is what makes that guarantee hold. It is how a student knows whose books they are
+     in at a glance (M3.2). #}
+  <div class="h-1.5 bg-company"></div>
 </header>
 {% endblock %}
 

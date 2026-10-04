@@ -42,6 +42,14 @@ PALETTE_PREFIXES = (
 #: backtracks across the alternation — but listing the compound forms at all is essential:
 #: without `border-t` in the list, `border-t-amber` does not match anything, because the `t-`
 #: sits between the prefix and the colour name.
+#: The palette this stylesheet is supposed to define. Pinned because the emission guard below
+#: builds its scan set *from* the defined tokens: deleting a token silently removes it from
+#: scrutiny rather than failing anything. This assertion is what makes a deletion loud.
+EXPECTED_TOKENS = (
+    "ink", "paper", "white", "muted", "rule",
+    "notice", "wash", "failure", "tint", "company",
+)
+
 _PREFIX_ALT = "|".join(sorted(map(re.escape, PALETTE_PREFIXES), key=lambda p: (-len(p), p)))
 
 
@@ -139,6 +147,16 @@ def test_every_palette_class_used_reaches_the_built_css():
     )
 
 
+def test_the_palette_is_exactly_the_tokens_we_expect():
+    """A deleted or renamed token must fail here, because no other guard can see it.
+
+    `_utilities_used` derives its scan set from whatever `@theme` currently declares, so a token
+    that disappears takes its own utilities out of the search with it. Every other guard in this
+    file then passes while the markup that named it renders with no colour at all.
+    """
+    assert set(_defined_tokens()) == set(EXPECTED_TOKENS)
+
+
 def test_every_font_face_file_exists():
     """A renamed woff2 falls back to Georgia with no error anywhere."""
     srcs = re.findall(r'src:\s*url\("([^"]+)"\)', _css_text())
@@ -211,6 +229,9 @@ CONTRAST_FLOORS = [
     ("ink", "wash", 4.5),
     ("failure", "wash", 4.5),
     ("muted", "wash", 4.5),
+    # Pins the monogram glyphs. It can only test the #1b3a5c fallback: the real accent arrives
+    # per-pack at request time.
+    ("paper", "company", 4.5),
 ]
 
 

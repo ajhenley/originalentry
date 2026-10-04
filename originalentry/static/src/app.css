@@ -25,9 +25,7 @@
   --color-failure: #a12b2b;
   --color-tint: #eae6de;      /* the material's own #EAE6DE, unnamed there; hover and quiet fills */
 
-  --radius-DEFAULT: 3px;
-  --radius-lg: 3px;
-  --radius-xl: 3px;
+  --radius: 3px;
 }
 
 /* The company accent comes from the pack (validated hex, V13) and is set as --company-accent in a
@@ -162,7 +160,7 @@
   .panel {
     background: var(--color-white);
     border: 1px solid var(--color-rule);
-    border-radius: var(--radius-DEFAULT);
+    border-radius: var(--radius);
   }
 
   .data-table {
@@ -202,24 +200,30 @@
     background: var(--color-tint);
   }
 
-  /* How a ruled book closes a column. */
   .data-table tfoot th,
   .data-table tfoot td {
     border-top: 1px solid var(--color-ink);
-    border-bottom: 3px double var(--color-ink);
     color: var(--color-ink);
     font-weight: 600;
   }
 
-  /* Ink acts, white retreats, outline is quietest. Teal's job is gone: there is one action
-     colour now, and it is the same ink the text is set in. */
+  /* How a ruled book closes a column — on the row that actually closes it. A `tfoot` with two
+     rows (the subsidiary proof compares a total against its control account) must not double-rule
+     the comparison. */
+  .data-table tfoot tr:last-child th,
+  .data-table tfoot tr:last-child td {
+    border-bottom: 3px double var(--color-ink);
+  }
+
+  /* Ink acts, white retreats, outline is quietest. There is one action colour, and it is the
+     same ink the text is set in. */
   .btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.55rem 1.25rem;
     border: 1px solid transparent;
-    border-radius: var(--radius-DEFAULT);
+    border-radius: var(--radius);
     font-size: 0.9rem;
     font-weight: 600;
     line-height: 1.2;
@@ -275,15 +279,16 @@
     width: 100%;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-muted);
-    border-radius: var(--radius-DEFAULT);
+    border-radius: var(--radius);
     background: var(--color-white);
     color: var(--color-ink);
     font-family: inherit;
     font-size: 0.9rem;
   }
 
+  /* The focus ring itself comes from the base layer's :focus-visible; the border and shadow are
+     an additional affordance under it. */
   .field:focus {
-    outline: none;
     border-color: var(--color-ink);
     box-shadow: 0 0 0 3px var(--color-wash);
   }
@@ -299,7 +304,7 @@
   .callout {
     border-left: 3px solid var(--color-muted);
     background: var(--color-white);
-    border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
+    border-radius: 0 var(--radius) var(--radius) 0;
     padding: 0.875rem 1.125rem;
     font-size: 0.9rem;
     color: var(--color-ink);
@@ -318,6 +323,7 @@
   }
 
   .callout__label {
+    font-family: var(--font-sans);
     font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.1em;
@@ -338,7 +344,7 @@
   /* Navigation in the workspace and console chrome. */
   .nav-link {
     padding: 0.3rem 0.65rem;
-    border-radius: var(--radius-DEFAULT);
+    border-radius: var(--radius);
     font-size: 0.875rem;
     color: rgb(255 255 255 / 0.75);
   }

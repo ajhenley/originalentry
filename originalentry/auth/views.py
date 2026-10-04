@@ -146,7 +146,12 @@ def code():
         return render_template("auth/code.html", email=email), 429
     if row is None:
         db.session.rollback()
-        flash("That code did not match. Check it and try again.")
+        # A correct code that is simply spent or stale deserves to be told so; anything else gets
+        # the generic line, so a guess cannot learn whether a sign-in is pending (E1).
+        flash(
+            tokens.explain_miss(db.session, email, entered)
+            or "That code did not match. Check it and try again."
+        )
         return render_template("auth/code.html", email=email), 422
     return _complete_sign_in(row)
 

@@ -183,3 +183,81 @@ def test_revoke_signs_out_every_device(client, session, app):
     session.flush()
     assert loader(stale_id) is None            # every existing device is signed out
     assert loader(user.get_id()) is not None    # a fresh sign-in still works
+
+
+# ── Why a code missed (E1-safe) ──────────────────────────────────────────────────────────
+
+
+def test_a_used_code_says_it_was_used_rather_than_blaming_the_typing(session):
+    """The commonest real case: a correct code, submitted twice.
+
+    `consume_code` only looks at unconsumed tokens, so the second submission looks identical to a
+    wrong code and the student is told to re-check a code that was right.
+    """
+    _, code = tokens.issue_token(session, "a@example.edu")
+    tokens.consume_code(session, "a@example.edu", code)
+
+    assert "already been used" in tokens.explain_miss(session, "a@example.edu", code)
+
+
+def test_an_expired_code_says_it_expired(session):
+    _, code = tokens.issue_token(session, "a@example.edu")
+    token = session.scalars(
+        select(LoginToken).where(LoginToken.email == "a@example.edu")
+    ).one()
+    token.expires_at = datetime.now(UTC) - timedelta(minutes=1)
+    session.flush()
+
+    assert "expired" in tokens.explain_miss(session, "a@example.edu", code)
+
+
+def test_a_wrong_code_is_explained_to_nobody(session):
+    """A guess must learn nothing — not even that a sign-in is pending."""
+    tokens.issue_token(session, "a@example.edu")
+
+    assert tokens.explain_miss(session, "a@example.edu", "000000") is None
+
+
+def test_a_guess_cannot_tell_whether_an_address_has_a_pending_sign_in(session):
+    """E1: the response must not reveal who is enrolled, or who is mid-sign-in.
+
+    This is the assertion that stops a well-meaning fix from turning the message into an
+    address-enumeration oracle.
+    """
+    tokens.issue_token(session, "pending@example.edu")
+
+    with_token = tokens.explain_miss(session, "pending@example.edu", "000000")
+    without_token = tokens.explain_miss(session, "nobody@example.edu", "000000")
+
+    assert with_token == without_token is None
+
+
+def test_submitting_a_code_twice_says_it_was_used_not_that_it_was_wrong(client, session, mail):
+    """The bug a real student hit: the code was right, the page said it was not.
+
+    Submitting twice — a refresh, a back button, a double click — consumed the token on the first
+    POST, and the second was answered "That code did not match", sending them to re-check a code
+    that had just worked.
+    """
+    _student(session, "s9@example.edu")
+    client.post("/auth/sign-in", data={"email": "s9@example.edu"})
+    code = mail[0]["code"]
+    assert client.post("/auth/code", data={"email": "s9@example.edu", "code": code}).status_code == 302
+
+    again = client.post("/auth/code", data={"email": "s9@example.edu", "code": code})
+
+    body = again.get_data(as_text=True)
+    assert "already been used" in body
+    assert "did not match" not in body
+
+
+def test_a_wrong_code_still_says_only_that_it_did_not_match(client, session, mail):
+    """The generic message must survive for a guess, or the fix becomes an enumeration oracle."""
+    _student(session, "s10@example.edu")
+    client.post("/auth/sign-in", data={"email": "s10@example.edu"})
+
+    resp = client.post("/auth/code", data={"email": "s10@example.edu", "code": "000000"})
+
+    body = resp.get_data(as_text=True)
+    assert "did not match" in body
+    assert "already been used" not in body

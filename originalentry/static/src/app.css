@@ -25,9 +25,9 @@
   --color-failure: #a12b2b;
   --color-tint: #eae6de;      /* the material's own #EAE6DE, unnamed there; hover and quiet fills */
 
-  --radius-DEFAULT: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-DEFAULT: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 3px;
 }
 
 /* The company accent comes from the pack (validated hex, V13) and is set as --company-accent in a
@@ -132,6 +132,7 @@
   /* The ledger's own word for a cross-reference. Small, tracked, uppercase in the semibold
      face, set in muted ink so it names without shouting. */
   .label-meta {
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.07em;
@@ -140,13 +141,15 @@
   }
 
   /* Names a section that genuinely needs naming, not one that sits above every heading. Wider
-     tracking than .label-meta and set in the notice colour, so it reads as a signpost. */
+     tracking than .label-meta and set in ink, so it reads as a signpost. Notice stays reserved
+     for actual notices (A7). The family is declared so the label looks the same on a heading. */
   .label-section {
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--color-notice);
+    color: var(--color-ink);
   }
 
   /* Figures and account numbers. No face of its own: Source Sans 3's digits are equal-width by
@@ -157,9 +160,9 @@
   }
 
   .panel {
-    background: var(--color-paper);
-    border: 1px solid var(--color-silver);
-    border-radius: var(--radius-lg);
+    background: var(--color-white);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-DEFAULT);
   }
 
   .data-table {
@@ -171,7 +174,7 @@
   .data-table caption {
     font-family: var(--font-display);
     font-size: 1.05rem;
-    color: var(--color-navy);
+    color: var(--color-ink);
     text-align: left;
     padding: 0.875rem 0.875rem 0.5rem;
   }
@@ -189,30 +192,33 @@
 
   .data-table tbody td,
   .data-table tbody th {
-    border-bottom: 1px solid var(--color-silver);
-    color: var(--color-muted);
+    border-bottom: 1px solid var(--color-rule);
+    color: var(--color-ink);
     font-weight: 400;
     text-align: left;
   }
 
   .data-table tbody tr:hover {
-    background: rgb(42 157 143 / 0.03);
+    background: var(--color-tint);
   }
 
+  /* How a ruled book closes a column. */
   .data-table tfoot th,
   .data-table tfoot td {
-    border-top: 2px solid var(--color-navy);
+    border-top: 1px solid var(--color-ink);
+    border-bottom: 3px double var(--color-ink);
     color: var(--color-ink);
     font-weight: 600;
   }
 
-  /* Buttons. Teal acts, navy administers, outline retreats. */
+  /* Ink acts, white retreats, outline is quietest. Teal's job is gone: there is one action
+     colour now, and it is the same ink the text is set in. */
   .btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.55rem 1.25rem;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     border-radius: var(--radius-DEFAULT);
     font-size: 0.9rem;
     font-weight: 600;
@@ -222,31 +228,32 @@
   }
 
   .btn--primary {
-    background: var(--color-teal-deep);
-    color: #fff;
+    background: var(--color-ink);
+    color: var(--color-paper);
   }
 
   .btn--primary:hover {
-    background: #19645a;
+    background: #45433e;
   }
 
   .btn--secondary {
-    background: var(--color-navy);
-    color: #fff;
+    background: var(--color-white);
+    color: var(--color-ink);
+    border-color: var(--color-ink);
   }
 
   .btn--secondary:hover {
-    background: var(--color-navy-mid);
+    background: var(--color-tint);
   }
 
   .btn--outline {
     background: transparent;
-    color: var(--color-navy);
-    border-color: var(--color-silver);
+    color: var(--color-ink);
+    border-color: var(--color-muted);
   }
 
   .btn--outline:hover {
-    border-color: var(--color-navy);
+    border-color: var(--color-ink);
   }
 
   .btn--small {
@@ -254,12 +261,13 @@
     font-size: 0.8rem;
   }
 
-  /* Fields. A visible label above every input, a teal ring on focus. */
+  /* Fields. A visible label above every input; on focus the border darkens to ink and a soft
+     wash halo surrounds it. */
   .field-label {
     display: block;
     font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--color-navy);
+    font-weight: 600;
+    color: var(--color-ink);
     margin-bottom: 0.25rem;
   }
 
@@ -276,8 +284,8 @@
 
   .field:focus {
     outline: none;
-    border-color: var(--color-teal);
-    box-shadow: 0 0 0 3px rgb(42 157 143 / 0.15);
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 3px var(--color-wash);
   }
 
   .field--figure {
@@ -285,28 +293,28 @@
     text-align: right;
   }
 
-  /* Callouts carry a left rule in the colour of what they are about. Teal tells you something,
-     amber asks you to notice a state of the books, coral is the app admitting trouble of its
+  /* Callouts carry a left rule in the colour of what they are about. Muted tells you something,
+     notice asks you to notice a state of the books, failure is the app admitting trouble of its
      own. None of them says anything about whether the work is any good (A7). */
   .callout {
-    border-left: 3px solid var(--color-teal);
-    background: rgb(42 157 143 / 0.05);
+    border-left: 3px solid var(--color-muted);
+    background: var(--color-white);
     border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
     padding: 0.875rem 1.125rem;
     font-size: 0.9rem;
-    color: var(--color-muted);
+    color: var(--color-ink);
   }
 
   .callout--attention {
-    border-left-color: var(--color-amber);
-    background: rgb(233 196 106 / 0.12);
-    color: var(--color-amber-deep);
+    border-left-color: var(--color-notice);
+    background: var(--color-wash);
+    color: var(--color-notice);
   }
 
   .callout--trouble {
-    border-left-color: var(--color-coral);
-    background: rgb(231 111 81 / 0.07);
-    color: var(--color-coral);
+    border-left-color: var(--color-failure);
+    background: var(--color-white);
+    color: var(--color-failure);
   }
 
   .callout__label {
@@ -320,11 +328,11 @@
   }
 
   .callout--attention .callout__label {
-    color: var(--color-amber-deep);
+    color: var(--color-notice);
   }
 
   .callout--trouble .callout__label {
-    color: var(--color-coral);
+    color: var(--color-failure);
   }
 
   /* Navigation in the workspace and console chrome. */
@@ -341,8 +349,17 @@
   }
 
   .nav-link[aria-current="page"] {
-    background: var(--color-teal-deep);
-    color: #fff;
-    font-weight: 500;
+    background: rgb(255 255 255 / 0.18);
+    color: var(--color-white);
+    font-weight: 600;
+  }
+
+  /* The material's signature device: two hairlines in the current colour, six pixels apart.
+     Replaces the solid 6px stripe wherever the stripe sat on a ground it cannot contrast with. */
+  .double-rule {
+    border-top: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    height: 6px;
+    width: 100%;
   }
 }

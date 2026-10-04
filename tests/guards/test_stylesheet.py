@@ -190,8 +190,8 @@ def _contrast(a: str, b: str) -> float:
     return (hi + 0.05) / (lo + 0.05)
 
 
-#: Every pair the interface actually renders, and the floor it must hold. 4.5 is AA for text;
-#: 3.0 is AA for a control's boundary (WCAG 1.4.11). `rule` is absent on purpose: at 1.41:1 it
+#: Every pair the interface actually renders, and the floor it must hold. Every row is 4.5, AA for
+#: text. `muted` on `tint` (4.95) is the tightest pair in the palette. `rule` is absent on purpose: at 1.41:1 it
 #: is a decorative divider, which 1.4.11 exempts, and a control that used it would be invisible.
 CONTRAST_FLOORS = [
     ("ink", "paper", 4.5),
@@ -203,8 +203,14 @@ CONTRAST_FLOORS = [
     ("failure", "white", 4.5),
     ("failure", "paper", 4.5),
     ("company", "paper", 4.5),
-    ("paper", "ink", 4.5),
-    ("white", "ink", 4.5),
+    ("muted", "tint", 4.5),
+    ("ink", "tint", 4.5),
+    ("notice", "tint", 4.5),
+    ("failure", "tint", 4.5),
+    ("company", "white", 4.5),
+    ("ink", "wash", 4.5),
+    ("failure", "wash", 4.5),
+    ("muted", "wash", 4.5),
 ]
 
 

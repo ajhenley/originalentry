@@ -878,18 +878,38 @@ Use `perl`, for the same two reasons Task 4 does: BSD sed silently ignores `\b` 
 
 ```bash
 cd originalentry
-ren() {
-  find templates static/js -type f \( -name '*.html' -o -name '*.js' \) -print0 \
-    | xargs -0 perl -pi -e "s/\b\Q$1\E\b/$2/g"
-}
-ren 'font-medium' 'font-semibold'   # 16 uses
-# font-mono is deleted outright, with the space that precedes it
 find templates static/js -type f \( -name '*.html' -o -name '*.js' \) -print0 \
-  | xargs -0 perl -pi -e 's/ *\bfont-mono\b//g'
+  | xargs -0 perl -pi -e 's/\bfont-medium\b/font-semibold/g'
 cd ..
 ```
 
-There is no 500 face; a synthesized weight renders differently in every browser. `font-mono` is removed outright at its three call sites — the elements keep their size and tracking from the surrounding rules.
+There is no 500 face; a synthesized weight renders differently in every browser. That takes `font-semibold` from 64 uses to 80.
+
+**`font-mono`'s three call sites are edited by hand, not swept.** A blanket deletion leaves `class=""` on two of them and `class=" tracking-widest"` on the third — and the two spans carry no other class, so they would lose their styling altogether rather than "keeping it from the surrounding rules". Each site needs a replacement that does the job the mono face was doing:
+
+In `originalentry/templates/staff/catalogue.html`, lines 16 and 28, a validation rule id (`V13`) is set in mono to mark it as a code token beside the prose that follows it. Make both:
+
+```jinja
+    <li><span class="font-semibold">{{ problem.rule }}</span> · {{ problem.path }}: {{ problem.message }}</li>
+```
+
+```jinja
+    <li><span class="font-semibold">{{ warning.rule }}</span> · {{ warning.path }}: {{ warning.message }}</li>
+```
+
+In `originalentry/templates/staff/assignments.html` line 35, a join code students read off the screen and type in. It needs aligned digits and the wide tracking it already had:
+
+```jinja
+        <td class="figure tracking-widest">{{ a.join_code }}</td>
+```
+
+`.figure` supplies `font-variant-numeric: tabular-nums lining-nums`, which is what a transcribed code wants. Afterwards confirm no empty or leading-space class attribute survives:
+
+```bash
+grep -rn 'class=""\|class=" ' originalentry/templates originalentry/static/js
+```
+
+Expected: no output.
 
 - [ ] **Step 6: Confirm no stale font reference remains**
 

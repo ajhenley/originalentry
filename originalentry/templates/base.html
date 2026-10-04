@@ -6,8 +6,9 @@
   <title>{% block title %}Original Entry{% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="description"
-        content="Original Entry is practice in double-entry bookkeeping from source documents —
-                 invoices, cheques and remittances — rather than a prepared list of transactions.">
+        content="Original Entry is practice in double-entry bookkeeping from the documents
+                 themselves — invoices, cheques and remittances — rather than a prepared list
+                 of transactions.">
   {# The faces are served from here, not a font CDN: a student opening a ledger should not also
      be announcing themselves to a third party. #}
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -16,7 +17,7 @@
   <link rel="icon" href="{{ url_for('static', filename='img/favicon-32.png') }}" sizes="32x32">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/favicon-180.png') }}">
   <meta property="og:title" content="Original Entry">
-  <meta property="og:description" content="Bookkeeping practice from the source documents.">
+  <meta property="og:description" content="Bookkeeping practice from the documents themselves.">
   <meta property="og:image" content="{{ url_for('static', filename='img/social-1200x630.png', _external=True) }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="{{ url_for('static', filename='img/social-1200x630.png', _external=True) }}">

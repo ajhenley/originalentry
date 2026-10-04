@@ -26,3 +26,7 @@ bin/tailwindcss
 
 # Exported marks carry student names, emails and grades. Never commit them.
 marks-*.csv
+
+# Superpowers worktrees. Never commit one: they contain symlinks to the venv
+# and the Tailwind binary, and their own checkout of every tracked file.
+.worktrees/

@@ -195,14 +195,53 @@ premise, and the sample is what tests the premise.
 
 | | today | this design |
 | --- | --- | --- |
-| Images | 186 | **372** (2×) |
+| Images | 186 | **372** (2x) |
 | Authoring | 2 driver numbers | 2 driver numbers + ~15 authored alternate economic events |
 | Combinations | 3 | 98,304 |
 | Sharing | 33% | 17% |
 
-The image count doubles. At roughly 200 KB per render that is tens of megabytes of `PackAsset` rows
-per pack version, and it already contributes to a 54.9 MB Heroku slug. Worth checking against
-storage before building.
+### Storage: measured, and it is the repo that pays, not Postgres
+
+An earlier draft of this spec estimated 200 KB per render and flagged Postgres.
+Both were wrong. Measured against the live database:
+
+| | measured |
+| --- | --- |
+| whole database | 34 MB |
+| `pack_asset` — 359 rows | 22 MB |
+| average render | **58 kB** (max 152 kB) |
+| Riverbend v6 — 186 renders | 14 MB |
+| **projected — 372 renders** | **~28 MB per pack version** |
+
+**Postgres is comfortable.** Neon's free tier is 0.5 GB and any paid tier is
+10 GB+, so twenty-eight megabytes a version is not a constraint. `PackAsset.data`
+is already a `deferred` column precisely so a ledger query never drags image
+bytes along with it, and growing what the column holds does not touch that path.
+Assets of an unpinned version are also deletable: `riverbend v5` and
+`alderfinch v2` carry 171 assets between them with zero live workspaces pointing
+at either. Storage you can prune is not a ceiling.
+
+**The git repository is the asymmetric cost.** Renders are committed —
+264 PNGs today, of which Riverbend's 186 are 14.8 MB, in a 30 MB object store.
+PNGs do not delta-compress, so each grouped version adds roughly 30 MB to
+history permanently. An unpinned `PackAsset` row can be deleted; a committed
+blob cannot be removed without rewriting history. At ten grouped versions that
+is a ~330 MB clone, against 280 MB in Postgres with a 10 GB allowance.
+
+There is also no `.slugignore`, so those bytes ship in the Heroku slug, which is
+most of its 54.9 MB against Heroku's 500 MB hard limit.
+
+> **Recommendation, independent of this design:** add a `.slugignore` excluding
+> `packs/*/documents/`. The running app never reads `packs/` — the image route
+> serves bytes from `PackAsset`, and `packs/` is build-time input to
+> `scripts/build_pack.py`. The sole runtime reference is `cli.py` reading
+> `riverbend-demo/source.json`, 12 kB with no images. This drops ~20 MB from the
+> slug today and keeps it flat as versions accumulate.
+
+Whether grouped-pack renders should be committed at all is a decision this
+design should make deliberately rather than inherit. They are reproducible from
+`source.json` by the generator, and the authoritative copy already lives in
+Postgres.
 
 ## Coexistence and migration
 
@@ -236,3 +275,6 @@ Recorded so the reasoning is not lost and the mistakes are not repeated.
    qualify, not the implied sixteen.
 3. **It deferred the in-band arithmetic** to build time instead of doing it.
 4. **It left checkpoints unexamined.** They turned out to be fine, but that was luck, not diligence.
+5. **It guessed at storage instead of measuring it**, overstating per-render size by 3.4x and
+   flagging Postgres — which has ample headroom — while missing the committed-to-git cost, which is
+   the one that cannot be undone.

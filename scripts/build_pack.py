@@ -568,6 +568,20 @@ KIND_LABEL = {
     "payroll_register": "Payroll register",
     "appointment_request": "Appointment request",
     "price_list": "Price list",
+    # A manufacturer's stationery, which arrived with Ashgrove Millwork. A merchandiser never
+    # requisitions materials to a job, books time against one, charges overhead to it or transfers
+    # it into stock at its accumulated cost, so none of these had a name here; _display_ref would
+    # have refused the envelope at the first one rather than list a quarter of it by bare reference.
+    "materials_requisition": "Materials requisition",
+    "time_ticket": "Time tickets",
+    "payroll_distribution": "Payroll distribution",
+    "overhead_allocation": "Overhead summary",
+    "job_cost_sheet": "Job cost sheet",
+    "production_order": "Production order",
+    "estimate": "Estimate",
+    "lease_schedule": "Lease schedule",
+    "delivery_note": "Delivery note",
+    "statement_of_account": "Statement of account",
 }
 
 
@@ -688,6 +702,18 @@ def expected_entries(model, variant: str, profile, manifest=None) -> list[dict]:
                 line["party"] = txn["ar"][0]
             if kind == "supplier" and txn.get("ap"):
                 line["party"] = txn["ap"][0]
+            # A Work in Process line names the job it belongs to, the way a customer line names the
+            # customer. The job is on the transaction's own meta, put there so a cost sheet can be
+            # rebuilt from the entries (companies/ashgrove.py tags every WIP-touching transaction).
+            if kind == "job":
+                job = (txn.get("meta") or {}).get("job")
+                if not job:
+                    raise SystemExit(
+                        f"{profile.COMPANY['slug']}: transaction {txn['no']} moves a 'job' "
+                        f"subsidiary account but names no job in its meta, so its cost sheet cannot "
+                        f"be built. Nothing was written."
+                    )
+                line["party"] = job
             lines.append(line)
         document = (_evidence_document(doc_for_txn, txn["no"], "its expected entry")
                     if doc_for_txn is not None else _ref(txn))
@@ -987,6 +1013,21 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
         + [{"code": c, "kind": "supplier", "name": v[0]} for c, v in model.VENDORS.items()]
         + profile.EXTRA_PARTIES
     )
+    # A manufacturer keeps a third subsidiary ledger: a cost sheet per job, subsidiary to Work in
+    # Process. The jobs are the model's own (companies/<name>.py's JOBS), named by number and by
+    # what is being built, so the party picker reads "J-114 — Kitchen, 14 units..." rather than a
+    # bare code. Only a company that declares a "job" control account (profile.SUBSIDIARY) has them;
+    # the merchandisers and the clinic declare none and are unaffected.
+    keeps_jobs = "job" in set(profile.SUBSIDIARY.values())
+    if keeps_jobs:
+        jobs = getattr(model, "JOBS", {})
+        if not jobs:
+            raise SystemExit(
+                f"{profile.COMPANY['slug']}: the profile declares a 'job' subsidiary ledger but "
+                f"the model has no JOBS to fill it. Nothing was written."
+            )
+        parties += [{"code": code, "kind": "job", "name": f"{code} — {what}"}
+                    for code, (_customer, what) in jobs.items()]
 
     variants = [{"code": c, "label": f"Version {c}", "drivers": model.VARIANTS[c]}
                 for c in sorted(model.VARIANTS)]
@@ -998,7 +1039,11 @@ def build_source(company: str, practicesets: Path, slug: str | None = None,
             # Debit-positive throughout, so a supplier's credit balance is negative.
             "parties": ({c: cents(v[1]) for c, v in model.CUSTOMERS.items()}
                         | {c: -cents(v[1]) for c, v in model.VENDORS.items()}
-                        | {p["code"]: 0 for p in profile.EXTRA_PARTIES}),
+                        | {p["code"]: 0 for p in profile.EXTRA_PARTIES}
+                        # Every job cost sheet opens at nil: Work in Process opens at nil (the shop
+                        # finishes its jobs before the shutdown), and V7 requires the job openings to
+                        # sum to that control.
+                        | ({code: 0 for code in getattr(model, "JOBS", {})} if keeps_jobs else {})),
         }
 
     answers = {}

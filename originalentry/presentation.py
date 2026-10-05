@@ -10,7 +10,9 @@ from dataclasses import dataclass
 
 from .models import ContentPack, PackVersion
 
-_KIND_LABELS = {"customer": "Customers", "supplier": "Suppliers"}
+# "job" would otherwise fall to the generic "Jobs"; a cabinet shop's third ledger is its job cost
+# sheets, which is what the paper set and the booklet call them.
+_KIND_LABELS = {"customer": "Customers", "supplier": "Suppliers", "job": "Job cost sheets"}
 
 
 @dataclass(frozen=True)

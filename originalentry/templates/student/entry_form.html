@@ -92,10 +92,17 @@
             <select id="line-{{ i }}-party" name="line-{{ i }}-party"
                     class="field">
               <option value="">—</option>
-              {% for p in parties %}
-              <option value="{{ p.code }}"
-                {% if values.get('line-' ~ i ~ '-party') == p.code %}selected{% endif %}>
-                {{ p.name }}</option>
+              {# Grouped by kind so a job cost sheet is not lost among the customers and suppliers:
+                 a manufacturer picks a job here as often as a customer, and the three are different
+                 ledgers. A company with one kind of party sees a single group. #}
+              {% for kind, group in parties | groupby('kind') %}
+              <optgroup label="{{ kind | kind_label }}">
+                {% for p in group %}
+                <option value="{{ p.code }}"
+                  {% if values.get('line-' ~ i ~ '-party') == p.code %}selected{% endif %}>
+                  {{ p.name }}</option>
+                {% endfor %}
+              </optgroup>
               {% endfor %}
             </select>
           </td>

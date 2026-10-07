@@ -194,6 +194,44 @@ def consume_code(session: Session, email: str, code: str) -> LoginToken | None:
     return None  # a miss; the top guard locks once the fifth attempt is used
 
 
+#: Copy for the two misses worth naming. Kept here beside :class:`CodeLocked`, which carries its
+#: own message for the same reason: the caller should not have to know why a code failed.
+CODE_ALREADY_USED = (
+    "That code has already been used. If you were signing in, reload the page — you may "
+    "already be signed in."
+)
+CODE_EXPIRED = "That code has expired. Ask for a new one."
+
+
+def explain_miss(session: Session, email: str, code: str) -> str | None:
+    """Why a code missed — but only when the code is demonstrably theirs.
+
+    :func:`consume_code` returns ``None`` for three different states, and the sign-in page
+    reported all of them as a mismatch. A correct code submitted twice was answered "that code
+    did not match", which sends someone to re-check a code that was right.
+
+    Returns ``None`` unless the entered code matches a token for this address, so a guess learns
+    nothing — not even whether a sign-in is pending (E1). Someone who types a correct code
+    already holds it, so naming its state tells them nothing they did not have.
+    """
+    email = email.strip().lower()
+    token = session.scalars(
+        select(LoginToken)
+        .where(
+            func.lower(LoginToken.email) == email,
+            LoginToken.code_hash == _hash_code(code),
+        )
+        .order_by(LoginToken.created_at.desc())
+    ).first()
+    if token is None:
+        return None
+    if token.consumed_at is not None:
+        return CODE_ALREADY_USED
+    if token.expires_at <= _now():
+        return CODE_EXPIRED
+    return None
+
+
 def purge_expired(session: Session) -> int:
     """Delete tokens older than 30 days (OPS-7). Runs whenever someone signs in."""
     cutoff = _now() - timedelta(days=PURGE_AFTER_DAYS)

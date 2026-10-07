@@ -87,14 +87,16 @@ def client(app, session):
         g.pop("_login_user", None)       # flask_login's per-context current_user
         g.pop("_my_section_ids", None)   # decorators.my_section_ids
 
-    app.before_request_funcs.setdefault(None, []).append(_fresh_request_caches)
-
     db.session.remove()
     db.session.registry.set(session)
     app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
     app.test_client_class = _Client
 
     try:
+        # Registered inside the try, so the finally below always removes it again. ``app`` is
+        # session-scoped: a hook left behind by a fixture that raised on its way in would stay
+        # registered for every later test in the run.
+        app.before_request_funcs.setdefault(None, []).append(_fresh_request_caches)
         yield app.test_client()
     finally:
         app.before_request_funcs[None].remove(_fresh_request_caches)

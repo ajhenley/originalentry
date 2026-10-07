@@ -130,16 +130,35 @@ real limits was declined, and this is where such a column would go if that chang
 
 **Enforcement is three chokepoints and three queries.**
 
+**There are 55 routes to think about, not 26.** An earlier pass of this spec counted only the
+`/staff/` console and missed the larger exposure: `workspace_view` in `decorators.py` guards 29
+`/w/` routes and currently says
+
+```python
+is_staff = current_user.role in STAFF_ROLES
+if not (is_owner or is_staff):
+    abort(404)
+```
+
+so **any staff member can open any student's actual books** — the journals, the ledgers, the
+entries — not merely their marks. That is the bigger leak of the two, and it is one decorator.
+
 | Where | Covers |
 | --- | --- |
-| `_assignment_or_404` gains the check | 16 routes, including every grading and marks route |
+| `workspace_view` — `is_staff` becomes "staff who teach this workspace's section, or admin" | **29 `/w/` routes** |
+| `_assignment_or_404` gains the check | 16 staff routes, including every grading and marks route |
 | New `_section_or_404`, replacing four identical inline `db.session.get(Section, …)` lookups at lines 570, 587, 609 and 648 | 4 section routes |
 | `index`'s assignment query joins `section_staff` | the dashboard |
 | `assignment_new` and `assignment_create` section lists | the form |
-| `catalogue`, `answer_key_print` | unowned by design — a company pack is nobody's, and a printed answer key is teaching material, not student data |
+| `catalogue`, `answer_key_print`, `catalogue_upload` | unowned by design — a company pack is nobody's, and a printed answer key is teaching material, not student data |
 
-`_workspace_or_404(assignment, public_id)` already filters by `assignment_id`, so every per-student
-route is nested under the assignment chokepoint and needs no check of its own.
+Four chokepoints cover 49 of the 55; three queries cover the rest; three routes are unowned.
+
+`workspace_view` reaches the section one join further than the console does:
+`Workspace.assignment_id` → `Assignment.section_id` → `section_staff`. Same check, same helper.
+
+`_workspace_or_404(assignment, public_id)` already filters by `assignment_id`, so the per-student
+console routes are nested under the assignment chokepoint and need no check of their own.
 
 ### The trap worth naming
 
@@ -160,10 +179,15 @@ section is a real question, deliberately left closed until the feature has been 
 
 ### The test that makes this safe rather than hopeful
 
-Every missed query is a data leak, and there are 26 endpoints. So instead of 26 hand-written tests,
-**one parameterised test walks `app.url_map` for `/staff/` rules and asserts each refuses a teacher
-who does not teach that section.** The unowned endpoints sit in an explicit allowlist, named one by
-one, so excluding one is a decision somebody wrote down.
+Every missed query is a data leak, and there are 55 endpoints. So instead of 55 hand-written tests,
+**one parameterised test walks `app.url_map` for both `/staff/` and `/w/` rules and asserts each
+refuses a teacher who does not teach that section.** The unowned endpoints sit in an explicit
+allowlist, named one by one, so excluding one is a decision somebody wrote down.
+
+This extends a convention the repository already has rather than inventing one:
+`tests/guards/test_structure.py:20-41` already walks the URL map for both prefixes, asserting every
+`/w/` route carries `@workspace_view` and every `/staff/` route carries `@staff_view`. The new test
+belongs beside those two and asks the next question — not *is it guarded* but *is it scoped*.
 
 The point is next year: a new staff route is covered the moment it is added, or the test fails and
 makes somebody decide. A hand-written suite silently omits the route nobody remembered.
@@ -314,6 +338,14 @@ and only the CLI can change that.
 - **A missed query is a data leak**, and that is the whole risk of this spec. The `url_map`-driven
   test is the mitigation, and its allowlist is the thing to review most carefully: every name on it
   is a route somebody decided not to scope.
+- **This spec already missed 29 routes once.** The first pass counted the `/staff/` console and
+  overlooked `workspace_view` entirely, which is the surface where a teacher reads a student's
+  actual ledgers rather than their marks. That is the argument for the `url_map` test over a
+  hand-written list, made by the spec's own history.
+- **Staff reading a student's books is a feature**, not only a leak: `workspace_view` deliberately
+  opens archived books to staff and sets a banner naming whose books they are (I2.4). Scoping must
+  keep that working for a teacher's own students — the test asserts it does, or the change has
+  broken marking rather than secured it.
 - **Reporting across sections stops working.** A head of department who wants cohort-wide
   diagnostics now needs an admin account. That is correct but it is a change in what the
   diagnostics screen means, and worth saying to whoever uses it.

@@ -11,6 +11,7 @@ term, so offboarding must not be a DELETE.
 """
 
 import pytest
+from flask import g
 from originalentry.auth import tokens
 from originalentry.extensions import db
 from originalentry.models import (
@@ -146,6 +147,13 @@ def test_a_live_session_dies_on_the_next_request(client, session, instructor, ad
 
     deactivate(session, target=instructor, actor=admin)
     session.commit()
+
+    # The harness quirk conftest._Client.sign_in documents, from the other side: this harness
+    # holds one app context open for the whole test and Flask reuses it per request, so
+    # Flask-Login's per-context cache would answer the second request from the user it already
+    # loaded and the loader would never run. In production every request gets a fresh context.
+    # Clearing it is what makes this a *next* request rather than a continuation of the first.
+    g.pop("_login_user", None)
 
     response = client.get("/staff/")
     # Exactly what @login_required does here: the unauthorized handler redirects a GET to the

@@ -26,6 +26,8 @@ def test_no_model_has_drifted_from_the_database(session):
     statement that an autogenerate right now would produce an empty migration."""
     # The test's own connection: reflection is read-only, so this needs no second connection to
     # the database and stays inside the per-test transaction.
+    # Alembic's comparison defaults: no compare_type or compare_server_default. This checks what
+    # `flask db migrate` checks, so server-default drift is not covered.
     context = MigrationContext.configure(session.connection())
     drift = compare_metadata(context, db.metadata)
 

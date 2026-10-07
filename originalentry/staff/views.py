@@ -1050,6 +1050,15 @@ def people_active(public_id: str):
     target = _person_or_404(public_id)
     back = redirect(url_for("staff.people"))
     switching_off = bool(request.form.get("deactivate"))
+    switching_on = bool(request.form.get("reactivate"))
+    if switching_off == switching_on:
+        # Both fields are read, and neither direction is the fallback. Reading only one made the
+        # other the default for any POST that did not name it -- so an empty or crafted body
+        # silently switched an account back on and wrote an audit row saying an administrator had
+        # asked for it. A security control must not default to "off".
+        flash("Choose whether to deactivate or reactivate that account.")
+        return back
+    was_off = target.deactivated_at is not None
     try:
         if switching_off:
             deactivate(db.session, target=target, actor=current_user)
@@ -1060,7 +1069,10 @@ def people_active(public_id: str):
         flash(str(refused))
         return back
     db.session.commit()
-    flash(f"{target.email} is no longer active. Their sections and record are untouched."
-          if switching_off else
-          f"{target.email} is active again, and teaches the sections they did before.")
+    if switching_off:
+        flash(f"{target.email} is no longer active. Their sections and record are untouched.")
+    elif was_off:
+        flash(f"{target.email} is active again, and teaches the sections they did before.")
+    else:
+        flash(f"{target.email} was already active. Nothing changed.")
     return back

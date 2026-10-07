@@ -255,6 +255,15 @@ def _join_user(token: LoginToken) -> User | None:
     user = db.session.scalars(
         select(User).where(func.lower(User.email) == token.email.lower())
     ).one_or_none()
+    # Before anything is written. This is not a lookup -- below, it enrols the person and opens a
+    # workspace for every open assignment in the section -- and _complete_sign_in's refusal runs
+    # after it and commits. Without this, an offboarded teacher who still knew a live join code
+    # for one of their old sections could put themselves on that section's roster permanently, as
+    # a student counted in its progress, on a sign-in that was then refused. Returning the user
+    # (not None) is what makes that refusal say "no longer active" rather than "link expired",
+    # and leaves the token consumed.
+    if user is not None and user.deactivated_at is not None:
+        return user
     if user is None:
         user = User(
             email=token.email,

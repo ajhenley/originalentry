@@ -42,6 +42,14 @@ def invite(session: Session, *, email: str, role: str, given: str, family: str, 
             f"{existing.email} already has a student account. A teacher who is also a student "
             f"here needs a separate staff address, so that one person's marks and another's "
             f"marking never share a sign-in.")
+    if existing is not None and existing.deactivated_at is not None:
+        # "Change their role instead" would be the wrong instruction here: changing the role of a
+        # switched-off account still would not let them in, and a second account would strand
+        # their sections and their record on the first one.
+        raise StaffingRefused(
+            f"{existing.email} already has a staff account that is switched off. Reactivate them "
+            f"rather than making a second account: their sections and their record are still "
+            f"attached to the one they have.")
     if existing is not None:
         raise StaffingRefused(
             f"{existing.email} already has a staff account. Change their role instead.")
@@ -106,6 +114,8 @@ def deactivate(session: Session, *, target: User, actor) -> User:
     if target.id == getattr(actor, "id", None):
         raise StaffingRefused("You cannot deactivate your own account.")
 
+    if target.deactivated_at is not None:
+        return target  # already off: no second stamp, and no second audit row saying so
     target.deactivated_at = func.now()
     # Every device, now. The user loader would refuse them anyway, but the bump is what stops a
     # later reactivation from reviving the cookie they were holding when they were switched off.
@@ -117,6 +127,9 @@ def deactivate(session: Session, *, target: User, actor) -> User:
 
 def reactivate(session: Session, *, target: User, actor) -> User:
     """Clear the stamp. Their sections are still attached, because they were never detached."""
+    if target.deactivated_at is None:
+        # Already active. An audit trail that records things nobody did is one you cannot read.
+        return target
     target.deactivated_at = None
     session.flush()
     staff_actions.record(session, actor, staff_actions.STAFF_REACTIVATED, "user", target.id)

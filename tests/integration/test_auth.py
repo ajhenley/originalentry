@@ -172,8 +172,8 @@ def test_join_by_code_creates_account_and_enrols(client, session, mail):
 
 def test_revoke_signs_out_every_device(client, session, app):
     # The session cookie carries "public_id:session_epoch"; the user_loader rejects a stale epoch.
-    # (Tested at the loader because this harness keeps one app context, so Flask-Login's per-context
-    # cache would otherwise mask the reload.)
+    # Called directly because the loader is the unit under test: through the client it would be
+    # one step removed, behind the per-request cache the `client` fixture clears.
     user = _student(session, "rev@example.edu")
     loader = app.login_manager._user_callback
     stale_id = user.get_id()

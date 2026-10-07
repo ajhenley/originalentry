@@ -11,19 +11,25 @@ term, so offboarding must not be a DELETE.
 """
 
 import pytest
-from flask import g
+from originalentry.auth import email as email_module
 from originalentry.auth import tokens
 from originalentry.extensions import db
 from originalentry.models import (
     ROLE_ADMIN,
     ROLE_INSTRUCTOR,
+    Enrollment,
     Section,
     SectionStaff,
     StaffAction,
     User,
 )
 from originalentry.services import staff_actions
-from originalentry.services.staffing import StaffingRefused, deactivate, reactivate
+from originalentry.services.staffing import (
+    StaffingRefused,
+    deactivate,
+    invite,
+    reactivate,
+)
 from sqlalchemy import select
 
 from tests.scoping_world import staff_account
@@ -36,6 +42,19 @@ pytestmark = pytest.mark.db
 # outer transaction: the rows survive a view's db.session.rollback() and the teardown rollback
 # still removes them. Leaning on a later fixture's commit to release an earlier one's savepoint
 # works only while the tests ask for them in one particular order.
+
+@pytest.fixture
+def mail(app):
+    cfg = app.extensions["originalentry_config"]
+    before = cfg.EMAIL_BACKEND
+    cfg.EMAIL_BACKEND = "memory"
+    email_module.SENT.clear()
+    try:
+        yield email_module.SENT
+    finally:
+        cfg.EMAIL_BACKEND = before
+        email_module.SENT.clear()
+
 
 @pytest.fixture
 def admin(session):
@@ -54,7 +73,10 @@ def instructor(session):
 
 @pytest.fixture
 def section(session):
-    row = Section(name="Deactivation ACCT1010-01", term="Spring", join_code="deact-sec-01")
+    # Uppercase: auth.join upper-cases the submitted code and matches join_code exactly, so a
+    # lower-case fixture code answers 422 and reads as a refusal that has nothing to do with the
+    # account's state.
+    row = Section(name="Deactivation ACCT1010-01", term="Spring", join_code="DEACTSEC01")
     session.add(row)
     session.commit()
     return row
@@ -109,34 +131,71 @@ def test_a_valid_link_from_a_deactivated_account_is_refused_with_a_reason(
     assert client.get("/staff/").status_code == 302
 
 
-def test_the_request_step_is_identical_for_active_deactivated_and_unknown_addresses(
-        client, session, instructor, admin):
-    """The E1 guarantee, tested directly rather than assumed."""
+def test_a_deactivated_account_completing_a_join_link_is_not_enrolled(
+        client, session, instructor, admin, section, mail):
+    """The refusal must not land after the writes.
+
+    _user_for is not a lookup for a PURPOSE_JOIN token: _join_user enrols the person and opens a
+    workspace for every open assignment in the section, and only then does the refusal run -- and
+    the refusal's first statement is a commit. So an offboarded teacher who still knows a live
+    join code for one of their old sections could put themselves on that section's roster
+    permanently, as a student, counted in its progress. No session is granted, so it is not an
+    access leak; it is a committed write by a locked-out account on a refused sign-in.
+    """
     deactivate(session, target=instructor, actor=admin)
     session.commit()
 
-    arms = {"deactivated": instructor.email, "unknown": "deact-nobody@example.edu"}
-    bodies = {
-        name: client.post("/auth/sign-in", data={"email": address}).get_data(as_text=True)
-        for name, address in arms.items()
-    }
-    statuses = {
-        name: client.post("/auth/sign-in", data={"email": address}).status_code
-        for name, address in arms.items()
-    }
+    joined = client.post("/auth/join", data={
+        "code": section.join_code, "given_name": "Lee", "family_name": "Teacher",
+        "email": instructor.email})
+    assert joined.status_code == 200
+    token = mail[0]["link"].rsplit("/", 1)[-1]
+
+    response = client.post("/auth/verify", data={"token": token}, follow_redirects=True)
+
+    assert b"no longer active" in response.data
+    session.expire_all()
+    assert session.scalars(select(Enrollment).where(
+        Enrollment.section_id == section.id,
+        Enrollment.user_id == instructor.id)).first() is None, \
+        "a locked-out account enrolled itself on a refused sign-in"
+
+
+def test_the_request_step_is_identical_for_active_deactivated_and_unknown_addresses(
+        client, session, instructor, admin):
+    """The E1 guarantee, tested directly rather than assumed. All three arms the name promises."""
+    deactivate(session, target=instructor, actor=admin)
+    session.commit()
+
+    arms = {"active": admin.email,
+            "deactivated": instructor.email,
+            "unknown": "deact-nobody@example.edu"}
+    # One POST per arm, not two. Each address has its own 3-per-15-minutes ceiling and a second
+    # pass would spend two thirds of it inside one test.
+    seen = {}
+    for name, address in arms.items():
+        response = client.post("/auth/sign-in", data={"email": address})
+        seen[name] = (response.status_code, response.get_data(as_text=True))
 
     # The request step renders check_email.html *with the submitted address* (auth/views.py:
-    # render_template("auth/check_email.html", email=email)), so the two bodies necessarily
-    # differ by that echoed address and a direct == would be red while E1 held perfectly. The
-    # property that matters is that nothing ELSE distinguishes them, so each arm's own address is
-    # normalised out before the comparison. Do not "simplify" this back into a direct comparison.
+    # render_template("auth/check_email.html", email=email)), so the bodies necessarily differ by
+    # that echoed address and a direct == would be red while E1 held perfectly. The property that
+    # matters is that nothing ELSE distinguishes them, so each arm's own address is normalised out
+    # before the comparison. Do not "simplify" this back into a direct comparison.
+    #
+    # The bodies are otherwise byte-identical for a reason worth knowing: base.html:7 renders
+    # <meta name="csrf-token"> into every page, including this one, and a freshly serialised token
+    # carries a one-second-resolution timestamp. They match because flask_wtf.generate_csrf caches
+    # on g (flask_wtf/csrf.py:50) and this harness shares one app context across the test. Clear
+    # that cache between the arms and this assertion becomes a timing coin-flip -- so whatever
+    # else is done to this harness, do not reset all of g per request.
     normalised = {name: body.replace(arms[name], "SUBMITTED-ADDRESS")
-                  for name, body in bodies.items()}
+                  for name, (_status, body) in seen.items()}
 
-    assert statuses["deactivated"] == statuses["unknown"] == 200
-    for body in bodies.values():
+    assert {status for status, _body in seen.values()} == {200}
+    for _status, body in seen.values():
         assert "Check your email" in body
-    assert normalised["deactivated"] == normalised["unknown"]
+    assert normalised["deactivated"] == normalised["unknown"] == normalised["active"]
 
 
 # ── A session already live dies ──────────────────────────────────────────────────────────
@@ -147,13 +206,6 @@ def test_a_live_session_dies_on_the_next_request(client, session, instructor, ad
 
     deactivate(session, target=instructor, actor=admin)
     session.commit()
-
-    # The harness quirk conftest._Client.sign_in documents, from the other side: this harness
-    # holds one app context open for the whole test and Flask reuses it per request, so
-    # Flask-Login's per-context cache would answer the second request from the user it already
-    # loaded and the loader would never run. In production every request gets a fresh context.
-    # Clearing it is what makes this a *next* request rather than a continuation of the first.
-    g.pop("_login_user", None)
 
     response = client.get("/staff/")
     # Exactly what @login_required does here: the unauthorized handler redirects a GET to the
@@ -198,6 +250,12 @@ def test_their_record_survives_including_their_sections(session, instructor, adm
     assert session.scalar(db.select(User.email).where(User.id == instructor.id)) == instructor.email
     [entry] = _audit(session, staff_actions.STAFF_DEACTIVATED, instructor.id)
     assert entry.actor_id == admin.id
+    # The third enforcement point, and the only one any other test reaches: the two explicit
+    # checks fire first, so without this line is_active could revert to a hardcoded True and the
+    # whole branch would stay green. It is what makes login_user() refuse of its own accord if
+    # either explicit check is ever removed -- a future mistake becomes "no session" rather than
+    # "a real session for a locked-out account".
+    assert instructor.is_active is False
 
 
 def test_a_section_whose_only_teacher_left_says_it_needs_one(client, session, admin, instructor,
@@ -227,6 +285,7 @@ def test_reactivation_needs_a_fresh_sign_in_and_gives_the_sections_back(
     session.commit()
 
     assert instructor.deactivated_at is None
+    assert instructor.is_active is True        # the other half of the is_active assertion above
     # The epoch moved on the way out, so reactivating does not revive the cookie they held: they
     # sign in again.
     assert instructor.get_id() != cookie_before
@@ -286,6 +345,13 @@ def test_the_route_deactivates_the_person_and_records_who_did_it(
     [entry] = _audit(session, staff_actions.STAFF_DEACTIVATED, instructor.id)
     assert entry.actor_id == admin.id
 
+    # The same POST again, which the screen never offers but a crafted body can send. Still one
+    # row: a second stamp would move the date the account was switched off, and a second row
+    # would say an administrator did something they did not do.
+    client.post(f"/staff/people/{instructor.public_id}/active",
+                data={"deactivate": "1"}, follow_redirects=True)
+    assert len(_audit(session, staff_actions.STAFF_DEACTIVATED, instructor.id)) == 1
+
 
 def test_the_route_reactivates_and_records_that_too(client, session, admin, instructor):
     deactivate(session, target=instructor, actor=admin)
@@ -298,6 +364,53 @@ def test_the_route_reactivates_and_records_that_too(client, session, admin, inst
     assert session.scalar(db.select(User.deactivated_at).where(User.id == instructor.id)) is None
     [entry] = _audit(session, staff_actions.STAFF_REACTIVATED, instructor.id)
     assert entry.actor_id == admin.id
+
+
+def test_the_route_does_nothing_at_all_for_a_post_naming_neither_direction(
+        client, session, admin, instructor):
+    """A security control must not default to "off".
+
+    Reading only the deactivate field made reactivation the fallback for any POST that was not
+    explicitly a deactivation, so an empty or crafted body switched the target back on and wrote
+    a STAFF_REACTIVATED row saying an administrator had asked for it.
+    """
+    deactivate(session, target=instructor, actor=admin)
+    session.commit()
+    client.sign_in(admin)
+
+    response = client.post(f"/staff/people/{instructor.public_id}/active",
+                           data={}, follow_redirects=True)
+
+    assert response.status_code == 200
+    session.expire_all()
+    assert session.scalar(
+        db.select(User.deactivated_at).where(User.id == instructor.id)) is not None
+    assert _audit(session, staff_actions.STAFF_REACTIVATED, instructor.id) == []
+
+
+def test_reactivating_an_already_active_account_writes_no_audit_row(
+        client, session, admin, instructor):
+    """An audit trail that records things nobody did is an audit trail you cannot read."""
+    client.sign_in(admin)
+    response = client.post(f"/staff/people/{instructor.public_id}/active",
+                           data={"reactivate": "1"}, follow_redirects=True)
+    assert response.status_code == 200
+    assert _audit(session, staff_actions.STAFF_REACTIVATED, instructor.id) == []
+
+
+def test_inviting_an_address_whose_staff_account_is_switched_off_says_so(
+        session, admin, instructor):
+    """"Change their role instead" is the wrong instruction for an account that is switched off:
+    changing the role would not let them in. Now that there is a switch, name the switch."""
+    deactivate(session, target=instructor, actor=admin)
+    session.commit()
+
+    with pytest.raises(StaffingRefused) as refused:
+        invite(session, email=instructor.email, role=ROLE_INSTRUCTOR,
+               given="", family="", actor=admin)
+    said = str(refused.value).lower()
+    assert "switched off" in said or "no longer active" in said
+    assert "reactivate" in said, "the refusal must say what to do instead"
 
 
 def test_the_route_refuses_the_sole_admin_switching_themselves_off(client, session, admin):

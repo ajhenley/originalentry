@@ -63,16 +63,19 @@
           {% else %}
           <span class="text-sm text-muted">None</span><br>
           {% endfor %}
+          {% set attachable = sections | rejectattr('id', 'in', attached.get(u.id, ())) | list %}
+          {% if attachable %}
           <form method="post" action="{{ url_for('staff.people_sections', public_id=u.public_id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <select name="section_id" aria-label="Section to attach to {{ u.email }}">
-              {% for s in sections if s.id not in attached.get(u.id, ()) %}
+              {% for s in attachable %}
               <option value="{{ s.id }}">{{ s.name }} ({{ teachers_per_section[s.id] }})</option>
               {% endfor %}
             </select>
             <button type="submit" name="attach" value="1" class="btn btn--outline btn--small">
               Attach</button>
           </form>
+          {% endif %}
         </td>
       </tr>
       {% endfor %}

@@ -2,12 +2,16 @@
 
 import pytest
 from originalentry.auth import email as email_module
+from originalentry.auth import tokens
 from originalentry.models import (
     ROLE_ADMIN,
     ROLE_INSTRUCTOR,
     ROLE_STUDENT,
+    SectionStaff,
+    StaffAction,
     User,
 )
+from originalentry.services import staff_actions
 from originalentry.services.staffing import StaffingRefused, invite
 from sqlalchemy import select
 
@@ -49,6 +53,12 @@ def student(session):
     return staff_account(session, "people-student@example.edu", role=ROLE_STUDENT, name="Sam")
 
 
+def _audit(session, action, table, target_id):
+    return session.scalars(select(StaffAction).where(
+        StaffAction.action == action, StaffAction.target_table == table,
+        StaffAction.target_id == target_id)).all()
+
+
 def _role_in_db(session, user):
     """The role as the database holds it, not as the identity map or the response says."""
     session.expire_all()
@@ -62,6 +72,24 @@ def test_inviting_an_unknown_address_creates_the_account_and_sends_one_email(
     session.flush()
     assert user.role == ROLE_INSTRUCTOR
     assert len(mail) == 1
+    [entry] = _audit(session, staff_actions.STAFF_INVITED, "user", user.id)
+    assert entry.actor_id == admin.id
+    assert entry.detail == {"role": ROLE_INSTRUCTOR}
+
+
+def test_inviting_with_a_student_role_is_refused_by_the_service(session, admin, mail):
+    with pytest.raises(StaffingRefused):
+        invite(session, email="sneaky@example.edu", role=ROLE_STUDENT,
+               given="", family="", actor=admin)
+    assert mail == []
+
+
+def test_the_per_address_limits_still_apply_to_an_invite(session, mail):
+    """The docstring below on the per-IP test promises this: ip=None lifts only the IP ceiling."""
+    for _ in range(3):
+        tokens.issue_token(session, "one.address@example.edu", ip=None)
+    with pytest.raises(tokens.RateLimited):
+        tokens.issue_token(session, "one.address@example.edu", ip=None)
 
 
 def test_inviting_an_address_that_already_has_a_student_account_is_refused(session, admin, student):
@@ -115,6 +143,9 @@ def test_demoting_an_admin_takes_their_access_with_it(client, session, admin, se
     client.sign_in(admin)
     client.post(f"/staff/people/{second_admin.public_id}/role", data={"role": ROLE_INSTRUCTOR})
     assert _role_in_db(session, second_admin) == ROLE_INSTRUCTOR
+    [entry] = _audit(session, staff_actions.STAFF_ROLE_CHANGED, "user", second_admin.id)
+    assert entry.actor_id == admin.id
+    assert entry.detail == {"from": ROLE_ADMIN, "to": ROLE_INSTRUCTOR}
     client.sign_in(second_admin)
     assert client.get("/staff/people").status_code == 404
 
@@ -137,19 +168,49 @@ def test_the_last_admin_cannot_be_demoted(client, session, admin):
         in response.data
 
 
-def test_attaching_a_section_puts_it_on_that_teachers_dashboard(client, session, admin,
-                                                                instructor):
+def test_attaching_then_detaching_a_section_moves_it_on_and_off_the_dashboard(
+        client, session, admin, instructor):
     owner = staff_account(session, "people-owner@example.edu", name="Oli")
     world = own_section_world(session, owner)
+    sid = world["section_id"]
+    url = f"/staff/people/{instructor.public_id}/sections"
     client.sign_in(instructor)
     assert world["section_name"] not in client.get("/staff/").get_data(as_text=True)
 
     client.sign_in(admin)
-    client.post(f"/staff/people/{instructor.public_id}/sections",
-                data={"section_id": str(world["section_id"]), "attach": "1"})
+    client.post(url, data={"section_id": str(sid), "attach": "1"}, follow_redirects=True)
     session.flush()
+    # create_section also recorded the owner's own attachment against this section.
+    assert [e.actor_id for e in _audit(session, staff_actions.SECTION_STAFF_ADDED, "section", sid)
+            if e.detail == {"user_id": instructor.id}] == [admin.id]
     client.sign_in(instructor)
     assert world["section_name"] in client.get("/staff/").get_data(as_text=True)
+
+    client.sign_in(admin)
+    client.post(url, data={"section_id": str(sid), "detach": "1"}, follow_redirects=True)
+    session.expire_all()
+    assert session.get(SectionStaff, (sid, instructor.id)) is None
+    [removed] = _audit(session, staff_actions.SECTION_STAFF_REMOVED, "section", sid)
+    assert removed.detail == {"user_id": instructor.id}
+    client.sign_in(instructor)
+    assert world["section_name"] not in client.get("/staff/").get_data(as_text=True)
+
+
+def test_attaching_with_no_section_chosen_is_a_message_not_a_404(client, admin, instructor):
+    """With every section already attached (Task 2's backfill) the select has no options and
+    posts no section_id."""
+    client.sign_in(admin)
+    response = client.post(f"/staff/people/{instructor.public_id}/sections",
+                           data={"attach": "1"}, follow_redirects=True)
+    assert response.status_code == 200
+    assert b"Choose a section." in response.data
+
+
+def test_the_console_menu_links_an_admin_to_people_and_not_a_teacher(client, admin, instructor):
+    client.sign_in(admin)
+    assert 'href="/staff/people"' in client.get("/staff/").get_data(as_text=True)
+    client.sign_in(instructor)
+    assert 'href="/staff/people"' not in client.get("/staff/").get_data(as_text=True)
 
 
 def test_a_teacher_cannot_reach_the_people_screen(client, instructor):

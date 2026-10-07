@@ -75,6 +75,15 @@ def test_every_exempt_name_is_a_real_route(app):
     assert not missing, f"exempt names matching no route: {missing}"
 
 
+def test_every_admin_only_route_is_guarded_by_admin_view(app):
+    """ADMIN_ONLY is exempt from the refusal walk, so nothing else asks whether its routes refuse
+    a teacher. Swapping @admin_view for @staff_view would let any instructor mint an admin."""
+    unguarded = sorted(
+        name for name in ADMIN_ONLY
+        if not getattr(app.view_functions[name], "_is_admin_view", False))
+    assert not unguarded, f"ADMIN_ONLY routes without @admin_view: {unguarded}"
+
+
 def _scoped_rules(app):
     for rule in app.url_map.iter_rules():
         if not (rule.rule.startswith("/staff") or rule.rule.startswith("/w/")):

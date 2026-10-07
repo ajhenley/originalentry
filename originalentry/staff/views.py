@@ -980,12 +980,17 @@ def people_role(public_id: str):
         flash("Choose a staff role.")
         return back
     if target.role in ADMIN_ROLES and new_role not in ADMIN_ROLES:
-        # Locked, so two administrators demoting each other in two requests cannot both pass.
-        remaining = db.session.scalars(db.select(User.id).where(
-            User.role.in_(ADMIN_ROLES), User.id != target.id,
-            # Task 6 adds User.deactivated_at: add `User.deactivated_at.is_(None)` here.
-        ).with_for_update()).all()
-        if not remaining:
+        # Lock the whole admin set, target included, in id order. Every demotion request then
+        # selects the identical rows in the identical order, so a second one blocks here until
+        # the first commits and then re-reads: two administrators demoting each other cannot
+        # both see the other as "remaining". (Locking only the rows other than the target would
+        # give each request a disjoint lock set and serialise nothing.)
+        admins = db.session.scalars(
+            db.select(User.id).where(
+                User.role.in_(ADMIN_ROLES),
+                # Task 6 adds User.deactivated_at: add `User.deactivated_at.is_(None)` here.
+            ).order_by(User.id).with_for_update()).all()
+        if not [i for i in admins if i != target.id]:
             flash("That is the last administrator. Make someone else an administrator first.")
             return back
     if target.id == current_user.id:
@@ -1006,7 +1011,9 @@ def people_sections(public_id: str):
     target = _person_or_404(public_id)
     section = db.session.get(Section, request.form.get("section_id", type=int) or 0)
     if section is None:
-        abort(404)
+        # An empty attach list posts no section_id; that is a missing choice, not a missing page.
+        flash("Choose a section.")
+        return redirect(url_for("staff.people"))
     row = db.session.get(SectionStaff, (section.id, target.id))
     if request.form.get("attach") and row is None:
         db.session.add(SectionStaff(section_id=section.id, user_id=target.id,

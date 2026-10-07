@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import email as auth_email
 from ..auth import tokens
+from ..decorators import STAFF_ROLES
 from ..models import ROLE_STUDENT, User
 from . import staff_actions
 
@@ -33,6 +34,8 @@ def _link(raw_token: str) -> str:
 
 
 def invite(session: Session, *, email: str, role: str, given: str, family: str, actor) -> User:
+    if role not in STAFF_ROLES:
+        raise StaffingRefused(f"{role!r} is not a staff role.")
     existing = _by_email(session, email)
     if existing is not None and existing.role == ROLE_STUDENT:
         raise StaffingRefused(

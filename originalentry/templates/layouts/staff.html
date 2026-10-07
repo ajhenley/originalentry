@@ -17,6 +17,10 @@
          {% if request.path == url_for('staff.index') %}aria-current="page"{% endif %}>Assignments</a>
       <a href="{{ url_for('staff.catalogue') }}" class="nav-link"
          {% if request.path == url_for('staff.catalogue') %}aria-current="page"{% endif %}>Catalogue</a>
+      {% if is_admin %}
+      <a href="{{ url_for('staff.people') }}" class="nav-link"
+         {% if request.path == url_for('staff.people') %}aria-current="page"{% endif %}>People</a>
+      {% endif %}
       {% with tone = 'dark' %}{% include "_account_menu.html" with context %}{% endwith %}
     </nav>
   </div>

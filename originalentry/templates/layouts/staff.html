@@ -27,6 +27,12 @@
 {% endblock %}
 
 {% block main %}
+  {# A log line is read by whoever went looking; a banner is read by the next person to open the
+     console. The switch is a supported state in which the privacy control is absent (I2.6). #}
+  {% if not config.SCOPED_VISIBILITY %}
+  <p class="callout callout--attention mb-4" role="status">Scoped visibility is off: every member
+    of staff can see every student's work.</p>
+  {% endif %}
   <h1 class="mb-5 text-3xl">{% block heading %}{% endblock %}</h1>
   {% block console %}{% endblock %}
 {% endblock %}

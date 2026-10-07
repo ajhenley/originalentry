@@ -15,6 +15,7 @@ from .models import (
     ROLE_ADMIN,
     ROLE_GRADER,
     ROLE_INSTRUCTOR,
+    Assignment,
     ContentPack,
     PackVersion,
     SectionStaff,
@@ -73,7 +74,10 @@ def workspace_view(view):
             abort(404)
 
         is_owner = ws.student_id == current_user.id
-        is_staff = current_user.role in STAFF_ROLES
+        # Staff see a student's books only for a section they teach. An admin sees all of them.
+        # One scalar to reach the section; may_see_section caches the rest per request.
+        is_staff = current_user.role in STAFF_ROLES and may_see_section(
+            db.session.scalar(db.select(Assignment.section_id).filter_by(id=ws.assignment_id)))
         if not (is_owner or is_staff):
             abort(404)
         if ws.archived_at is not None and not is_staff:

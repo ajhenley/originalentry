@@ -23,6 +23,8 @@ from flask import (
 from flask_login import current_user
 from werkzeug.datastructures import MultiDict
 
+from ..decorators import ADMIN_ROLES, may_see_section, my_section_ids
+from ..decorators_admin import admin_view
 from ..decorators_staff import staff_view
 from ..extensions import db
 from ..models import (
@@ -31,6 +33,7 @@ from ..models import (
     ContentPack,
     PackVersion,
     Section,
+    SectionStaff,
     User,
     Variant,
     Workspace,
@@ -71,11 +74,30 @@ BATCH = 10  # workspaces graded per request, so nothing comes near the request l
 bp = Blueprint("staff", __name__, url_prefix="/staff")
 
 
+def _scoped() -> bool:
+    """Whether this viewer's lists are narrowed to the sections they teach.
+
+    The switch and the admin exemption are decorators.may_see_section's to own; a list has no id
+    to ask about, so this asks the same two questions in the same order and nothing else.
+    """
+    return (current_app.config["SCOPED_VISIBILITY"]
+            and current_user.role not in ADMIN_ROLES)
+
+
+def _section_or_404(section_id: int) -> Section:
+    section = db.session.get(Section, section_id)
+    if section is None or not may_see_section(section.id):
+        abort(404)
+    return section
+
+
 def _assignment_or_404(public_id: str) -> Assignment:
     assignment = db.session.execute(
         db.select(Assignment).filter_by(public_id=public_id, archived_at=None)
     ).scalar_one_or_none()
-    if assignment is None:
+    # 404 and not 403, as everywhere else here: a refusal that confirms the assignment exists
+    # tells a teacher about a colleague's section.
+    if assignment is None or not may_see_section(assignment.section_id):
         abort(404)
     return assignment
 
@@ -83,14 +105,19 @@ def _assignment_or_404(public_id: str) -> Assignment:
 @bp.get("/")
 @staff_view
 def index():
-    rows = db.session.execute(
+    query = (
         db.select(Assignment, Section, ContentPack)
         .join(Section, Assignment.section_id == Section.id)
         .outerjoin(PackVersion, Assignment.fixed_pack_version_id == PackVersion.id)
         .outerjoin(ContentPack, PackVersion.content_pack_id == ContentPack.id)
         .where(Assignment.archived_at.is_(None))
         .order_by(Section.name, Assignment.title)
-    ).all()
+    )
+    if _scoped():
+        query = query.join(
+            SectionStaff, SectionStaff.section_id == Assignment.section_id
+        ).where(SectionStaff.user_id == current_user.id)
+    rows = db.session.execute(query).all()
 
     counts = dict(
         db.session.execute(
@@ -113,7 +140,10 @@ def index():
         }
         for assignment, section, pack in rows
     ]
-    return render_template("staff/assignments.html", assignments=assignments)
+    # An empty dashboard and no explanation reads as an outage. It is one sentence, and only when
+    # the reason really is that nobody has attached this person to a section yet.
+    return render_template("staff/assignments.html", assignments=assignments,
+                           teaches_nothing=_scoped() and not my_section_ids())
 
 
 @bp.get("/progress/<assignment>")
@@ -434,25 +464,52 @@ def _parse_when(raw: str | None):
 
 def _possible_prerequisites():
     """Live assignments this one could wait on (M2.5). Ordered by section, then title, because an
-    instructor thinks of them as "November, then December" inside one course."""
-    rows = db.session.execute(
+    instructor thinks of them as "November, then December" inside one course.
+
+    Scoped like every other list here. Its labels are a section's name and an assignment's title,
+    which is a colleague's business and not this teacher's -- and an assignment cannot sensibly
+    wait on one in a section you do not teach anyway.
+    """
+    query = (
         db.select(Assignment, Section)
         .join(Section, Assignment.section_id == Section.id)
         .where(Assignment.archived_at.is_(None))
         .order_by(Section.name, Assignment.title)
-    ).all()
+    )
+    if _scoped():
+        query = query.join(
+            SectionStaff, SectionStaff.section_id == Assignment.section_id
+        ).where(SectionStaff.user_id == current_user.id)
+    rows = db.session.execute(query).all()
     return [
         {"public_id": a.public_id, "label": f"{section.name} · {a.title}"}
         for a, section in rows
     ]
 
 
+def _my_sections():
+    """The sections to offer in the dropdown: yours, or every one of them for an admin."""
+    query = db.select(Section).where(Section.archived_at.is_(None))
+    if _scoped():
+        query = query.join(
+            SectionStaff, SectionStaff.section_id == Section.id
+        ).where(SectionStaff.user_id == current_user.id)
+    return db.session.scalars(query.order_by(Section.name)).all()
+
+
 def _assignment_or_none(public_id: str | None):
+    """The posted prerequisite, if there is one. Scoped for the same reason the posted section id
+    is: filtering the dropdown is not a permission check, and an assignment in a section you do
+    not teach is not one you may name here. It reads as absent rather than as an error, which is
+    what an id you were never offered is."""
     if not (public_id or "").strip():
         return None
-    return db.session.execute(
+    found = db.session.execute(
         db.select(Assignment).filter_by(public_id=public_id.strip(), archived_at=None)
     ).scalar_one_or_none()
+    if found is None or not may_see_section(found.section_id):
+        return None
+    return found
 
 
 @bp.get("/assignments/new")
@@ -461,9 +518,7 @@ def assignment_new():
     return render_template(
         "staff/assignment_new.html",
         catalogue=_catalogue(),
-        sections=db.session.scalars(
-            db.select(Section).where(Section.archived_at.is_(None)).order_by(Section.name)
-        ).all(),
+        sections=_my_sections(),
         prerequisites=_possible_prerequisites(),
         values=MultiDict(),
         errors={},
@@ -507,6 +562,11 @@ def assignment_create():
         section = db.session.get(Section, form.get("section_id", type=int) or 0)
         if section is None:
             errors["section_id"] = "Choose the section this assignment is for."
+        # Filtering the dropdown is not a permission check: a crafted POST would otherwise plant
+        # an assignment in a colleague's section. A form error at 422 rather than a 404, because
+        # this route is reached by submitting a form.
+        if section is not None and not may_see_section(section.id):
+            errors["section_id"] = "That section is not one you teach."
 
     due_at = _parse_when(form.get("due_at"))
     late_until = _parse_when(form.get("late_until"))
@@ -520,9 +580,7 @@ def assignment_create():
         return render_template(
             "staff/assignment_new.html",
             catalogue=catalogue,
-            sections=db.session.scalars(
-                db.select(Section).where(Section.archived_at.is_(None)).order_by(Section.name)
-            ).all(),
+            sections=_my_sections(),
             prerequisites=_possible_prerequisites(),
             values=form,
             errors=errors,
@@ -568,9 +626,7 @@ def assignment_clone(assignment: str):
 @bp.get("/sections/<int:section_id>/availability")
 @staff_view
 def section_availability(section_id: int):
-    section = db.session.get(Section, section_id)
-    if section is None:
-        abort(404)
+    section = _section_or_404(section_id)
     available = multicompany.available_content_pack_ids(db.session, section_id)
     packs = db.session.execute(
         db.select(ContentPack).order_by(ContentPack.company_name)
@@ -585,9 +641,7 @@ def section_availability(section_id: int):
 @bp.post("/sections/<int:section_id>/availability")
 @staff_view
 def section_availability_set(section_id: int):
-    section = db.session.get(Section, section_id)
-    if section is None:
-        abort(404)
+    _section_or_404(section_id)  # for the refusal only; the ids below are all this needs
     content_pack_id = request.form.get("content_pack_id", type=int)
     available = request.form.get("available") == "1"
     if content_pack_id:
@@ -607,9 +661,7 @@ def section_roster_import(section_id: int):
 
     Importing an address does not make it anyone's account — sign-in is still a link sent to that
     address — so this enrols people, and the people themselves prove the address is theirs."""
-    section = db.session.get(Section, section_id)
-    if section is None:
-        abort(404)
+    section = _section_or_404(section_id)
     back = redirect(url_for("staff.section_availability", section_id=section_id))
 
     upload = request.files.get("roster")
@@ -646,9 +698,7 @@ def section_roster_import(section_id: int):
 @bp.post("/sections/<int:section_id>/join-code")
 @staff_view
 def section_rotate_code(section_id: int):
-    section = db.session.get(Section, section_id)
-    if section is None:
-        abort(404)
+    section = _section_or_404(section_id)
     rotate_join_code(db.session, section, actor=current_user)
     db.session.commit()
     flash(f"{section.name} now joins with {section.join_code}.")
@@ -726,7 +776,7 @@ def answer_key_print(pack_version_id: int, variant_code: str):
 
 
 @bp.post("/catalogue")
-@staff_view
+@admin_view
 def catalogue_upload():
     upload = request.files.get("pack")
     if upload is None or not upload.filename:

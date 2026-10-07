@@ -23,4 +23,8 @@ def admin_view(view):
         return view(*args, **kwargs)
 
     wrapped._is_admin_view = True
+    # An admin is staff: ADMIN_ROLES is a subset of STAFF_ROLES, so an admin-only route requires
+    # staff a fortiori. tests/guards/test_structure.py asks whether every console route requires
+    # staff, not which decorator spelled it, and would otherwise read an admin route as unguarded.
+    wrapped._is_staff_view = True
     return wrapped

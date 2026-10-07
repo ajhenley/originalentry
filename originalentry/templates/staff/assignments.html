@@ -8,7 +8,12 @@
 </p>
 
 {% if not assignments %}
-<p class="text-muted">No assignments yet.</p>
+{# An empty dashboard and no explanation reads as an outage, and the two reasons for an empty one
+   are not the same problem to take to anybody. #}
+<p class="text-muted">
+  {%- if teaches_nothing %}You are teaching no sections yet. An administrator attaches you to
+  your sections; until then there is nothing here to show.{% else %}No assignments yet.{% endif -%}
+</p>
 {% else %}
 <div class="panel overflow-x-auto" role="region" aria-label="Assignments"
      tabindex="0">

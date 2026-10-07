@@ -192,6 +192,7 @@ def test_attaching_then_detaching_a_section_moves_it_on_and_off_the_dashboard(
     assert session.get(SectionStaff, (sid, instructor.id)) is None
     [removed] = _audit(session, staff_actions.SECTION_STAFF_REMOVED, "section", sid)
     assert removed.detail == {"user_id": instructor.id}
+    assert removed.actor_id == admin.id, "the detach is not attributed to the admin who did it"
     client.sign_in(instructor)
     assert world["section_name"] not in client.get("/staff/").get_data(as_text=True)
 
@@ -210,7 +211,11 @@ def test_the_console_menu_links_an_admin_to_people_and_not_a_teacher(client, adm
     client.sign_in(admin)
     assert 'href="/staff/people"' in client.get("/staff/").get_data(as_text=True)
     client.sign_in(instructor)
-    assert 'href="/staff/people"' not in client.get("/staff/").get_data(as_text=True)
+    page = client.get("/staff/")
+    # Status first: a 404 contains no link either, so without this the negative half would
+    # pass on a console that had stopped rendering altogether.
+    assert page.status_code == 200
+    assert 'href="/staff/people"' not in page.get_data(as_text=True)
 
 
 def test_a_teacher_cannot_reach_the_people_screen(client, instructor):

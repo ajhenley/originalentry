@@ -985,6 +985,10 @@ def people_role(public_id: str):
         # the first commits and then re-reads: two administrators demoting each other cannot
         # both see the other as "remaining". (Locking only the rows other than the target would
         # give each request a disjoint lock set and serialise nothing.)
+        # No test here proves this. The test client points db.session at the test's own
+        # connection, so a request never contends with anything and with_for_update() is
+        # indistinguishable from no lock. Changing these lines needs reasoning, not a green
+        # suite.
         admins = db.session.scalars(
             db.select(User.id).where(
                 User.role.in_(ADMIN_ROLES),

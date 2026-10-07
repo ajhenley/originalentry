@@ -15,7 +15,7 @@ import json
 import zipfile
 
 import pytest
-from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.models import Assignment, Section, SectionStaff, User, Variant, Workspace
 from originalentry.packs.importing import import_pack_zip
 from sqlalchemy import select
 
@@ -73,6 +73,10 @@ def workspace(session, client):
     section = Section(name="Sec", join_code="ref-join")
     student = User(email="ref-student@example.edu", given_name="Ola", family_name="Okoro")
     session.add_all([section, student])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=section.id, user_id=instructor.id))
     session.flush()
     assignment = Assignment(section_id=section.id, title="December", company_policy="fixed",
                             fixed_pack_version_id=version.id, mode="paper")

@@ -11,7 +11,7 @@ should not have work taken away because staff changed a setting behind them.
 import secrets
 
 import pytest
-from originalentry.models import Enrollment, Section, User, Workspace
+from originalentry.models import Enrollment, Section, SectionStaff, User, Workspace
 from originalentry.packs import schema
 from originalentry.packs.importer import import_content
 from originalentry.services.assignments import (
@@ -141,6 +141,10 @@ def test_an_instructor_sets_it_when_creating_the_assignment(client, session, two
     section, _, november, _ = two_assignments
     instructor = User(email=f"pi-{secrets.token_hex(3)}@example.edu", role="instructor")
     session.add(instructor)
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4) keeps
+    # November out of the prerequisite list, which is the thing this test reads.
+    session.add(SectionStaff(section_id=section.id, user_id=instructor.id))
     session.commit()
     client.sign_in(instructor)
 

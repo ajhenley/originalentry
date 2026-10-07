@@ -5,7 +5,7 @@ import copy
 import secrets
 
 import pytest
-from originalentry.models import ContentPack, Section, User, Workspace
+from originalentry.models import ContentPack, Section, SectionStaff, User, Workspace
 from originalentry.packs import schema
 from originalentry.packs.importer import import_content
 from originalentry.services.assignments import (
@@ -74,6 +74,10 @@ def archived(session, client):
                    given_name="Ola", family_name="Bello")
     instructor = User(email=f"vi-{secrets.token_hex(3)}@example.edu", role="instructor")
     session.add_all([section, student, instructor])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=section.id, user_id=instructor.id))
     session.flush()
     assignment = create_assignment(session, section=section, title="Dec", pack_version=pv)
     old = open_workspace(session, assignment, student)

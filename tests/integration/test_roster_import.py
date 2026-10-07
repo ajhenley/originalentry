@@ -12,7 +12,7 @@ import io
 import secrets
 
 import pytest
-from originalentry.models import Enrollment, Section, User, Workspace
+from originalentry.models import Enrollment, Section, SectionStaff, User, Workspace
 from originalentry.packs import schema
 from originalentry.packs.importer import import_content
 from originalentry.services.assignments import create_assignment
@@ -37,6 +37,10 @@ def section(session, client):
     sec = Section(name="ACCT 1010", join_code=f"R{secrets.token_hex(3).upper()}")
     instructor = User(email=f"ri-{secrets.token_hex(3)}@example.edu", role="instructor")
     session.add_all([sec, instructor])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=sec.id, user_id=instructor.id))
     session.flush()
     create_assignment(session, section=sec, title="December", pack_version=pv)
     return sec, instructor

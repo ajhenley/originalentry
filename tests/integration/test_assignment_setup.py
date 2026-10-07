@@ -10,7 +10,15 @@ import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from originalentry.models import Assignment, Enrollment, Section, User, Variant, Workspace
+from originalentry.models import (
+    Assignment,
+    Enrollment,
+    Section,
+    SectionStaff,
+    User,
+    Variant,
+    Workspace,
+)
 from originalentry.packs import schema
 from originalentry.packs.importer import import_answer_keys, import_content
 from originalentry.services.assignments import (
@@ -230,11 +238,15 @@ def instructor(catalogue, session):
 
 
 @pytest.fixture
-def section(session):
+def section(session, instructor):
     # commit() releases a savepoint (conftest: join_transaction_mode="create_savepoint"), so the
     # row survives the view's rollback before a refused re-render and is still removed at teardown.
     sec = Section(name="ACCT 1010-02", join_code="keep-join")
     session.add(sec)
+    session.flush()
+    # The instructor teaches it. Scoped visibility (Task 4) keeps a section you do not teach out
+    # of the dropdown, and out of a form you may post -- and this test reads that dropdown back.
+    session.add(SectionStaff(section_id=sec.id, user_id=instructor.id))
     session.commit()
     return sec
 

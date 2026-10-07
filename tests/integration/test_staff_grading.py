@@ -6,7 +6,15 @@ action for the whole section.
 """
 
 import pytest
-from originalentry.models import Assignment, Section, StaffAction, User, Variant, Workspace
+from originalentry.models import (
+    Assignment,
+    Section,
+    SectionStaff,
+    StaffAction,
+    User,
+    Variant,
+    Workspace,
+)
 from originalentry.packs import schema
 from originalentry.packs.importer import import_answer_keys, import_content
 from originalentry.services import workspace_write
@@ -27,6 +35,10 @@ def section(session, client):
     sec = Section(name="ACCT 1010-03", join_code="grading-join")
     instructor = User(email="grading-instructor@example.edu", role="instructor")
     session.add_all([sec, instructor])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=sec.id, user_id=instructor.id))
     session.flush()
     assignment = Assignment(section_id=sec.id, title="December cycle", company_policy="fixed",
                             fixed_pack_version_id=pv.id)

@@ -14,7 +14,7 @@ from datetime import date
 
 import pytest
 from originalentry.forms.entries import EntryCommand, LineCommand
-from originalentry.models import Section, StaffAction, User, Variant
+from originalentry.models import Section, SectionStaff, StaffAction, User, Variant
 from originalentry.packs import schema
 from originalentry.packs.importer import import_content
 from originalentry.services import WriteRefused, workspace_write
@@ -48,6 +48,10 @@ def manual(session, client):
                    given_name="Ada", family_name="Sowande")
     instructor = User(email=f"mvi-{secrets.token_hex(3)}@example.edu", role="instructor")
     session.add_all([section, student, instructor])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=section.id, user_id=instructor.id))
     session.flush()
     assignment = create_assignment(session, section=section, title="December",
                                    pack_version=pv, variant_policy=MANUAL)

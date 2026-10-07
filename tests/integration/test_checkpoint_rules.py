@@ -13,7 +13,7 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 from originalentry.forms.entries import EntryCommand, LineCommand
 from originalentry.grading.checkpoints import evaluate
-from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.models import Assignment, Section, SectionStaff, User, Variant, Workspace
 from originalentry.packs import schema
 from originalentry.packs.importer import import_answer_keys, import_content
 from originalentry.services import WriteRefused, workspace_write
@@ -45,6 +45,10 @@ def workspace(session, client):
     student = User(email="cpr@example.edu", given_name="Ada", family_name="Sowande")
     instructor = User(email="cpr-instructor@example.edu", role="instructor")
     session.add_all([section, student, instructor])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=section.id, user_id=instructor.id))
     session.flush()
     assignment = Assignment(section_id=section.id, title="December", company_policy="fixed",
                             fixed_pack_version_id=pv.id)

@@ -5,6 +5,7 @@ section, make an assignment on a company from the catalogue, hand out a join cod
 student enrolled and working. Cloning last term's assignment with new dates is one action.
 """
 
+import copy
 import re
 from datetime import UTC, datetime, timedelta
 
@@ -217,12 +218,14 @@ def test_archived_assignments_are_left_alone(session, catalogue):
 
 
 @pytest.fixture
-def pack_version(catalogue):
+def pack_version(catalogue, session):
+    session.commit()      # survive the view's rollback on our own, whatever order fixtures run in
     return catalogue[0]
 
 
 @pytest.fixture
-def instructor(catalogue):
+def instructor(catalogue, session):
+    session.commit()
     return catalogue[1]
 
 
@@ -267,7 +270,7 @@ def test_a_rejected_form_keeps_every_control_the_user_set(client, session, instr
         "pack_version_id": str(pack_version.id),
         "section_choice": "existing",
         "section_id": str(section.id),
-        "mode": "paper",
+        "mode": "screen",
         "variant_policy": "manual",
         "late_policy": "accept_late",
         "due_at": "2026-12-15T17:00",
@@ -283,7 +286,7 @@ def test_a_rejected_form_keeps_every_control_the_user_set(client, session, instr
         "the company was dropped"
     assert _control(page, "option", "selected", "section_id", str(section.id)), \
         "the section was dropped"
-    assert _control(page, "option", "selected", "mode", "paper"), "the documents mode was dropped"
+    assert _control(page, "option", "selected", "mode", "screen"), "the documents mode was dropped"
     assert _control(page, "option", "selected", "variant_policy", "manual"), \
         "the version policy was dropped"
     assert _control(page, "option", "selected", "late_policy", "accept_late"), \
@@ -293,3 +296,69 @@ def test_a_rejected_form_keeps_every_control_the_user_set(client, session, instr
     assert _control(page, "input", "checked", "section_choice", "existing"), \
         "the section choice radio was dropped"
     assert 'value="Riverbend, section B"' in page, "the title was dropped"
+
+
+def test_a_rejected_choice_form_keeps_the_ticked_companies(client, session, instructor,
+                                                           pack_version, section):
+    """company_policy=choice with two ticked companies: the getlist branch of the template."""
+    data = copy.deepcopy(testco_alpha.PACK)
+    data["company"]["slug"] = "setup-second-co"
+    data["company"]["name"] = "Setup Second Co"
+    second = import_content(session, schema.load_pack(data), source_sha256="setup2" + "0" * 58)
+    import_answer_keys(session, second, {"A": schema.load_answer_key(testco_alpha.KEY_A)})
+    session.commit()
+    client.sign_in(instructor)
+
+    response = client.post("/staff/assignments/new", data={
+        "title": "Riverbend, choice",
+        "company_policy": "choice",
+        "choice_pack_version_ids": [str(pack_version.id), str(second.id)],
+        "section_choice": "existing",
+        "section_id": str(section.id),
+        "late_policy": "accept_late",
+        "due_at": "2026-12-15T17:00",
+        "late_until": "2026-12-01T17:00",
+    })
+
+    assert response.status_code == 422
+    page = response.get_data(as_text=True)
+    assert "Late work needs a cut-off after the due date" in page
+    assert _control(page, "input", "checked", "company_policy", "choice"), \
+        "the choice radio was dropped"
+    assert not _control(page, "input", "checked", "company_policy", "fixed"), \
+        "the fixed radio is checked as well"
+    assert _control(page, "input", "checked", "choice_pack_version_ids", str(pack_version.id)), \
+        "the first ticked company was dropped"
+    assert _control(page, "input", "checked", "choice_pack_version_ids", str(second.id)), \
+        "the second ticked company was dropped"
+
+
+def test_a_rejected_form_keeps_a_new_section_the_user_was_making(client, session, instructor,
+                                                                 pack_version):
+    """section_choice=new: create_section runs before validation fails, then the view rolls back."""
+    client.sign_in(instructor)
+
+    response = client.post("/staff/assignments/new", data={
+        "title": "Riverbend, new section",
+        "company_policy": "fixed",
+        "pack_version_id": str(pack_version.id),
+        "section_choice": "new",
+        "section_name": "ACCT 1010-77",
+        "section_term": "Spring 2027",
+        "late_policy": "accept_late",
+        "due_at": "2026-12-15T17:00",
+        "late_until": "2026-12-01T17:00",
+    })
+
+    assert response.status_code == 422
+    page = response.get_data(as_text=True)
+    assert "Late work needs a cut-off after the due date" in page
+    assert _control(page, "input", "checked", "section_choice", "new"), \
+        "the new-section radio was dropped"
+    assert not _control(page, "input", "checked", "section_choice", "existing"), \
+        "the existing radio is checked as well"
+    assert 'value="ACCT 1010-77"' in page, "the new section's name was dropped"
+    assert 'value="Spring 2027"' in page, "the new section's term was dropped"
+    assert session.scalar(select(func.count()).select_from(Section)
+                          .where(Section.name == "ACCT 1010-77")) == 0, \
+        "a refused form must not leave its half-made section behind"

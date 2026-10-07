@@ -110,6 +110,10 @@ class SectionStaff(db.Model):
 
     section: Mapped[Section] = relationship()
 
+    # What my_section_ids reads once per request; declared here as well as in the migration so
+    # the model and the schema agree and an autogenerate never proposes dropping it.
+    __table_args__ = (Index("ix_section_staff_user", "user_id"),)
+
 
 class StaffAction(db.Model):
     """What staff did, and why (D2).

@@ -12,7 +12,7 @@ import pytest
 from markupsafe import escape
 from originalentry import messages
 from originalentry.extensions import db
-from originalentry.models import SectionStaff
+from originalentry.models import Assignment, SectionStaff
 from originalentry.services.assignments import create_section
 
 from tests.scoping_world import (
@@ -114,6 +114,31 @@ def test_a_crafted_create_naming_another_teachers_section_is_refused(client, own
     })
     assert response.status_code == 422
     assert "not one you teach" in response.get_data(as_text=True)
+
+
+def test_a_crafted_prerequisite_naming_another_teachers_assignment_is_dropped(
+        client, session, owner, mine, foreign):
+    """The prerequisite dropdown is filtered, which is not a permission check either.
+
+    A crafted POST would otherwise make this teacher's assignment wait on one in a section they
+    do not teach -- a colleague's assignment, named in a gate their students will meet. An id you
+    were never offered reads as absent rather than as an error, so the assignment is created and
+    the prerequisite is simply not set.
+    """
+    client.sign_in(owner)
+    response = client.post("/staff/assignments/new", data={
+        "title": "Mine, with a borrowed gate", "company_policy": "fixed",
+        "pack_version_id": str(mine["pack_version_id"]),
+        "section_choice": "existing", "section_id": str(mine["section_id"]),
+        "prerequisite": foreign["assignment"],
+        "mode": "screen", "variant_policy": "round_robin", "late_policy": "closed",
+    })
+
+    assert response.status_code == 302, response.get_data(as_text=True)[:400]
+    made = session.scalars(db.select(Assignment).filter_by(
+        title="Mine, with a borrowed gate")).one()
+    assert made.prerequisite_assignment_id is None, (
+        "a crafted POST set a prerequisite in a section this teacher does not teach")
 
 
 def test_the_marks_csv_and_the_diagnostics_export_are_scoped(client, outsider, foreign):

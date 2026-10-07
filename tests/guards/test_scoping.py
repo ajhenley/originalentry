@@ -6,6 +6,7 @@ app.url_map rather than a list, because the first draft of the spec behind this 
 chokepoints instead of enumerating routes and missed twenty-nine of them.
 """
 
+import importlib
 import inspect
 
 import pytest
@@ -223,6 +224,21 @@ def test_every_scoped_console_route_goes_through_one_of_the_two_lookups(app):
     )
 
 
-def test_every_filtered_route_names_the_case_that_covers_it(app):
-    """FILTERED is the one exemption that is not a refusal, so it has to point somewhere."""
+def test_every_filtered_route_names_the_case_that_covers_it():
+    """FILTERED is the one exemption that is not a refusal, so it has to point somewhere real.
+
+    It is also the hatch a new route with no path argument gets pushed into, which makes it the
+    exemption most in need of an anchor. Comparing the two dict literals in this file proves only
+    that two literals agree; it has to resolve the name to a callable, so that renaming or
+    deleting one of the three cases fails here instead of leaving the matrix green with an
+    exemption pointing at nothing.
+    """
+    module = importlib.import_module("tests.integration.test_scoped_console")
     assert set(FILTERED) == set(FILTERED_COVERED_BY)
+    missing = []
+    for endpoint, name in sorted(FILTERED_COVERED_BY.items()):
+        module_name, _, test_name = name.rpartition(".")
+        assert module_name == "test_scoped_console", f"{endpoint}: unknown module {module_name}"
+        if not callable(getattr(module, test_name, None)):
+            missing.append(f"{endpoint} -> {name}")
+    assert not missing, "exemptions naming a case that does not exist: " + ", ".join(missing)

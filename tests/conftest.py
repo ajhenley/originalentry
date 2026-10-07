@@ -54,8 +54,13 @@ class _Client(FlaskClient):
         # This harness holds one app context open for the whole test, and Flask reuses it for
         # each request rather than pushing a fresh one. Flask-Login caches the loaded user on
         # ``g``, so without this a second sign-in in the same test would be ignored.
+        #
+        # decorators.my_section_ids caches the same way, per request, and outlives a sign-in
+        # switch here for the same reason: without this pop, a test that signs in teacher A,
+        # makes a request and then signs in teacher B evaluates B against A's sections.
         if has_app_context():
             g.pop("_login_user", None)
+            g.pop("_my_section_ids", None)
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 """Flask CLI commands (T13.2). The break-glass paths for when email is down, and staff creation.
 
-    flask staff add <email> --role instructor|grader
+    flask staff add <email> --role grader|instructor|admin
     flask auth issue-link <email>     # prints a sign-in link + code for an existing user
     flask auth revoke <email>         # bumps session_epoch, signing out every device
 """

@@ -89,6 +89,28 @@ class Enrollment(db.Model):
     user: Mapped[User] = relationship()
     # The composite primary key already enforces one enrollment per (section, user).
 
+
+class SectionStaff(db.Model):
+    """Who teaches a section.
+
+    A join table rather than an owner column on Section, because a course is commonly co-taught
+    and because a teaching assistant has to be attachable to one section rather than to all of
+    them. One teacher is one row.
+
+    ``added_by_id`` is here so the audit can answer who granted access, which a role column on
+    the user cannot.
+    """
+
+    __tablename__ = "section_staff"
+
+    section_id: Mapped[int] = mapped_column(ForeignKey("section.id"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    added_by_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+
+    section: Mapped[Section] = relationship()
+
+
 class StaffAction(db.Model):
     """What staff did, and why (D2).
 
@@ -152,6 +174,7 @@ __all__ = [
     "User",
     "Section",
     "Enrollment",
+    "SectionStaff",
     "ROLE_STUDENT",
     "ROLE_GRADER",
     "ROLE_INSTRUCTOR",

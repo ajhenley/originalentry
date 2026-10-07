@@ -26,6 +26,7 @@ from .people import (
     Enrollment,
     LoginToken,
     Section,
+    SectionStaff,
     StaffAction,
     User,
 )
@@ -63,6 +64,7 @@ __all__ = [
     "User",
     "Section",
     "Enrollment",
+    "SectionStaff",
     "ROLE_STUDENT",
     "ROLE_GRADER",
     "ROLE_INSTRUCTOR",

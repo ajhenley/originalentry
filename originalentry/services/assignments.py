@@ -14,11 +14,13 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from ..decorators import STAFF_ROLES
 from ..models import (
     Assignment,
     Enrollment,
     PackVersion,
     Section,
+    SectionStaff,
     Variant,
     Workspace,
 )
@@ -58,6 +60,14 @@ def create_section(session: Session, *, name: str, term: str, course_tag: str | 
     session.add(section)
     session.flush()
     staff_actions.record(session, actor, "create_section", "section", section.id)
+    # The person who made it teaches it. Without this, a teacher who creates an assignment with a
+    # new section has made a section nobody teaches, and scoping refuses them from the thing they
+    # just created on the very next request.
+    if actor is not None and getattr(actor, "role", None) in STAFF_ROLES:
+        session.add(SectionStaff(section_id=section.id, user_id=actor.id, added_by_id=actor.id))
+        session.flush()
+        staff_actions.record(session, actor, staff_actions.SECTION_STAFF_ADDED,
+                             "section", section.id, detail={"user_id": actor.id})
     return section
 
 

@@ -157,4 +157,10 @@ def foreign_world(session) -> dict:
         "section_id": section.id,
         "pack_version_id": pack_version.id,
         "teacher_id": teacher.id,
+        # The two strings a leak would put on somebody else's screen. Returned so the tests that
+        # assert their absence read them from here: hand-copied literals pass vacuously the moment
+        # this fixture is renamed, and they pass in the leak-detecting direction, which is the one
+        # that matters.
+        "title": assignment.title,
+        "section_name": section.name,
     }

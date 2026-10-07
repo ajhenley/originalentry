@@ -1,10 +1,13 @@
 """Adding, re-roling and section-attaching staff, from inside the app."""
 
+from datetime import UTC, datetime
+
 import pytest
 from originalentry.auth import email as email_module
 from originalentry.auth import tokens
 from originalentry.models import (
     ROLE_ADMIN,
+    ROLE_GRADER,
     ROLE_INSTRUCTOR,
     ROLE_STUDENT,
     SectionStaff,
@@ -221,3 +224,77 @@ def test_the_console_menu_links_an_admin_to_people_and_not_a_teacher(client, adm
 def test_a_teacher_cannot_reach_the_people_screen(client, instructor):
     client.sign_in(instructor)
     assert client.get("/staff/people").status_code == 404
+
+
+# ── grader is understood and never offered ───────────────────────────────────────────────
+# Nothing in the app branches on grader versus instructor, and giving grader real limits was
+# declined. So a screen that offers it invites an administrator to pick it for a teaching
+# assistant believing it is the lesser permission, on the one screen whose job is granting access
+# to student marks. It is not the lesser permission: that account reads every mark in every
+# section attached to it.
+
+@pytest.fixture
+def grader(session):
+    """An account that already holds the role, which must keep working."""
+    return staff_account(session, "people-grader@example.edu", role=ROLE_GRADER, name="Gil")
+
+
+def test_neither_role_dropdown_offers_grader(client, admin, grader):
+    client.sign_in(admin)
+    page = client.get("/staff/people").get_data(as_text=True)
+    assert page.count('value="grader"') == 0, "grader is selectable on the people screen"
+    assert 'value="instructor"' in page and 'value="admin"' in page
+
+
+def test_the_dropdowns_name_the_roles_rather_than_their_identifiers(client, admin):
+    client.sign_in(admin)
+    page = client.get("/staff/people").get_data(as_text=True)
+    assert ">Teacher<" in page and ">Admin<" in page
+    assert ">instructor<" not in page, "a role rendered as its raw stored identifier"
+
+
+def test_an_existing_grader_shows_as_teacher_with_the_stored_role_noted(client, admin, grader):
+    """Their account keeps working and stays manageable; the screen just stops pretending the
+    distinction means something, while still saying what the database holds."""
+    client.sign_in(admin)
+    page = client.get("/staff/people").get_data(as_text=True)
+    assert grader.email in page, "an existing grader fell off the screen entirely"
+    assert "stored role: grader" in page
+
+
+def test_adding_a_grader_is_refused(client, session, admin):
+    client.sign_in(admin)
+    response = client.post("/staff/people", data={
+        "email": "new.grader@example.edu", "role": ROLE_GRADER}, follow_redirects=True)
+    assert b"Choose a staff role." in response.data
+    assert session.scalars(select(User).where(
+        User.email == "new.grader@example.edu")).first() is None
+
+
+def test_re_roling_somebody_to_grader_is_refused(client, session, admin, instructor):
+    client.sign_in(admin)
+    response = client.post(f"/staff/people/{instructor.public_id}/role",
+                           data={"role": ROLE_GRADER}, follow_redirects=True)
+    assert b"Choose a staff role." in response.data
+    assert _role_in_db(session, instructor) == ROLE_INSTRUCTOR
+
+
+def test_the_service_refuses_a_grader_invite_too(session, admin):
+    """The route is not the only caller, and STAFF_ROLES -- which invite used to validate against
+    -- admits grader."""
+    with pytest.raises(StaffingRefused) as refused:
+        invite(session, email="svc.grader@example.edu", role=ROLE_GRADER,
+               given="", family="", actor=admin)
+    assert "offers" in str(refused.value)
+
+
+def test_the_screen_shows_when_each_person_last_signed_in(client, session, admin, instructor):
+    """spec:427 names it in the row. An administrator deciding whether an account is still in use
+    cannot answer that from a role and a section list."""
+    instructor.last_sign_in_at = datetime(2026, 3, 14, 9, 30, tzinfo=UTC)
+    session.commit()
+    client.sign_in(admin)
+    page = client.get("/staff/people").get_data(as_text=True)
+    assert "Last sign-in" in page
+    assert "14 Mar 2026" in page
+    assert "Never" in page, "an account that has never signed in must say so, not show a blank"

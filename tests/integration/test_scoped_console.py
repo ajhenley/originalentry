@@ -90,7 +90,27 @@ def test_the_assignment_list_shows_only_your_own_sections(client, owner, mine, f
     page = client.get("/staff/").get_data(as_text=True)
 
     assert mine["title"] in page
-    assert "Their December cycle" not in page, "the dashboard listed a colleague's assignment"
+    assert foreign["title"] not in page, "the dashboard listed a colleague's assignment"
+
+
+def test_with_the_switch_off_the_list_shows_a_colleagues_section_again(
+        monkeypatch, app, client, owner, mine, foreign):
+    """The other state of the kill switch, for the half a route walk cannot see.
+
+    tests/guards/test_scoping.py inverts the refusal matrix with the switch off, but every list
+    query is EXEMPT there -- it is scoped by what the query returns, not by refusing the request.
+    So this is the only thing that would catch a list that narrows regardless of the flag, which
+    is the half of the switch no route-level guard would notice.
+
+    ``monkeypatch.setitem``, never assignment: ``app`` is session-scoped and a leaked False would
+    disable the guard for every test that ran afterwards.
+    """
+    monkeypatch.setitem(app.config, "SCOPED_VISIBILITY", False)
+    client.sign_in(owner)
+    page = client.get("/staff/").get_data(as_text=True)
+
+    assert mine["title"] in page
+    assert foreign["title"] in page, "the switch is off and the list was still narrowed"
 
 
 def test_the_section_dropdown_offers_only_your_own(client, owner, mine, foreign):
@@ -101,7 +121,10 @@ def test_the_section_dropdown_offers_only_your_own(client, owner, mine, foreign)
 
     assert f'value="{mine["section_id"]}"' in page
     assert f'value="{foreign["section_id"]}"' not in page
-    assert "Somebody else&#39;s section" not in page and "Somebody else's section" not in page
+    # Both spellings, because the name holds an apostrophe and Jinja escapes it on the way out:
+    # asserting only the raw form would pass on a page that had leaked the escaped one.
+    assert foreign["section_name"] not in page
+    assert str(escape(foreign["section_name"])) not in page
 
 
 def test_a_crafted_create_naming_another_teachers_section_is_refused(client, owner, foreign):

@@ -17,7 +17,7 @@ from originalentry.staff.views import _assignment_or_404, _section_or_404
 
 pytestmark = pytest.mark.db
 
-# Routes that are not section-scoped, and WHY. Three different reasons, kept apart: a reviewer
+# Routes that are not section-scoped, and WHY. Four different reasons, kept apart: a reviewer
 # auditing this list has to be able to tell which one applies to which name.
 UNOWNED = {                 # nobody's data; any staff member may see these
     "staff.catalogue": "a company pack belongs to no section",
@@ -39,7 +39,11 @@ FILTERED = {                # scoped by what the query returns, not by refusing 
         "submitting a form, and a 404 on a form you are legitimately filling in is baffling"
     ),
 }
-EXEMPT = UNOWNED | ADMIN_ONLY | FILTERED
+ENROLMENT_SCOPED = {        # owned, but scoped by enrolment, which is tighter than by section
+    "student.choose": "scoped by enrolment, which is tighter: staff hold no enrolments",
+    "student.choose_submit": "scoped by enrolment, which is tighter: staff hold no enrolments",
+}
+EXEMPT = UNOWNED | ADMIN_ONLY | FILTERED | ENROLMENT_SCOPED
 
 # The three FILTERED routes cannot be walked, so each is covered by a named case instead. Listed
 # here so the pairing is auditable from the matrix rather than only from the other file.
@@ -64,6 +68,9 @@ PLACEHOLDERS = {"key": "sales", "ref": "D01", "entry_id": "1", "statement_type":
 ADMISSION_BLIND = {
     "student.document_image": "the fixture pack is on paper: there is no image to serve",
 }
+# And the same route is vacuous in the *refusal* direction: it 404s on assignment.mode != "screen"
+# whatever the scoping says, so its 404 in the foreign-teacher walk is not evidence that scoping
+# refused anybody. Nobody should read the refusal half as having tested it either.
 
 
 def test_every_exempt_name_is_a_real_route(app):
@@ -85,9 +92,19 @@ def test_every_admin_only_route_is_guarded_by_admin_view(app):
     assert not unguarded, f"ADMIN_ONLY routes without @admin_view: {unguarded}"
 
 
+# What makes a route this matrix's business: it names somebody's assignment, section or workspace
+# in its path. Driven off the arguments rather than off the /staff and /w/ prefixes, which was a
+# blind spot: student.choose has named an <assignment> all along and sat outside both, so a
+# /a/<assignment>/marks added next year would have been invisible here. Nothing was leaking --
+# student.choose is scoped by enrolment, and staff hold none -- but that was a coincidence of
+# today's URL layout rather than a decision, and ENROLMENT_SCOPED is now the decision.
+SUBJECT_ARGUMENTS = frozenset({"assignment", "section_id", "workspace"})
+
+
 def _scoped_rules(app):
     for rule in app.url_map.iter_rules():
-        if not (rule.rule.startswith("/staff") or rule.rule.startswith("/w/")):
+        if not (SUBJECT_ARGUMENTS & rule.arguments
+                or rule.rule.startswith("/staff") or rule.rule.startswith("/w/")):
             continue
         if rule.endpoint in EXEMPT:
             continue
@@ -145,6 +162,34 @@ def test_an_admin_is_refused_nowhere(client, app, worked, admin):
     walked = _walk(client, app, worked, methods={"GET"}, skip=ADMISSION_BLIND)
     refused = [r for r, code in walked.items() if code == 404]
     assert not refused, "refused an admin:\n  " + "\n  ".join(refused)
+
+
+def test_the_switch_off_admits_a_teacher_who_teaches_nothing_everywhere(
+        monkeypatch, client, app, worked, outsider):
+    """The other state of the kill switch, which the spec requires be tested rather than assumed.
+
+    With SCOPED_VISIBILITY=0 the refusal matrix inverts entirely: the teacher refused everywhere
+    above is admitted everywhere, because the switch exists to be thrown in a hurry if scoping
+    turns out to lock a department out mid-term. Nothing else on this branch asserts the inverted
+    direction, and it is the one test that catches a list query that narrows regardless of the
+    flag -- the half of the switch that no route-level guard would notice.
+
+    ``monkeypatch.setitem`` and never assignment: ``app`` is session-scoped, so a leaked False
+    would disable the guard for every test that ran afterwards.
+
+    ``worked`` and not ``foreign``, for the reason the owner walk already gives above: ``worked``
+    holds real path pieces from tests/perfect_student.py, so a 404 here can only mean a refusal.
+    Walked with ``foreign`` and the placeholder ids, student.reference, student.document and
+    student.statement 404 on content that does not exist in that pack -- which would have to be
+    exempted, and an exemption added to make this pass would hide exactly the regression the test
+    is for. GET only, for the reason the owner walk gives: real ids and a POST walk would release
+    marks and archive a workspace.
+    """
+    monkeypatch.setitem(app.config, "SCOPED_VISIBILITY", False)
+    client.sign_in(outsider)
+    walked = _walk(client, app, worked, methods={"GET"}, skip=ADMISSION_BLIND)
+    refused = [r for r, code in walked.items() if code == 404]
+    assert not refused, "the switch is off and these still refused:\n  " + "\n  ".join(refused)
 
 
 # ── The admission half of the POST-only routes ───────────────────────────────────────────────

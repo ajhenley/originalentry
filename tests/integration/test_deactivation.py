@@ -348,9 +348,13 @@ def test_the_route_deactivates_the_person_and_records_who_did_it(
     # The same POST again, which the screen never offers but a crafted body can send. Still one
     # row: a second stamp would move the date the account was switched off, and a second row
     # would say an administrator did something they did not do.
-    client.post(f"/staff/people/{instructor.public_id}/active",
-                data={"deactivate": "1"}, follow_redirects=True)
+    again = client.post(f"/staff/people/{instructor.public_id}/active",
+                        data={"deactivate": "1"}, follow_redirects=True)
     assert len(_audit(session, staff_actions.STAFF_DEACTIVATED, instructor.id)) == 1
+    # And the screen must not report it as though something happened. A message that overstates a
+    # no-op is how an operator comes to believe a second switch-off was needed.
+    assert b"was already switched off. Nothing changed." in again.data
+    assert b"is no longer active. Their sections and record are untouched." not in again.data
 
 
 def test_the_route_reactivates_and_records_that_too(client, session, admin, instructor):
@@ -409,7 +413,7 @@ def test_inviting_an_address_whose_staff_account_is_switched_off_says_so(
         invite(session, email=instructor.email, role=ROLE_INSTRUCTOR,
                given="", family="", actor=admin)
     said = str(refused.value).lower()
-    assert "switched off" in said or "no longer active" in said
+    assert "switched off" in said
     assert "reactivate" in said, "the refusal must say what to do instead"
 
 

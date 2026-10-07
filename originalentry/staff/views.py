@@ -89,8 +89,10 @@ bp = Blueprint("staff", __name__, url_prefix="/staff")
 def _scoped() -> bool:
     """Whether this viewer's lists are narrowed to the sections they teach.
 
-    The switch and the admin exemption are decorators.may_see_section's to own; a list has no id
-    to ask about, so this asks the same two questions in the same order and nothing else.
+    The second of the two readers of ``SCOPED_VISIBILITY``; ``decorators.may_see_section`` is the
+    other, and owns the rule. A list has no id to ask about, so this asks that function's same two
+    questions in the same order and nothing else. Either entry point should lead you to the other:
+    change the order or the exemption in one and it has to change in both.
     """
     return (current_app.config["SCOPED_VISIBILITY"]
             and current_user.role not in ADMIN_ROLES)
@@ -910,7 +912,22 @@ def assignment_checkpoints(assignment: str):
 
 # ── people (Task 5): staff accounts, roles and which sections each teaches ─────────────────────
 
+# Two different jobs, kept apart. ASSIGNABLE_ROLES is who this screen *manages*: grader is in it
+# so the accounts that already hold that role still appear and can still be re-roled or switched
+# off. OFFERED_ROLES is what it *offers*, and grader is not on it.
+#
+# Not cosmetic. Nothing in the app branches on grader versus instructor -- the spec says so in
+# as many words, and giving grader real limits was declined -- so a screen that offers "grader"
+# invites an administrator to pick it for a teaching assistant believing it is the lesser
+# permission. It is not: that account reads every mark in every section attached to it. Offering
+# a choice that does nothing, on the screen that grants access to student marks, is worse than
+# offering no choice.
 ASSIGNABLE_ROLES = (ROLE_INSTRUCTOR, ROLE_GRADER, ROLE_ADMIN)
+OFFERED_ROLES = ((ROLE_INSTRUCTOR, "Teacher"), (ROLE_ADMIN, "Admin"))
+OFFERED_VALUES = frozenset(value for value, _label in OFFERED_ROLES)
+# What a stored role is called on screen. A grader displays as Teacher, with the stored role noted
+# beside it so an administrator can still see what the database holds.
+ROLE_LABELS = {ROLE_INSTRUCTOR: "Teacher", ROLE_GRADER: "Teacher", ROLE_ADMIN: "Admin"}
 _STAFF_NOTE = ("The sign-in link lasts fifteen minutes. If it has lapsed, they can still sign "
                "in from the sign-in page with this address.")
 
@@ -938,7 +955,8 @@ def people():
         s.id: sum(1 for ids in attached.values() if s.id in ids) for s in sections}
     return render_template(
         "staff/people.html", staff=staff, sections=sections, attached=attached,
-        teachers_per_section=teachers_per_section, roles=ASSIGNABLE_ROLES,
+        teachers_per_section=teachers_per_section, roles=OFFERED_ROLES, role_labels=ROLE_LABELS,
+        offered_values=OFFERED_VALUES,
         needs_teacher=[s for s in sections if s.id not in staffed_by_active],
         crowded=sum(1 for n in teachers_per_section.values() if n > 1))
 
@@ -947,7 +965,7 @@ def people():
 @admin_view
 def people_add():
     role = request.form.get("role") or ROLE_INSTRUCTOR
-    if role not in ASSIGNABLE_ROLES:
+    if role not in OFFERED_VALUES:
         flash("Choose a staff role.")
         return redirect(url_for("staff.people"))
     address = (request.form.get("email") or "").strip()
@@ -990,7 +1008,7 @@ def people_role(public_id: str):
     target = _person_or_404(public_id)
     back = redirect(url_for("staff.people"))
     new_role = request.form.get("role") or ""
-    if new_role not in ASSIGNABLE_ROLES:
+    if new_role not in OFFERED_VALUES:
         flash("Choose a staff role.")
         return back
     if target.role in ADMIN_ROLES and new_role not in ADMIN_ROLES:
@@ -1069,7 +1087,9 @@ def people_active(public_id: str):
         flash(str(refused))
         return back
     db.session.commit()
-    if switching_off:
+    if switching_off and was_off:
+        flash(f"{target.email} was already switched off. Nothing changed.")
+    elif switching_off:
         flash(f"{target.email} is no longer active. Their sections and record are untouched.")
     elif was_off:
         flash(f"{target.email} is active again, and teaches the sections they did before.")

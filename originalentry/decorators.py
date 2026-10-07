@@ -46,8 +46,17 @@ def may_see_section(section_id: int) -> bool:
     """Whether the signed-in staff member may see this section's students.
 
     One function, because a scoping rule implemented in four places is a scoping rule with four
-    chances to differ. The flag is read here and nowhere else for the same reason: a half-disabled
-    guard is worse than either state.
+    chances to differ: a half-disabled guard is worse than either state.
+
+    ``SCOPED_VISIBILITY`` has **two** readers that decide what somebody may see, not one: this
+    function, and ``staff.views._scoped``. Every route with an id to ask about asks here; a list
+    query has no id, so ``_scoped`` asks these same two questions in the same order for those.
+    Two named helpers is the shape that is safe; a flag checked inline at a call site is the shape
+    that is not, because that is what leaves half the routes scoped and half not. Change the order
+    or the exemption in one and it has to change in the other.
+
+    ``grep SCOPED_VISIBILITY`` finds two more, and neither decides anything: ``app.py`` logs a
+    warning at startup when it is off, and ``layouts/staff.html`` shows the banner that says so.
     """
     if not current_app.config["SCOPED_VISIBILITY"]:
         return True

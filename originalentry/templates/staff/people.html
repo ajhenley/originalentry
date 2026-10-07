@@ -28,7 +28,7 @@
   <label>Family name <input type="text" name="family_name"></label>
   <label>Role
     <select name="role">
-      {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+      {% for value, label in roles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
     </select>
   </label>
   <button type="submit" class="btn btn--small">Add and email a sign-in link</button>
@@ -42,6 +42,7 @@
         <th scope="col" class="text-left">Person</th>
         <th scope="col" class="text-left">Role</th>
         <th scope="col" class="text-left">Sections</th>
+        <th scope="col" class="text-left">Last sign-in</th>
         <th scope="col" class="text-left">Active</th>
       </tr>
     </thead>
@@ -53,11 +54,20 @@
           <form method="post" action="{{ url_for('staff.people_role', public_id=u.public_id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <select name="role" aria-label="Role for {{ u.email }}">
-              {% for r in roles %}
-              <option value="{{ r }}" {% if r == u.role %}selected{% endif %}>{{ r }}</option>
+              {% for value, label in roles %}
+              <option value="{{ value }}" {% if value == u.role %}selected{% endif %}>
+                {{ label }}</option>
               {% endfor %}
             </select>
             <button type="submit" class="btn btn--outline btn--small">Change</button>
+            {% if u.role not in offered_values %}
+            {# A role this app no longer offers (grader). No option matches it, so the select shows
+               Teacher -- which is right, because nothing in the app branches on the difference --
+               and the stored value is named here so an administrator can still see what the
+               database holds. #}
+            <span class="text-sm text-muted">{{ role_labels.get(u.role, u.role) }}
+              (stored role: {{ u.role }})</span>
+            {% endif %}
           </form>
         </td>
         <td>
@@ -86,6 +96,9 @@
               Attach</button>
           </form>
           {% endif %}
+        </td>
+        <td class="text-sm">
+          {{ u.last_sign_in_at.strftime('%-d %b %Y') if u.last_sign_in_at else 'Never' }}
         </td>
         <td>
           <form method="post" action="{{ url_for('staff.people_active', public_id=u.public_id) }}">

@@ -12,9 +12,14 @@ from sqlalchemy.orm import Session
 
 from ..auth import email as auth_email
 from ..auth import tokens
-from ..decorators import ADMIN_ROLES, STAFF_ROLES
-from ..models import ROLE_STUDENT, User
+from ..decorators import ADMIN_ROLES
+from ..models import ROLE_ADMIN, ROLE_INSTRUCTOR, ROLE_STUDENT, User
 from . import staff_actions
+
+# The roles this app offers, as opposed to the roles it understands. ``grader`` is understood --
+# accounts hold it -- and never offered, because nothing in the app branches on it. staff.views
+# derives its dropdowns from the same decision.
+OFFERED_ROLES = frozenset({ROLE_INSTRUCTOR, ROLE_ADMIN})
 
 
 class StaffingRefused(Exception):
@@ -34,8 +39,10 @@ def _link(raw_token: str) -> str:
 
 
 def invite(session: Session, *, email: str, role: str, given: str, family: str, actor) -> User:
-    if role not in STAFF_ROLES:
-        raise StaffingRefused(f"{role!r} is not a staff role.")
+    # OFFERED_ROLES, not STAFF_ROLES: the latter admits grader, which this app never offers
+    # because nothing branches on it. An account that already holds it keeps working.
+    if role not in OFFERED_ROLES:
+        raise StaffingRefused(f"{role!r} is not a role this app offers.")
     existing = _by_email(session, email)
     if existing is not None and existing.role == ROLE_STUDENT:
         raise StaffingRefused(

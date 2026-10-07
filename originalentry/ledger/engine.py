@@ -257,6 +257,13 @@ def subsidiary_proof(snapshot: Snapshot, subsidiary_kind: str) -> SubsidiaryProo
         code = line.party_code
         if code is None:
             continue
+        # A party line counts toward this ledger only when it sits on this kind's own control
+        # account. The forms accept a party on any account (they only *require* one on a subsidiary
+        # account), so a customer mistakenly tagged on a cash or expense line must not inflate the
+        # receivables total against a control it never touched -- that would fail the proof, and
+        # cost subsidiary_agreement marks, for a slip unrelated to the control relationship.
+        if control_number is None or line.account_number != control_number:
+            continue
         party = snapshot.parties.get(code)
         if party is None or party.kind != subsidiary_kind:
             continue

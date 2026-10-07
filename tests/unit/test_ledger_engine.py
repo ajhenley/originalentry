@@ -132,6 +132,32 @@ def test_subsidiary_proof_agrees(snap):
     assert balances_by_party == {"C-HALV": 588_000, "C-BEND": 100_000}
 
 
+def test_a_party_on_a_non_control_line_does_not_break_the_proof(snap):
+    """A customer code tagged on a line that is not the receivables control -- here a cash receipt
+    posted with a stray party -- must not be counted into the subsidiary total. It never touched
+    the control, so counting it would fail the proof and dock subsidiary_agreement for a slip that
+    has nothing to do with the control/subsidiary relationship."""
+    snap.entries[4] = Entry(
+        id=4, journal_key="general", entry_date=date(2026, 12, 6), kind=REGULAR,
+        document_ref="RCPT-1",
+        lines=(
+            Line(1, "101", debit_cents=50000, party_code="C-BEND"),  # party on Cash, by mistake
+            Line(2, "401", credit_cents=50000),
+        ),
+    )
+    snap.general_postings += (Posting("general", GENERAL, 2, (4,)),)
+    snap.subsidiary_postings += (Posting("general", SUBSIDIARY, 2, (4,)),)
+
+    proof = ledger.subsidiary_proof(snap, "customer")
+
+    assert proof.agrees
+    assert proof.party_total_cents == proof.control_balance_cents == 688_000
+    # C-BEND is still 100,000 (its real sale), not 150,000 — the cash-line tag was ignored.
+    assert {r.party_code: r.balance_cents for r in proof.party_rows} == {
+        "C-HALV": 588_000, "C-BEND": 100_000,
+    }
+
+
 def test_voided_entry_is_not_posted(snap):
     voided = snap.entries[2]
     snap.entries[2] = Entry(

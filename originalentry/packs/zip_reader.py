@@ -51,6 +51,9 @@ def read_pack_zip(fileobj) -> PackBundle:
         raise PackZipRefused(
             f"That archive holds {len(infos)} files; the limit is {MAX_ENTRIES}."
         )
+    # A cheap early reject on the declared sizes. It is not the real guard -- ``file_size`` is
+    # attacker-controlled central-directory metadata and a zip bomb can declare it small -- so the
+    # bytes actually decompressed are counted against the same budget as each member is read below.
     total = sum(info.file_size for info in infos)
     if total > MAX_UNCOMPRESSED_BYTES:
         raise PackZipRefused(
@@ -64,13 +67,34 @@ def read_pack_zip(fileobj) -> PackBundle:
     if PACK_NAME not in names:
         raise PackZipRefused("That archive has no pack.json at its root.")
 
-    bundle = PackBundle(pack=_read_json(archive, PACK_NAME), sha256=digest)
+    remaining = [MAX_UNCOMPRESSED_BYTES]
+
+    def _capped_read(name: str) -> bytes:
+        """Decompress one member in bounded chunks, stopping the moment the cumulative output
+        would exceed the budget -- so a member whose true size dwarfs its declared one cannot fill
+        memory before the size check ever runs."""
+        chunks: list[bytes] = []
+        with archive.open(name) as member:
+            while True:
+                chunk = member.read(65536)
+                if not chunk:
+                    break
+                remaining[0] -= len(chunk)
+                if remaining[0] < 0:
+                    raise PackZipRefused(
+                        "That archive unpacks to more than "
+                        f"{MAX_UNCOMPRESSED_BYTES // (1024 * 1024)} MB."
+                    )
+                chunks.append(chunk)
+        return b"".join(chunks)
+
+    bundle = PackBundle(pack=_load_json(PACK_NAME, _capped_read(PACK_NAME)), sha256=digest)
     for name in sorted(names):
         if name.startswith(KEYS_PREFIX) and name.endswith(".json"):
             variant = posixpath.basename(name)[: -len(".json")]
-            bundle.keys[variant] = _read_json(archive, name)
+            bundle.keys[variant] = _load_json(name, _capped_read(name))
         elif name.startswith(DOCUMENTS_PREFIX) and name.endswith(".png"):
-            bundle.images[name] = archive.read(name)
+            bundle.images[name] = _capped_read(name)
     return bundle
 
 
@@ -82,8 +106,8 @@ def _refuse_unsafe_path(name: str) -> None:
         raise PackZipRefused(f"{name} points outside the archive.")
 
 
-def _read_json(archive: zipfile.ZipFile, name: str) -> dict:
+def _load_json(name: str, data: bytes) -> dict:
     try:
-        return json.loads(archive.read(name).decode("utf-8"))
+        return json.loads(data.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise PackZipRefused(f"{name} is not readable JSON.") from exc

@@ -11,3 +11,4 @@ psycopg[binary]>=3.1,<4
 pydantic>=2.6,<3
 requests>=2.31,<3
 gunicorn>=21,<24
+sentry-sdk[flask]>=2,<3

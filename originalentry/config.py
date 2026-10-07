@@ -98,6 +98,12 @@ class Config:
         # CSRF on every POST, with NO time limit (a form open for hours must still save).
         self.WTF_CSRF_TIME_LIMIT = None
 
+        # Reject an over-large request body before Werkzeug buffers it into memory. The only large
+        # upload is a pack zip on the staff catalogue screen; the biggest real pack is ~15 MB, so
+        # 64 MB is generous headroom and well under what would exhaust a dyno. Without this a
+        # multi-gigabyte POST was read fully into RAM before any size check ran.
+        self.MAX_CONTENT_LENGTH = int(e.get("MAX_UPLOAD_MB", "64")) * 1024 * 1024
+
     def as_flask_mapping(self) -> dict[str, object]:
         """The subset Flask/extensions read via app.config."""
         return {

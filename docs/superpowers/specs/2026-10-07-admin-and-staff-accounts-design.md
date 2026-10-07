@@ -198,27 +198,73 @@ check:
 not a permission check** — a crafted POST would otherwise create an assignment inside a
 colleague's section. The posted id is verified, not merely the rendered options.
 
+**It is refused as a form error, not a 404.** This route is reached by submitting a form, and a 404
+on a form you are legitimately filling in is baffling. It joins the validation errors already
+there:
+
+```python
+if section is not None and not may_see_section(section.id):
+    errors["section_id"] = "That section is not one you teach."
+```
+
+which re-renders at 422 exactly as the existing errors do.
+
+> **Prerequisite, not a footnote.** That re-render is the known bug: of the form's fifteen fields,
+> the seven text and date boxes repopulate and **all eight selects, radios and tick boxes silently
+> reset** — which is what produced *"Choose the company this assignment uses"* for a company that
+> had been chosen. Adding a rejection path to that form without fixing the reset first specifies a
+> worse bug than the one being fixed. The reset is eight `selected`/`checked` conditionals in
+> `assignment_new.html`; it is a prerequisite task in the plan, not a follow-on.
+
 ### One helper, and a switch to turn it off
 
 Every chokepoint calls the same function:
 
 ```python
+def my_section_ids() -> frozenset[int]:
+    """The sections this staff member teaches, loaded once per request.
+
+    Cached on `g` because workspace_view runs on every /w/ route and a console page checks
+    several times: one query per request, not one per check.
+    """
+    if not hasattr(g, "_my_section_ids"):
+        g._my_section_ids = frozenset(db.session.scalars(
+            db.select(SectionStaff.section_id).filter_by(user_id=current_user.id)
+        ).all())
+    return g._my_section_ids
+
+
 def may_see_section(section_id: int) -> bool:
     """Whether the signed-in staff member may see this section's students.
 
     One function, because a scoping rule implemented in four places is a scoping rule with four
-    chances to differ. The flag is here and nowhere else for the same reason: a half-disabled
-    guard is worse than either state.
+    chances to differ. The flag is read here and nowhere else for the same reason: a
+    half-disabled guard is worse than either state.
     """
     if not current_app.config["SCOPED_VISIBILITY"]:
         return True
     if current_user.role in ADMIN_ROLES:
         return True
-    return db.session.execute(
-        db.select(SectionStaff.user_id).filter_by(
-            section_id=section_id, user_id=current_user.id)
-    ).first() is not None
+    return section_id in my_section_ids()
 ```
+
+**`workspace_view` reaches the section with one scalar, not a denormalised column.** It holds a
+workspace and needs a section:
+
+```python
+section_id = db.session.scalar(
+    db.select(Assignment.section_id).filter_by(id=ws.assignment_id))
+```
+
+So a `/w/` request costs **two extra queries on its first check and none after** — the scalar
+above, and the one `my_section_ids` caches. Both are primary-key or indexed lookups, against the
+six that `decorators.py` already performs on that path.
+
+The alternative was a denormalised `Workspace.section_id`, saving one scalar per request at the
+cost of a column, a backfill, and a second source of truth for which section a workspace belongs
+to. Rejected: the query is cheap, and a cached copy of a foreign key is a drift risk in the one
+place where being wrong means showing the wrong student's books. If profiling ever says otherwise,
+denormalise then — with the scoping already proven.
 
 **`SCOPED_VISIBILITY` defaults to `True`** and exists because this change can lock every teacher
 out of every class at once, and it would be deployed mid-term. Without it, a scoping misfire on
@@ -226,8 +272,19 @@ deploy morning is fixed by a code deploy under pressure; with it, it is fixed by
 `heroku config:set SCOPED_VISIBILITY=0` while somebody reads the logs. Ten lines of insurance
 against a bad morning.
 
-It is checked in this one function, never inline at a call site, so the flag cannot leave half the
+It is read in this one function, never inline at a call site, so the flag cannot leave half the
 routes scoped and half not.
+
+**And it says so, loudly, for as long as it is off.** A supported state in which the privacy
+control is absent must not be a quiet one — somebody flips it at 2am to unblock a class and nobody
+flips it back. So:
+
+- `create_app` logs a warning at startup: *"SCOPED_VISIBILITY is off: every staff member can see
+  every student's work."*
+- The staff console renders a banner saying the same thing, on every page, to everyone.
+
+The banner is the part that matters. A log line is read by whoever went looking; a banner is read
+by the next person to open the console.
 
 ### Backfill: every existing section to every current staff member
 
@@ -249,79 +306,121 @@ work is visible rather than remembered.
 
 ### The test that makes this safe rather than hopeful
 
-Every missed route is a data leak, and there are 55. So instead of 55 hand-written tests, **one
-parameterised test walks `app.url_map` and asserts each `/staff/` and `/w/` route refuses a teacher
-who does not teach that section.**
+Every missed route is a data leak and every over-refused route is a teacher locked out of their own
+class. There are 55 routes, so both directions are a matrix walked off `app.url_map` rather than a
+list somebody maintains.
 
 This extends a convention the repository already has: `tests/guards/test_structure.py:20-41` walks
 the URL map for both prefixes, asserting every `/w/` route carries `@workspace_view` and every
-`/staff/` route carries `@staff_view`. The new test belongs beside those and asks the next question
+`/staff/` route carries `@staff_view`. The new file belongs beside those and asks the next question
 — not *is it guarded* but *is it scoped*.
 
-Two facts make it far smaller than it looks, and the previous pass of this spec specified neither:
+**Both directions, and the second one is the one that gets noticed at 8am.** An earlier pass of
+this spec specified only the refusal half, which an implementation returning 404 to *everybody*
+would have passed clean on all 52 scoped routes. A leak is the quiet failure; locking a teacher out
+of their own class in week nine is the loud one.
 
-1. **The guards abort before the view body runs.** `workspace_view` refuses inside the decorator;
-   each staff view calls `_assignment_or_404` or `_section_or_404` on its first line. So the inner
-   path parameters — `key`, `ref`, `entry_id`, `statement_type`, `kind`, `section`, `run_id` — are
-   never examined on the refusal path and **placeholders are sufficient**. Only three ids must be
-   real.
-2. **`tests/conftest.py:77` already sets `WTF_CSRF_ENABLED=False`**, so the 25 POST routes need no
-   token.
+The two halves need different fixtures, and the reason is worth stating because it is not obvious:
+
+- **The refusal half can use placeholders.** Both guards abort before the view body runs —
+  `workspace_view` inside the decorator, each staff view on its first line — so `key`, `ref`,
+  `entry_id`, `statement_type`, `kind`, `section` and `run_id` are never examined on that path.
+- **The admission half cannot.** Once the guard passes, the view body runs and a bogus `entry_id`
+  404s for an honest reason, which is indistinguishable from a scoping refusal. So the admission
+  half needs **real** ids, built by `tests/perfect_student.py:build()` — the existing helper that
+  works a whole set through the real services, leaving real entries, posting runs and statements to
+  harvest ids from.
+
+`tests/conftest.py:77` already sets `WTF_CSRF_ENABLED=False`, so the 25 POST routes need no token.
 
 ```python
 # tests/guards/test_scoping.py
-FOREIGN = {}          # filled by the fixture: a section, assignment and workspace owned by someone else
+
+# Routes that are not section-scoped, and WHY. Two different reasons, kept apart: a reviewer
+# auditing this list has to be able to tell which one applies to which name.
+UNOWNED = {                 # nobody's data; any staff member may see these
+    "staff.catalogue": "a company pack belongs to no section",
+    "staff.answer_key_print": "an answer key is teaching material, not student data",
+}
+ADMIN_ONLY = {              # owned, but gated by role rather than by section
+    "staff.catalogue_upload": "cohort-wide, so admin-only",
+    "staff.people": "staff management",
+    "staff.people_add": "staff management",
+    "staff.people_role": "staff management",
+    "staff.people_sections": "staff management",
+}
+EXEMPT = UNOWNED | ADMIN_ONLY
+
 PLACEHOLDERS = {"key": "sales", "ref": "D01", "entry_id": "1", "statement_type": "trial_balance",
                 "kind": "customer", "section": "chart", "run_id": "1",
                 "pack_version_id": "1", "variant_code": "A"}
 
-# Every name here is a route somebody decided not to scope. Review this list, not the count.
-UNOWNED = {"staff.catalogue", "staff.catalogue_upload", "staff.answer_key_print",
-           "staff.people", "staff.people_add", "staff.people_role", "staff.people_sections"}
+
+def test_every_exempt_name_is_a_real_route(app):
+    """An exempt name matching no endpoint silently stops excluding anything.
+
+    Rename a route and this fails, rather than the allowlist quietly ceasing to mean what it says.
+    """
+    known = {rule.endpoint for rule in app.url_map.iter_rules()}
+    assert set(EXEMPT) <= known, f"exempt names matching no route: {sorted(set(EXEMPT) - known)}"
 
 
 def _scoped_rules(app):
     for rule in app.url_map.iter_rules():
         if not (rule.rule.startswith("/staff") or rule.rule.startswith("/w/")):
             continue
-        if rule.endpoint in UNOWNED:
+        if rule.endpoint in EXEMPT:
             continue
         yield rule
 
 
-def test_every_scoped_route_refuses_a_teacher_from_another_section(client, foreign, teacher):
-    """A teacher who does not teach this section gets 404 on every route that touches it.
-
-    Driven off the URL map rather than a list, so a route added next year is covered the moment it
-    exists -- or this fails and makes somebody decide. A hand-written suite omits the route nobody
-    remembered, which is how the first draft of this spec missed twenty-nine of them.
-    """
-    sign_in(client, teacher)
-    leaked = []
-    for rule in _scoped_rules(client.application):
-        args = {**PLACEHOLDERS, **{k: foreign[k] for k in rule.arguments if k in foreign}}
+def _walk(client, app, ids):
+    """Every scoped route, once per method, with these ids. Returns {"GET staff.x": status}."""
+    seen = {}
+    for rule in _scoped_rules(app):
+        args = {**PLACEHOLDERS, **ids}
         url = url_for(rule.endpoint, **{k: args[k] for k in rule.arguments})
         for method in sorted(rule.methods & {"GET", "POST"}):
-            response = client.open(url, method=method)
-            if response.status_code != 404:
-                leaked.append(f"{method} {rule.endpoint} -> {response.status_code}")
-    assert not leaked, "routes that did not refuse a foreign teacher:\n  " + "\n  ".join(leaked)
+            seen[f"{method} {rule.endpoint}"] = client.open(url, method=method).status_code
+    return seen
+
+
+def test_a_teacher_from_another_section_is_refused_everywhere(client, app, foreign, outsider):
+    """Placeholder ids are enough here: the guard aborts before any view body reads them."""
+    sign_in(client, outsider)
+    leaked = [r for r, code in _walk(client, app, foreign).items() if code != 404]
+    assert not leaked, "did not refuse a foreign teacher:\n  " + "\n  ".join(leaked)
+
+
+def test_the_section_s_own_teacher_is_refused_nowhere(client, app, worked, owner):
+    """The other half. Without it, 404-for-everybody passes the test above on every route.
+
+    `worked` is built by tests/perfect_student.py, so every id here is real and a 404 can only
+    mean the scoping refused someone it should have let in. Any other status -- 200, 302, 400,
+    422 -- means the route let them through, which is all this asserts.
+    """
+    sign_in(client, owner)
+    refused = [r for r, code in _walk(client, app, worked).items() if code == 404]
+    assert not refused, "refused the section's own teacher:\n  " + "\n  ".join(refused)
 ```
 
-Plus the ordinary cases, which matter as much because scoping that over-refuses has broken marking
-rather than secured it:
+Note what the admission half asserts: **not 404**, not 200. A POST walked without a valid body will
+redirect or come back 422, and that is fine — it proves the route was entered. Only 404 means the
+guard turned away the teacher who owns the class.
 
-- An admin reaches everything.
-- A teacher reaches their own sections and no others.
-- A co-teacher on the same section sees the same marks.
+Plus the cases a matrix cannot express:
+
+- An admin reaches everything, in both directions.
+- A co-teacher on the same section sees the same marks as the first teacher.
 - **A teacher can still open their own student's books** at `/w/`, and still sees the banner naming
   whose books they are — `workspace_view` deliberately opens archived books to staff (I2.4), and
   that has to keep working.
-- `grading_marks_csv` and `diagnostics_export` are both scoped — the two routes that hand student
-  data out in bulk.
-- A crafted `assignment_create` POST naming another teacher's section is refused.
-- With `SCOPED_VISIBILITY=0`, every one of the above opens again — the switch is tested, not
-  assumed.
+- `grading_marks_csv` and `diagnostics_export` are scoped — the two routes that hand student data
+  out in bulk.
+- A crafted `assignment_create` POST naming another teacher's section comes back 422 with
+  `errors["section_id"]` set, not 404.
+- With `SCOPED_VISIBILITY=0` the refusal matrix inverts entirely — every route admits the foreign
+  teacher — and the console renders the banner. The switch is tested in both states, not assumed.
 
 ## Section 3: the people screen
 
@@ -451,6 +550,9 @@ question.
 
 The sections are in dependency order and should be built that way:
 
+0. **The `assignment_new.html` re-render reset** — eight `selected`/`checked` conditionals. It is a
+   prerequisite rather than a follow-on, because Section 2 adds a rejection path to that form and
+   a form that loses its state on rejection turns one refusal into a mystery.
 1. **The permission model**, because the scoping exemption needs `ADMIN_ROLES` to exist.
 2. **Scoping**, because it is the fix and everything else is scaffolding around it.
 3. **The people screen**, because it is how the backfill gets corrected.
@@ -481,9 +583,13 @@ on for everyone once the pruning is done.
 
 ## Risks
 
-- **A missed query is a data leak**, and that is the whole risk of this spec. The `url_map`-driven
-  test is the mitigation, and its allowlist is the thing to review most carefully: every name on it
-  is a route somebody decided not to scope.
+- **A missed route is a data leak; an over-refused route is a teacher locked out of their own class
+  in week nine.** Both are the risk, and the second is the one that gets noticed first. The
+  bidirectional `url_map` matrix is the mitigation; `EXEMPT` is the thing to review most carefully,
+  because every name on it is a route somebody decided not to scope and the reason is written
+  beside it.
+- **The form that now has a new rejection path is the one that already loses eight controls on
+  re-render.** Fixing that reset is a prerequisite task, not a follow-on — specified in Section 2.
 - **This spec already missed 29 routes once.** The first pass counted the `/staff/` console and
   overlooked `workspace_view` entirely, which is the surface where a teacher reads a student's
   actual ledgers rather than their marks. That is the argument for the `url_map` test over a

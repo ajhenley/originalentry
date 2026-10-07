@@ -46,6 +46,22 @@ def create_app(config=None) -> Flask:
     app.config.update(cfg.as_flask_mapping())
     app.extensions["originalentry_config"] = cfg
 
+    # Error monitoring (T13). The config has always read SENTRY_DSN; without this nothing was ever
+    # sent, so a production 500 was invisible until a student reported it. Initialised only when a
+    # DSN is set, so dev and tests send nothing. send_default_pii stays off: this app's users are
+    # students, and an answer key must never ride out on a traceback (D6).
+    if cfg.SENTRY_DSN:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+
+        sentry_sdk.init(
+            dsn=cfg.SENTRY_DSN,
+            integrations=[FlaskIntegration()],
+            environment=cfg.APP_ENV,
+            send_default_pii=False,
+            traces_sample_rate=0.0,
+        )
+
     # Heroku router terminates TLS; trust one proxy hop so url_for builds https links.
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 

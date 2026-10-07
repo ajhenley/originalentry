@@ -178,3 +178,16 @@ def test_the_menu_reads_as_a_control_on_the_public_pages(client, people):
 
     assert "border" in summary          # a bordered control, not another link
     assert "text-ink" in summary       # and legible on cream
+
+
+def test_an_admin_is_offered_the_console_not_the_student_fallback(client, session):
+    """The menu asks decorators.STAFF_ROLES who is staff; it keeps no role list of its own."""
+    admin = User(email=f"aa-{secrets.token_hex(3)}@example.edu", role="admin")
+    session.add(admin)
+    session.commit()
+    client.sign_in(admin)
+
+    body = client.get("/").get_data(as_text=True)
+
+    assert ">Console</a>" in body
+    assert "No books open yet." not in body

@@ -24,8 +24,7 @@ ROLE_STUDENT = "student"
 ROLE_GRADER = "grader"
 ROLE_INSTRUCTOR = "instructor"
 ROLE_ADMIN = "admin"
-# Declared, and read by nothing today -- cli.py hand-writes its own choices. Keeping it honest
-# costs nothing; deriving the CLI's choices from it is the better fix, in step 5 below.
+# The one list of roles; the CLI's --role choices derive from it.
 ROLES = (ROLE_STUDENT, ROLE_GRADER, ROLE_INSTRUCTOR, ROLE_ADMIN)
 
 
@@ -155,8 +154,8 @@ __all__ = [
     "Enrollment",
     "ROLE_STUDENT",
     "ROLE_GRADER",
-    "ROLE_ADMIN",
     "ROLE_INSTRUCTOR",
+    "ROLE_ADMIN",
     "ROLES",
     "StaffAction",
     "LoginToken",

@@ -125,6 +125,15 @@ def _register_jinja(app: Flask) -> None:
             return ""
         return "Account" if current_user.role in STAFF_ROLES else "Your workspaces"
 
+    def _viewer_is_staff() -> bool:
+        # A computed boolean rather than the frozenset: templates ask "is this viewer staff?" and
+        # must not carry an opinion about which roles those are (decorators.STAFF_ROLES owns it).
+        from flask_login import current_user
+
+        from .decorators import STAFF_ROLES
+
+        return bool(current_user.is_authenticated and current_user.role in STAFF_ROLES)
+
     @app.context_processor
     def _inject_workspace_context():
         # The workspace decorator sets these on g; expose them to base/layout templates.
@@ -141,6 +150,7 @@ def _register_jinja(app: Flask) -> None:
             # each view. It queries only for a signed-in student (D6 rule 3).
             "my_workspaces": _account_workspaces(),
             "account_label": _account_label(),
+            "is_staff": _viewer_is_staff(),
             "grading_messages": messages.grading_batch_strings(),
             "switch_targets": getattr(g, "switch_targets", []),
             # The date the public documents carry, in one place so they cannot disagree.

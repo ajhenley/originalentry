@@ -30,7 +30,9 @@ def register_cli(app: Flask) -> None:
 
     @staff.command("add")
     @click.argument("email")
-    @click.option("--role", type=click.Choice([r for r in ROLES if r != ROLE_STUDENT]), required=True)
+    @click.option(
+        "--role", type=click.Choice([r for r in ROLES if r != ROLE_STUDENT]), required=True
+    )
     @click.option("--given", default="", help="Given name.")
     @click.option("--family", default="", help="Family name.")
     def staff_add(email: str, role: str, given: str, family: str) -> None:

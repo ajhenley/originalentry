@@ -239,6 +239,9 @@ def test_every_filtered_route_names_the_case_that_covers_it():
     for endpoint, name in sorted(FILTERED_COVERED_BY.items()):
         module_name, _, test_name = name.rpartition(".")
         assert module_name == "test_scoped_console", f"{endpoint}: unknown module {module_name}"
-        if not callable(getattr(module, test_name, None)):
+        # test_ prefix as well as callable: `owner` and `create_section` are callable attributes
+        # of that module too, so callable() alone would let an exemption point at a fixture or an
+        # imported helper and still look anchored.
+        if not (test_name.startswith("test_") and callable(getattr(module, test_name, None))):
             missing.append(f"{endpoint} -> {name}")
     assert not missing, "exemptions naming a case that does not exist: " + ", ".join(missing)

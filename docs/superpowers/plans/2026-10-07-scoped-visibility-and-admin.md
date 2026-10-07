@@ -862,7 +862,9 @@ def test_an_admin_is_refused_nowhere(client, app, worked, admin):
 ```
 
 The `foreign`, `outsider`, `worked`, `owner` and `admin` fixtures go in
-`tests/guards/conftest.py`.
+`tests/guards/conftest.py`. `foreign` is a dict of `{"assignment", "workspace", "company_slug",
+"section_id"}` for a section `outsider` does not teach; `worked` is the same keys for a section
+`owner` does teach, built by `tests/perfect_student.py:build()` so every inner id is real.
 
 > **Two things these fixtures must get right, both learned in Task 0.**
 >
@@ -873,10 +875,13 @@ The `foreign`, `outsider`, `worked`, `owner` and `admin` fixtures go in
 > view's rollback and teardown still removes it. Do not reach for a pre-existing row and skip when
 > there is none — a test that skips is a test that can stop running unnoticed.
 >
+> **A fixture that only flushes depends on a later one committing.** Task 0 ended with
+> `instructor` and `pack_version` surviving the rollback only because `section` committed after
+> them and released the savepoint holding all three — which works only while the test requests
+> them in that order. Have each fixture that must survive a rollback commit for itself.
+>
 > **`outsider` is a brand-new account.** Task 2's backfill attached every section to every staff
-> member who existed when it ran, so no pre-existing account teaches nothing. Create one. `foreign` is a dict of `{"assignment", "workspace", "company_slug",
-"section_id"}` for a section `outsider` does not teach; `worked` is the same keys for a section
-`owner` does teach, built by `tests/perfect_student.py:build()` so every inner id is real.
+> member who existed when it ran, so no pre-existing account teaches nothing. Create one.
 
 - [ ] **Step 2: Run it to verify it fails**
 

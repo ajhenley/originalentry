@@ -28,11 +28,10 @@ from flask import (
 from flask_login import login_user, logout_user
 from sqlalchemy import func, select
 
+from ..decorators import STAFF_ROLES
 from ..extensions import db
 from ..models import (
     PURPOSE_JOIN,
-    ROLE_GRADER,
-    ROLE_INSTRUCTOR,
     Enrollment,
     LoginToken,
     Section,
@@ -44,7 +43,6 @@ from . import tokens
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-STAFF_ROLES = {ROLE_GRADER, ROLE_INSTRUCTOR}
 _APP_BASE = "APP_BASE_URL"
 
 

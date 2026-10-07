@@ -23,7 +23,10 @@ from ..ids import new_public_id
 ROLE_STUDENT = "student"
 ROLE_GRADER = "grader"
 ROLE_INSTRUCTOR = "instructor"
-ROLES = (ROLE_STUDENT, ROLE_GRADER, ROLE_INSTRUCTOR)
+ROLE_ADMIN = "admin"
+# Declared, and read by nothing today -- cli.py hand-writes its own choices. Keeping it honest
+# costs nothing; deriving the CLI's choices from it is the better fix, in step 5 below.
+ROLES = (ROLE_STUDENT, ROLE_GRADER, ROLE_INSTRUCTOR, ROLE_ADMIN)
 
 
 class User(db.Model):
@@ -152,6 +155,7 @@ __all__ = [
     "Enrollment",
     "ROLE_STUDENT",
     "ROLE_GRADER",
+    "ROLE_ADMIN",
     "ROLE_INSTRUCTOR",
     "ROLES",
     "StaffAction",

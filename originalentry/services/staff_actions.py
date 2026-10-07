@@ -16,6 +16,12 @@ GRADE_COMMENT = "grade_comment"
 RELEASE_MARKS = "release_marks"
 GRADE_RUN = "grade_run"
 REOPEN_WORKSPACE = "reopen_workspace"
+STAFF_INVITED = "staff_invited"
+STAFF_ROLE_CHANGED = "staff_role_changed"
+STAFF_DEACTIVATED = "staff_deactivated"
+STAFF_REACTIVATED = "staff_reactivated"
+SECTION_STAFF_ADDED = "section_staff_added"
+SECTION_STAFF_REMOVED = "section_staff_removed"
 
 
 def record(

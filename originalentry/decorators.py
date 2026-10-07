@@ -12,6 +12,7 @@ from flask_login import current_user, login_required
 from . import messages
 from .extensions import db
 from .models import (
+    ROLE_ADMIN,
     ROLE_GRADER,
     ROLE_INSTRUCTOR,
     ContentPack,
@@ -22,7 +23,8 @@ from .models import (
 )
 from .presentation import build_company
 
-STAFF_ROLES = frozenset({ROLE_GRADER, ROLE_INSTRUCTOR})
+STAFF_ROLES = frozenset({ROLE_GRADER, ROLE_INSTRUCTOR, ROLE_ADMIN})
+ADMIN_ROLES = frozenset({ROLE_ADMIN})
 
 
 def workspace_view(view):

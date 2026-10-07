@@ -5,6 +5,7 @@ section, make an assignment on a company from the catalogue, hand out a join cod
 student enrolled and working. Cloning last term's assignment with new dates is one action.
 """
 
+import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -227,12 +228,27 @@ def instructor(catalogue):
 
 @pytest.fixture
 def section(session):
-    # The view rolls back before it re-renders a refused form, which would discard a section made
-    # inside the test's own transaction. A section already committed survives that rollback.
-    sec = session.scalars(select(Section).where(Section.archived_at.is_(None))).first()
-    if sec is None:
-        pytest.skip("needs one committed, unarchived section in the database")
+    # commit() releases a savepoint (conftest: join_transaction_mode="create_savepoint"), so the
+    # row survives the view's rollback before a refused re-render and is still removed at teardown.
+    sec = Section(name="ACCT 1010-02", join_code="keep-join")
+    session.add(sec)
+    session.commit()
     return sec
+
+
+def _control(page: str, tag: str, attr: str, name: str, value: str) -> bool:
+    """Whether the <option>/<input> named `name` with this value carries `attr`, however wrapped."""
+    if tag == "option":
+        block = re.search(rf'<select[^>]*name="{name}".*?</select>', page, re.S)
+        assert block, f"no {name} select on the page"
+        scope = block.group(0)
+    else:
+        scope = page
+    pattern = (rf'<option[^>]*value="{re.escape(value)}"[^>]*>' if tag == "option"
+               else rf'<input[^>]*name="{name}"[^>]*value="{re.escape(value)}"[^>]*>')
+    found = re.search(pattern, scope)
+    assert found, f"{name} has no {tag} for {value}"
+    return re.search(rf'\b{attr}\b', found.group(0)) is not None
 
 
 def test_a_rejected_form_keeps_every_control_the_user_set(client, session, instructor, pack_version,
@@ -263,12 +279,17 @@ def test_a_rejected_form_keeps_every_control_the_user_set(client, session, instr
     assert "Late work needs a cut-off after the due date" in page
 
     # Every control the user set must come back set.
-    assert f'value="{pack_version.id}" selected' in page or \
-           f'value="{pack_version.id}"  selected' in page, "the company was dropped"
-    assert f'value="{section.id}" selected' in page, "the section was dropped"
-    assert 'value="paper" selected' in page, "the documents mode was dropped"
-    assert 'value="manual" selected' in page, "the version policy was dropped"
-    assert 'value="accept_late" selected' in page, "the late policy was dropped"
-    assert 'value="fixed" checked' in page, "the company policy radio was dropped"
-    assert 'value="existing" checked' in page, "the section choice radio was dropped"
+    assert _control(page, "option", "selected", "pack_version_id", str(pack_version.id)), \
+        "the company was dropped"
+    assert _control(page, "option", "selected", "section_id", str(section.id)), \
+        "the section was dropped"
+    assert _control(page, "option", "selected", "mode", "paper"), "the documents mode was dropped"
+    assert _control(page, "option", "selected", "variant_policy", "manual"), \
+        "the version policy was dropped"
+    assert _control(page, "option", "selected", "late_policy", "accept_late"), \
+        "the late policy was dropped"
+    assert _control(page, "input", "checked", "company_policy", "fixed"), \
+        "the company policy radio was dropped"
+    assert _control(page, "input", "checked", "section_choice", "existing"), \
+        "the section choice radio was dropped"
     assert 'value="Riverbend, section B"' in page, "the title was dropped"

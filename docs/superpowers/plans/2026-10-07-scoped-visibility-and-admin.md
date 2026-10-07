@@ -98,7 +98,7 @@ def test_a_rejected_form_keeps_every_control_the_user_set(client, session, instr
         "section_id": str(section.id),
         "mode": "paper",
         "variant_policy": "manual",
-        "late_policy": "accept",
+        "late_policy": "accept_late"   # LATE_ACCEPT; "accept" is not a real value,
         "due_at": "2026-12-15T17:00",
         "late_until": "2026-12-01T17:00",      # before the due date: the one real error
     })
@@ -862,7 +862,19 @@ def test_an_admin_is_refused_nowhere(client, app, worked, admin):
 ```
 
 The `foreign`, `outsider`, `worked`, `owner` and `admin` fixtures go in
-`tests/guards/conftest.py`. `foreign` is a dict of `{"assignment", "workspace", "company_slug",
+`tests/guards/conftest.py`.
+
+> **Two things these fixtures must get right, both learned in Task 0.**
+>
+> **They commit.** `assignment_create` calls `db.session.rollback()` before re-rendering a refused
+> form, which wipes anything created inside the test's transaction. `tests/conftest.py:33-37` binds
+> the Session with `join_transaction_mode="create_savepoint"`, so a fixture that calls
+> `session.commit()` releases a savepoint rather than the outer transaction: the row survives the
+> view's rollback and teardown still removes it. Do not reach for a pre-existing row and skip when
+> there is none — a test that skips is a test that can stop running unnoticed.
+>
+> **`outsider` is a brand-new account.** Task 2's backfill attached every section to every staff
+> member who existed when it ran, so no pre-existing account teaches nothing. Create one. `foreign` is a dict of `{"assignment", "workspace", "company_slug",
 "section_id"}` for a section `outsider` does not teach; `worked` is the same keys for a section
 `owner` does teach, built by `tests/perfect_student.py:build()` so every inner id is real.
 

@@ -21,6 +21,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user
+from werkzeug.datastructures import MultiDict
 
 from ..decorators_staff import staff_view
 from ..extensions import db
@@ -464,7 +465,7 @@ def assignment_new():
             db.select(Section).where(Section.archived_at.is_(None)).order_by(Section.name)
         ).all(),
         prerequisites=_possible_prerequisites(),
-        values={},
+        values=MultiDict(),
         errors={},
     )
 

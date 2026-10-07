@@ -213,3 +213,62 @@ def test_archived_assignments_are_left_alone(session, catalogue):
         select(func.count()).select_from(Assignment).where(Assignment.section_id == section.id)
     ).scalar_one() == 1
     assert isinstance(section, Section)
+
+
+@pytest.fixture
+def pack_version(catalogue):
+    return catalogue[0]
+
+
+@pytest.fixture
+def instructor(catalogue):
+    return catalogue[1]
+
+
+@pytest.fixture
+def section(session):
+    # The view rolls back before it re-renders a refused form, which would discard a section made
+    # inside the test's own transaction. A section already committed survives that rollback.
+    sec = session.scalars(select(Section).where(Section.archived_at.is_(None))).first()
+    if sec is None:
+        pytest.skip("needs one committed, unarchived section in the database")
+    return sec
+
+
+def test_a_rejected_form_keeps_every_control_the_user_set(client, session, instructor, pack_version,
+                                                          section):
+    """A validation error on one field must not silently reset the other fourteen.
+
+    This is the bug that told an instructor to "Choose the company this assignment uses" about a
+    company they had chosen: the error was a late cut-off, the re-render dropped the company, and
+    the second submit complained about the company.
+    """
+    client.sign_in(instructor)
+
+    response = client.post("/staff/assignments/new", data={
+        "title": "Riverbend, section B",
+        "company_policy": "fixed",
+        "pack_version_id": str(pack_version.id),
+        "section_choice": "existing",
+        "section_id": str(section.id),
+        "mode": "paper",
+        "variant_policy": "manual",
+        "late_policy": "accept_late",
+        "due_at": "2026-12-15T17:00",
+        "late_until": "2026-12-01T17:00",      # before the due date: the one real error
+    })
+
+    assert response.status_code == 422
+    page = response.get_data(as_text=True)
+    assert "Late work needs a cut-off after the due date" in page
+
+    # Every control the user set must come back set.
+    assert f'value="{pack_version.id}" selected' in page or \
+           f'value="{pack_version.id}"  selected' in page, "the company was dropped"
+    assert f'value="{section.id}" selected' in page, "the section was dropped"
+    assert 'value="paper" selected' in page, "the documents mode was dropped"
+    assert 'value="manual" selected' in page, "the version policy was dropped"
+    assert 'value="accept_late" selected' in page, "the late policy was dropped"
+    assert 'value="fixed" checked' in page, "the company policy radio was dropped"
+    assert 'value="existing" checked' in page, "the section choice radio was dropped"
+    assert 'value="Riverbend, section B"' in page, "the title was dropped"

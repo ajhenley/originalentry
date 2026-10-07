@@ -3,7 +3,6 @@
 import logging
 
 import pytest
-from flask import g
 from flask_login import login_user
 from originalentry.decorators import may_see_section, my_section_ids
 from originalentry.models import ROLE_ADMIN, ROLE_INSTRUCTOR, SectionStaff, User
@@ -57,15 +56,18 @@ def test_the_sections_are_loaded_once_per_request(app, session, instructor, sect
         assert my_section_ids() is first, "the per-request cache was not used"
 
 
-def test_the_switch_opens_everything(app, session, instructor, section):
-    """Review Focus 5. The flag is a supported state in which the privacy control is absent."""
+def test_the_switch_opens_everything(monkeypatch, app, session, instructor, section):
+    """Review Focus 5. The flag is a supported state in which the privacy control is absent.
+
+    ``monkeypatch.setitem`` rather than assign-and-restore: ``app`` is session-scoped, so a flag
+    left False by a failing assertion would disable the guard for every later test in the run --
+    and the tests that would then pass wrongly are the scoping tests themselves.
+    """
     with app.test_request_context():
         login_user(instructor)
         assert may_see_section(section.id) is False
-        app.config["SCOPED_VISIBILITY"] = False
-        g.pop("_my_section_ids", None)
+        monkeypatch.setitem(app.config, "SCOPED_VISIBILITY", False)
         assert may_see_section(section.id) is True
-    app.config["SCOPED_VISIBILITY"] = True
 
 
 def test_the_switch_being_off_is_logged_at_startup(monkeypatch, caplog):

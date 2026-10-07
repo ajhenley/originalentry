@@ -65,8 +65,6 @@ ADMISSION_BLIND = {
 }
 
 
-@pytest.mark.xfail(strict=True, reason="the five staff.people* names are created by Task 5, "
-                                       "which removes this marker")
 def test_every_exempt_name_is_a_real_route(app):
     """An exempt name matching no endpoint silently stops excluding anything.
 

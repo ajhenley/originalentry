@@ -23,11 +23,16 @@ from flask import (
 from flask_login import current_user
 from werkzeug.datastructures import MultiDict
 
+from ..auth import email as auth_email
+from ..auth import tokens
 from ..decorators import ADMIN_ROLES, may_see_section, my_section_ids
 from ..decorators_admin import admin_view
 from ..decorators_staff import staff_view
 from ..extensions import db
 from ..models import (
+    ROLE_ADMIN,
+    ROLE_GRADER,
+    ROLE_INSTRUCTOR,
     AnswerKey,
     Assignment,
     ContentPack,
@@ -65,6 +70,7 @@ from ..services.grades import (
 from ..services.marks_export import CANVAS, GENERIC, marks_csv
 from ..services.progress import assignment_progress
 from ..services.roster import RosterRefused, import_roster
+from ..services.staffing import StaffingRefused, invite
 from ..services.submit import ReopenRefused, reopen_workspace
 from ..services.variants import VariantRefused, assign_variant, variants_for
 from .key_record import printable_key
@@ -894,3 +900,124 @@ def assignment_checkpoints(assignment: str):
     db.session.commit()
     flash(f"Checkpoint {ordinal} updated.")
     return back
+
+
+# ── people (Task 5): staff accounts, roles and which sections each teaches ─────────────────────
+
+ASSIGNABLE_ROLES = (ROLE_INSTRUCTOR, ROLE_GRADER, ROLE_ADMIN)
+_STAFF_NOTE = ("The sign-in link lasts fifteen minutes. If it has lapsed, they can still sign "
+               "in from the sign-in page with this address.")
+
+
+@bp.get("/people")
+@admin_view
+def people():
+    staff = db.session.scalars(
+        db.select(User).where(User.role.in_(ASSIGNABLE_ROLES)).order_by(User.email)).all()
+    sections = db.session.scalars(db.select(Section).order_by(Section.name)).all()
+    attached: dict[int, set[int]] = {}
+    for section_id, user_id in db.session.execute(
+            db.select(SectionStaff.section_id, SectionStaff.user_id)).all():
+        attached.setdefault(user_id, set()).add(section_id)
+    # Task 2 attached every existing section to every existing staff member so nothing broke on
+    # deploy; a section with several teachers is where that still needs pruning.
+    teachers_per_section = {
+        s.id: sum(1 for ids in attached.values() if s.id in ids) for s in sections}
+    return render_template(
+        "staff/people.html", staff=staff, sections=sections, attached=attached,
+        teachers_per_section=teachers_per_section, roles=ASSIGNABLE_ROLES,
+        crowded=sum(1 for n in teachers_per_section.values() if n > 1))
+
+
+@bp.post("/people")
+@admin_view
+def people_add():
+    role = request.form.get("role") or ROLE_INSTRUCTOR
+    if role not in ASSIGNABLE_ROLES:
+        flash("Choose a staff role.")
+        return redirect(url_for("staff.people"))
+    address = (request.form.get("email") or "").strip()
+    if "@" not in address:
+        flash("Enter an email address.")
+        return redirect(url_for("staff.people"))
+    try:
+        user = invite(db.session, email=address, role=role,
+                      given=(request.form.get("given_name") or "").strip(),
+                      family=(request.form.get("family_name") or "").strip(),
+                      actor=current_user)
+    except StaffingRefused as refused:
+        db.session.rollback()
+        flash(str(refused))
+        return redirect(url_for("staff.people"))
+    except tokens.RateLimited as limited:
+        db.session.rollback()
+        flash(str(limited))
+        return redirect(url_for("staff.people"))
+    except auth_email.EmailError:
+        db.session.rollback()
+        flash("The invitation email could not be sent, so no account was made. Try again.")
+        return redirect(url_for("staff.people"))
+    db.session.commit()
+    flash(f"{user.email} added and emailed a sign-in link. {_STAFF_NOTE}")
+    return redirect(url_for("staff.people"))
+
+
+def _person_or_404(public_id: str) -> User:
+    target = db.session.execute(
+        db.select(User).filter_by(public_id=public_id)).scalar_one_or_none()
+    if target is None or target.role not in ASSIGNABLE_ROLES:
+        abort(404)
+    return target
+
+
+@bp.post("/people/<public_id>/role")
+@admin_view
+def people_role(public_id: str):
+    target = _person_or_404(public_id)
+    back = redirect(url_for("staff.people"))
+    new_role = request.form.get("role") or ""
+    if new_role not in ASSIGNABLE_ROLES:
+        flash("Choose a staff role.")
+        return back
+    if target.role in ADMIN_ROLES and new_role not in ADMIN_ROLES:
+        # Locked, so two administrators demoting each other in two requests cannot both pass.
+        remaining = db.session.scalars(db.select(User.id).where(
+            User.role.in_(ADMIN_ROLES), User.id != target.id,
+            # Task 6 adds User.deactivated_at: add `User.deactivated_at.is_(None)` here.
+        ).with_for_update()).all()
+        if not remaining:
+            flash("That is the last administrator. Make someone else an administrator first.")
+            return back
+    if target.id == current_user.id:
+        flash("You cannot change your own role.")
+        return back
+    if new_role != target.role:
+        staff_actions.record(db.session, current_user, staff_actions.STAFF_ROLE_CHANGED, "user",
+                             target.id, detail={"from": target.role, "to": new_role})
+        target.role = new_role
+        db.session.commit()
+        flash(f"{target.email} is now {new_role}.")
+    return back
+
+
+@bp.post("/people/<public_id>/sections")
+@admin_view
+def people_sections(public_id: str):
+    target = _person_or_404(public_id)
+    section = db.session.get(Section, request.form.get("section_id", type=int) or 0)
+    if section is None:
+        abort(404)
+    row = db.session.get(SectionStaff, (section.id, target.id))
+    if request.form.get("attach") and row is None:
+        db.session.add(SectionStaff(section_id=section.id, user_id=target.id,
+                                    added_by_id=current_user.id))
+        staff_actions.record(db.session, current_user, staff_actions.SECTION_STAFF_ADDED,
+                             "section", section.id, detail={"user_id": target.id})
+        flash(f"{target.email} now teaches {section.name}.")
+    elif request.form.get("detach") and row is not None:
+        db.session.delete(row)
+        staff_actions.record(db.session, current_user, staff_actions.SECTION_STAFF_REMOVED,
+                             "section", section.id, detail={"user_id": target.id})
+        flash(f"{target.email} no longer teaches {section.name}.")
+    db.session.commit()
+    return redirect(url_for("staff.people"))

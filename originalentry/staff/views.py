@@ -70,7 +70,13 @@ from ..services.grades import (
 from ..services.marks_export import CANVAS, GENERIC, marks_csv
 from ..services.progress import assignment_progress
 from ..services.roster import RosterRefused, import_roster
-from ..services.staffing import StaffingRefused, invite
+from ..services.staffing import (
+    StaffingRefused,
+    deactivate,
+    invite,
+    other_active_admins,
+    reactivate,
+)
 from ..services.submit import ReopenRefused, reopen_workspace
 from ..services.variants import VariantRefused, assign_variant, variants_for
 from .key_record import printable_key
@@ -916,9 +922,16 @@ def people():
         db.select(User).where(User.role.in_(ASSIGNABLE_ROLES)).order_by(User.email)).all()
     sections = db.session.scalars(db.select(Section).order_by(Section.name)).all()
     attached: dict[int, set[int]] = {}
-    for section_id, user_id in db.session.execute(
-            db.select(SectionStaff.section_id, SectionStaff.user_id)).all():
+    # Which sections still have somebody active on them. Read off the same pass as `attached`
+    # rather than a second query: deactivating a teacher does not detach them, so a section can
+    # be fully attached and still have nobody who can open it.
+    staffed_by_active: set[int] = set()
+    for section_id, user_id, deactivated_at in db.session.execute(
+            db.select(SectionStaff.section_id, SectionStaff.user_id, User.deactivated_at)
+            .join(User, User.id == SectionStaff.user_id)).all():
         attached.setdefault(user_id, set()).add(section_id)
+        if deactivated_at is None:
+            staffed_by_active.add(section_id)
     # Task 2 attached every existing section to every existing staff member so nothing broke on
     # deploy; a section with several teachers is where that still needs pruning.
     teachers_per_section = {
@@ -926,6 +939,7 @@ def people():
     return render_template(
         "staff/people.html", staff=staff, sections=sections, attached=attached,
         teachers_per_section=teachers_per_section, roles=ASSIGNABLE_ROLES,
+        needs_teacher=[s for s in sections if s.id not in staffed_by_active],
         crowded=sum(1 for n in teachers_per_section.values() if n > 1))
 
 
@@ -980,21 +994,11 @@ def people_role(public_id: str):
         flash("Choose a staff role.")
         return back
     if target.role in ADMIN_ROLES and new_role not in ADMIN_ROLES:
-        # Lock the whole admin set, target included, in id order. Every demotion request then
-        # selects the identical rows in the identical order, so a second one blocks here until
-        # the first commits and then re-reads: two administrators demoting each other cannot
-        # both see the other as "remaining". (Locking only the rows other than the target would
-        # give each request a disjoint lock set and serialise nothing.)
-        # No test here proves this. The test client points db.session at the test's own
-        # connection, so a request never contends with anything and with_for_update() is
-        # indistinguishable from no lock. Changing these lines needs reasoning, not a green
-        # suite.
-        admins = db.session.scalars(
-            db.select(User.id).where(
-                User.role.in_(ADMIN_ROLES),
-                # Task 6 adds User.deactivated_at: add `User.deactivated_at.is_(None)` here.
-            ).order_by(User.id).with_for_update()).all()
-        if not [i for i in admins if i != target.id]:
+        # One implementation of the last-admin rule, shared with services.staffing.deactivate:
+        # demotion and deactivation are two ways of taking the same powers away, and the same
+        # rule written twice is two chances for the two to differ. The lock it holds, and why no
+        # test here can prove it, are documented on the helper.
+        if not other_active_admins(db.session, target.id):
             flash("That is the last administrator. Make someone else an administrator first.")
             return back
     if target.id == current_user.id:
@@ -1032,3 +1036,31 @@ def people_sections(public_id: str):
         flash(f"{target.email} no longer teaches {section.name}.")
     db.session.commit()
     return redirect(url_for("staff.people"))
+
+
+@bp.post("/people/<public_id>/active")
+@admin_view
+def people_active(public_id: str):
+    """Switch a staff account off, or back on.
+
+    Off, not gone: the account and its ``section_staff`` rows stay, because those rows are the
+    only answer to who taught a class last term. A section left with nobody active says so on
+    this screen, so nobody has to remember which ones they are.
+    """
+    target = _person_or_404(public_id)
+    back = redirect(url_for("staff.people"))
+    switching_off = bool(request.form.get("deactivate"))
+    try:
+        if switching_off:
+            deactivate(db.session, target=target, actor=current_user)
+        else:
+            reactivate(db.session, target=target, actor=current_user)
+    except StaffingRefused as refused:
+        db.session.rollback()
+        flash(str(refused))
+        return back
+    db.session.commit()
+    flash(f"{target.email} is no longer active. Their sections and record are untouched."
+          if switching_off else
+          f"{target.email} is active again, and teaches the sections they did before.")
+    return back

@@ -29,6 +29,7 @@ ADMIN_ONLY = {              # owned, but gated by role rather than by section
     "staff.people_add": "staff management",
     "staff.people_role": "staff management",
     "staff.people_sections": "staff management",
+    "staff.people_active": "staff management",
 }
 FILTERED = {                # scoped by what the query returns, not by refusing the request
     "staff.index": "the assignment list is filtered to the sections you teach",

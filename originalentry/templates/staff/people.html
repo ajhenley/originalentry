@@ -12,6 +12,15 @@
   {% endif %}
 </p>
 
+{% if needs_teacher %}
+<p class="mb-4 text-sm">
+  {% for s in needs_teacher %}
+  <strong>{{ s.name }} needs a teacher</strong>: nobody active is attached to it, so nobody can
+  see this class's students or mark their work.<br>
+  {% endfor %}
+</p>
+{% endif %}
+
 <form method="post" action="{{ url_for('staff.people_add') }}" class="panel mb-6 grid gap-3">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label>Email <input type="email" name="email" required autocomplete="off"></label>
@@ -33,6 +42,7 @@
         <th scope="col" class="text-left">Person</th>
         <th scope="col" class="text-left">Role</th>
         <th scope="col" class="text-left">Sections</th>
+        <th scope="col" class="text-left">Active</th>
       </tr>
     </thead>
     <tbody>
@@ -76,6 +86,19 @@
               Attach</button>
           </form>
           {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('staff.people_active', public_id=u.public_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if u.deactivated_at %}
+            <span class="text-sm text-muted">No longer active</span>
+            <button type="submit" name="reactivate" value="1" class="btn btn--outline btn--small">
+              Reactivate</button>
+            {% else %}
+            <button type="submit" name="deactivate" value="1" class="btn btn--outline btn--small">
+              Deactivate</button>
+            {% endif %}
+          </form>
         </td>
       </tr>
       {% endfor %}

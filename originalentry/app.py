@@ -214,6 +214,11 @@ def _register_login(app: Flask) -> None:
         ).scalar_one_or_none()
         if user is None or str(user.session_epoch) != epoch:
             return None
+        # One chokepoint for every live session, whatever cookie is carrying it. Returning None
+        # here only kills the session; auth.views._complete_sign_in is what refuses a *new*
+        # sign-in with a reason, so nobody is bounced without being told why.
+        if user.deactivated_at is not None:
+            return None
         return user
 
 

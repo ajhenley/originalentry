@@ -46,6 +46,10 @@ def create_app(config=None) -> Flask:
     app.config.update(cfg.as_flask_mapping())
     app.extensions["originalentry_config"] = cfg
 
+    if not app.config["SCOPED_VISIBILITY"]:
+        app.logger.warning(
+            "SCOPED_VISIBILITY is off: every staff member can see every student's work.")
+
     # Error monitoring (T13). The config has always read SENTRY_DSN; without this nothing was ever
     # sent, so a production 500 was invisible until a student reported it. Initialised only when a
     # DSN is set, so dev and tests send nothing. send_default_pii stays off: this app's users are

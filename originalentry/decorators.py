@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import abort, g, render_template
+from flask import abort, current_app, g, render_template
 from flask_login import current_user, login_required
 
 from . import messages
@@ -17,6 +17,7 @@ from .models import (
     ROLE_INSTRUCTOR,
     ContentPack,
     PackVersion,
+    SectionStaff,
     User,
     Variant,
     Workspace,
@@ -25,6 +26,33 @@ from .presentation import build_company
 
 STAFF_ROLES = frozenset({ROLE_GRADER, ROLE_INSTRUCTOR, ROLE_ADMIN})
 ADMIN_ROLES = frozenset({ROLE_ADMIN})
+
+
+def my_section_ids() -> frozenset[int]:
+    """The sections this staff member teaches, loaded once per request.
+
+    Cached on ``g`` because workspace_view runs on every /w/ route and a console page checks
+    several times: one query per request, not one per check.
+    """
+    if not hasattr(g, "_my_section_ids"):
+        g._my_section_ids = frozenset(db.session.scalars(
+            db.select(SectionStaff.section_id).filter_by(user_id=current_user.id)
+        ).all())
+    return g._my_section_ids
+
+
+def may_see_section(section_id: int) -> bool:
+    """Whether the signed-in staff member may see this section's students.
+
+    One function, because a scoping rule implemented in four places is a scoping rule with four
+    chances to differ. The flag is read here and nowhere else for the same reason: a half-disabled
+    guard is worse than either state.
+    """
+    if not current_app.config["SCOPED_VISIBILITY"]:
+        return True
+    if current_user.role in ADMIN_ROLES:
+        return True
+    return section_id in my_section_ids()
 
 
 def workspace_view(view):

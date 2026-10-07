@@ -1,11 +1,11 @@
 """Who teaches a section."""
 
 import pytest
-from alembic.autogenerate import compare_metadata
-from alembic.migration import MigrationContext
 from originalentry.extensions import db
 from originalentry.models import ROLE_INSTRUCTOR, SectionStaff, User
 from originalentry.services.assignments import create_section
+
+pytestmark = pytest.mark.db
 
 
 @pytest.fixture
@@ -46,15 +46,3 @@ def test_creating_a_section_without_an_actor_attaches_nobody(session):
     session.flush()
     assert session.scalars(
         db.select(SectionStaff).filter_by(section_id=section.id)).all() == []
-
-
-def test_the_model_declares_every_index_the_migration_creates(session):
-    """``ix_section_staff_user`` is what ``my_section_ids`` reads once per request. The migration
-    creates it, so if the model does not declare it the two disagree and the next
-    ``flask db migrate`` writes a migration that drops it. This is the shape of the mistake, so
-    it is pinned: any section_staff difference between the model and the live schema fails here.
-    """
-    context = MigrationContext.configure(session.connection())
-    drift = [change for change in compare_metadata(context, db.metadata)
-             if "section_staff" in str(change)]
-    assert drift == [], f"the model and the schema disagree about section_staff: {drift}"

@@ -30,6 +30,7 @@ ADMIN_ONLY = {              # owned, but gated by role rather than by section
     "staff.people_role": "staff management",
     "staff.people_sections": "staff management",
     "staff.people_active": "staff management",
+    "staff.students": "every student in the install, so admin-only rather than section-scoped",
 }
 FILTERED = {                # scoped by what the query returns, not by refusing the request
     "staff.index": "the assignment list is filtered to the sections you teach",

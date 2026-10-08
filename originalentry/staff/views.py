@@ -33,6 +33,7 @@ from ..models import (
     ROLE_ADMIN,
     ROLE_GRADER,
     ROLE_INSTRUCTOR,
+    ROLE_STUDENT,
     AnswerKey,
     Assignment,
     ContentPack,
@@ -962,6 +963,73 @@ OFFERED_VALUES = frozenset(value for value, _label in OFFERED_ROLES)
 ROLE_LABELS = {ROLE_INSTRUCTOR: "Teacher", ROLE_GRADER: "Teacher", ROLE_ADMIN: "Admin"}
 _STAFF_NOTE = ("The sign-in link lasts fifteen minutes. If it has lapsed, they can still sign "
                "in from the sign-in page with this address.")
+
+
+@bp.get("/students")
+@admin_view
+def students():
+    """Every student, where they are enrolled, and what they have open.
+
+    Admin only. This is every student in the install on one screen, which is the opposite of what
+    section scoping does for a teacher, so it is gated by role rather than by section.
+
+    Read-only. Deactivating students is out of scope by design -- the spec puts them under
+    rosters and sections, "a different thing" -- so this screen finds people and shows what is
+    true of them, and changes nothing.
+
+    One query for the students, one for their enrolments and one for their open books, rather
+    than either per row: a roster is the screen most likely to grow past the size somebody
+    imagined when they wrote it.
+    """
+    term = (request.args.get("q") or "").strip()
+    query = db.select(User).where(User.role == ROLE_STUDENT)
+    if term:
+        # Each field matched on its own rather than a concatenation: "Kelly" should find a family
+        # name and "roster-keep" an address, and neither should depend on how a full name is
+        # assembled for someone with no given name.
+        like = f"%{term.lower()}%"
+        query = query.where(db.or_(
+            db.func.lower(User.email).like(like),
+            db.func.lower(User.given_name).like(like),
+            db.func.lower(User.family_name).like(like),
+        ))
+    found = db.session.scalars(
+        query.order_by(User.family_name, User.given_name, User.email)).all()
+    ids = [u.id for u in found]
+
+    enrolled: dict[int, list[dict]] = {}
+    books: dict[int, dict[str, int]] = {}
+    if ids:
+        for user_id, section_name, source, number in db.session.execute(
+            db.select(Enrollment.user_id, Section.name, Enrollment.source,
+                      Enrollment.student_number)
+            .join(Section, Section.id == Enrollment.section_id)
+            .where(Enrollment.user_id.in_(ids))
+            .order_by(Section.name)
+        ).all():
+            enrolled.setdefault(user_id, []).append(
+                {"section": section_name, "source": source, "number": number})
+        for student_id, status, count in db.session.execute(
+            db.select(Workspace.student_id, Workspace.status, db.func.count())
+            .where(Workspace.student_id.in_(ids), Workspace.archived_at.is_(None))
+            .group_by(Workspace.student_id, Workspace.status)
+        ).all():
+            books.setdefault(student_id, {})[status] = count
+
+    return render_template(
+        "staff/students.html",
+        term=term,
+        students=[
+            {
+                "name": f"{u.given_name} {u.family_name}".strip() or "—",
+                "email": u.email,
+                "enrolled": enrolled.get(u.id, []),
+                "books": sorted(books.get(u.id, {}).items()),
+                "last_sign_in_at": u.last_sign_in_at,
+            }
+            for u in found
+        ],
+    )
 
 
 @bp.get("/people")

@@ -1,0 +1,76 @@
+{% extends "layouts/staff.html" %}
+{% block heading %}Students{% endblock %}
+
+{% block console %}
+<p class="mb-4 max-w-prose text-sm text-muted">
+  Every student, where they are enrolled, and what they have open. Read-only: students are
+  governed by rosters and sections, so nothing on this screen changes an account.
+</p>
+
+{# The app's first search form, so it uses the field classes rather than inventing a look. GET,
+   so a filtered roster is a link somebody can keep or send. #}
+<form method="get" action="{{ url_for('staff.students') }}"
+      class="mb-4 flex flex-wrap items-end gap-2">
+  <div>
+    <label class="field-label" for="q">Find a student</label>
+    <input id="q" name="q" type="search" value="{{ term }}" placeholder="Name or address"
+           class="field mt-1 bg-paper">
+  </div>
+  <button type="submit" class="btn btn--small">Search</button>
+  {% if term %}
+  <a class="btn btn--secondary btn--small" href="{{ url_for('staff.students') }}">Clear</a>
+  {% endif %}
+</form>
+
+{% if not students %}
+{# The two empty states are different problems: a search that found nobody, and an install with
+   nobody in it. Saying which one it is saves somebody checking the other. #}
+<p class="text-muted">
+  {%- if term %}No student matches “{{ term }}”.{% else %}No students yet. They appear here once
+  somebody joins a section with its code or is imported from a roster.{% endif -%}
+</p>
+{% else %}
+<p class="mb-4 text-sm text-muted">
+  {{ students|length }} student{{ "" if students|length == 1 else "s" }}{{ " matching" if term }}
+</p>
+
+<div class="panel overflow-x-auto" role="region" tabindex="0" aria-label="Students">
+  <table class="data-table">
+    <caption>Students</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="text-left">Student</th>
+        <th scope="col" class="text-left">Enrolled in</th>
+        <th scope="col" class="text-left">Books open</th>
+        <th scope="col" class="text-left">Last sign-in</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in students %}
+      <tr>
+        <td>{{ s.name }}<br><span class="text-sm">{{ s.email }}</span></td>
+        <td class="text-sm">
+          {%- if s.enrolled %}
+          {%- for e in s.enrolled %}
+          {{ e.section }}<span class="text-xs text-muted"> · {{ e.source.replace("_", " ") }}
+            {%- if e.number %} · {{ e.number }}{% endif -%}
+          </span>{{ "<br>"|safe if not loop.last }}
+          {%- endfor %}
+          {%- else %}<span class="text-muted">Not enrolled</span>{% endif -%}
+        </td>
+        <td class="text-sm tabular-nums">
+          {%- if s.books %}
+          {%- for status, count in s.books %}{{ count }} {{ status.replace("_", " ")
+            }}{{ ", " if not loop.last }}{% endfor %}
+          {%- else %}<span class="text-muted">—</span>{% endif -%}
+        </td>
+        <td class="text-sm">
+          {{ s.last_sign_in_at.strftime('%-d %b %Y') if s.last_sign_in_at else 'Never' }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

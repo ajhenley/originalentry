@@ -25,7 +25,7 @@ from werkzeug.datastructures import MultiDict
 
 from ..auth import email as auth_email
 from ..auth import tokens
-from ..decorators import ADMIN_ROLES, may_see_section, my_section_ids
+from ..decorators import ADMIN_ROLES, STAFF_ROLES, may_see_section, my_section_ids
 from ..decorators_admin import admin_view
 from ..decorators_staff import staff_view
 from ..extensions import db
@@ -36,6 +36,7 @@ from ..models import (
     AnswerKey,
     Assignment,
     ContentPack,
+    Enrollment,
     PackVersion,
     Section,
     SectionStaff,
@@ -116,6 +117,36 @@ def _assignment_or_404(public_id: str) -> Assignment:
     return assignment
 
 
+def _admin_stats() -> dict[str, int]:
+    """The counts at the top of an administrator's console.
+
+    These are deliberately global, which is why ``index`` computes them only for an admin: a
+    teacher shown how many students exist in total is being shown across the sections they do not
+    teach, and not showing them that is the whole point of ``section_staff``. It is also why no
+    teacher pays for these eight queries.
+
+    Two definitions worth stating, because a count that means the wrong thing still looks right:
+    students are counted by *enrolment* and de-duplicated, since enrolments are not people and
+    one student taking two courses is one student; and ``teachers`` excludes the deactivated,
+    who are counted on their own, because a switched-off account has stopped teaching without
+    having ceased to exist.
+    """
+    def count(column, *where) -> int:
+        return db.session.scalar(db.select(db.func.count(column)).where(*where)) or 0
+
+    is_staff = User.role.in_(STAFF_ROLES)
+    return {
+        "teachers": count(User.id, is_staff, User.deactivated_at.is_(None)),
+        "deactivated": count(User.id, is_staff, User.deactivated_at.is_not(None)),
+        "students": count(db.distinct(Enrollment.user_id)),
+        "sections": count(Section.id),
+        "assignments": count(Assignment.id, Assignment.archived_at.is_(None)),
+        "packs": count(ContentPack.id),
+        "versions": count(PackVersion.id),
+        "workspaces": count(Workspace.id, Workspace.archived_at.is_(None)),
+    }
+
+
 @bp.get("/")
 @staff_view
 def index():
@@ -157,6 +188,7 @@ def index():
     # An empty dashboard and no explanation reads as an outage. It is one sentence, and only when
     # the reason really is that nobody has attached this person to a section yet.
     return render_template("staff/assignments.html", assignments=assignments,
+                           stats=_admin_stats() if current_user.role in ADMIN_ROLES else None,
                            teaches_nothing=_scoped() and not my_section_ids())
 
 

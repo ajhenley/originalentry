@@ -2,6 +2,44 @@
 {% block heading %}Assignments{% endblock %}
 
 {% block console %}
+{# Administrators only, and the view passes stats=None to everybody else: these numbers span
+   every section, so a teacher shown them would be shown across the sections they do not teach.
+   sm:grid-cols-3 rather than a four-across grid because grid-cols-4 is not in the built
+   stylesheet, and Tailwind emits nothing for a utility it has not scanned. #}
+{% if stats %}
+<section aria-label="At a glance" class="mb-6 grid gap-3 sm:grid-cols-3">
+  <div class="panel p-3" data-stat="teachers">
+    <p class="text-2xl font-semibold tabular-nums">{{ stats.teachers }}</p>
+    <p class="text-xs uppercase tracking-wide text-muted">Teachers</p>
+  </div>
+  <div class="panel p-3" data-stat="students">
+    <p class="text-2xl font-semibold tabular-nums">{{ stats.students }}</p>
+    <p class="text-xs uppercase tracking-wide text-muted">Students enrolled</p>
+  </div>
+  <div class="panel p-3" data-stat="sections">
+    <p class="text-2xl font-semibold tabular-nums">{{ stats.sections }}</p>
+    <p class="text-xs uppercase tracking-wide text-muted">Sections</p>
+  </div>
+  <div class="panel p-3" data-stat="assignments">
+    <p class="text-2xl font-semibold tabular-nums">{{ stats.assignments }}</p>
+    <p class="text-xs uppercase tracking-wide text-muted">Assignments</p>
+  </div>
+  <div class="panel p-3" data-stat="workspaces">
+    <p class="text-2xl font-semibold tabular-nums">{{ stats.workspaces }}</p>
+    <p class="text-xs uppercase tracking-wide text-muted">Books in progress</p>
+  </div>
+  <div class="panel p-3" data-stat="packs">
+    <p class="text-2xl font-semibold tabular-nums">{{ stats.packs }}</p>
+    <p class="text-xs uppercase tracking-wide text-muted">Catalogue</p>
+    <p class="text-xs text-muted">{{ stats.versions }} version{{ "" if stats.versions == 1 else "s" }}</p>
+  </div>
+  <div class="panel p-3" data-stat="deactivated">
+    <p class="text-2xl font-semibold tabular-nums">{{ stats.deactivated }}</p>
+    <p class="text-xs uppercase tracking-wide text-muted">Staff switched off</p>
+  </div>
+</section>
+{% endif %}
+
 <p class="mb-4">
   <a class="btn btn--secondary btn--small"
      href="{{ url_for('staff.assignment_new') }}">New assignment</a>

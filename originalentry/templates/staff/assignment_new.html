@@ -22,19 +22,24 @@
     <legend class="px-1 text-sm font-semibold">Section</legend>
     <div class="space-y-2">
       <label class="flex items-center gap-2 text-sm">
-        <input type="radio" name="section_choice" value="existing" checked>
+        <input type="radio" name="section_choice" value="existing"
+               {% if values.get('section_choice', 'existing') == 'existing' %}checked{% endif %}>
         Use an existing section
       </label>
       <label class="sr-only" for="section_id">Existing section</label>
       <select id="section_id" name="section_id" class="field">
         <option value="">Choose a section</option>
         {% for section in sections %}
-        <option value="{{ section.id }}">{{ section.name }} ({{ section.term }})</option>
+        {# values is a form MultiDict, so its ids are strings; section.id is an int. #}
+        <option value="{{ section.id }}"
+                {% if values.get('section_id') == section.id|string %}selected{% endif %}>
+          {{ section.name }} ({{ section.term }})</option>
         {% endfor %}
       </select>
 
       <label class="flex items-center gap-2 pt-2 text-sm">
-        <input type="radio" name="section_choice" value="new">
+        <input type="radio" name="section_choice" value="new"
+               {% if values.get('section_choice') == 'new' %}checked{% endif %}>
         Make a new one
       </label>
       <div class="flex flex-wrap gap-2">
@@ -63,7 +68,8 @@
   <fieldset class="panel p-4">
     <legend class="px-1 text-sm font-semibold">Company</legend>
     <label class="flex items-center gap-2 text-sm">
-      <input type="radio" name="company_policy" value="fixed" checked>
+      <input type="radio" name="company_policy" value="fixed"
+               {% if values.get('company_policy', 'fixed') == 'fixed' %}checked{% endif %}>
       One company, the same for everyone
     </label>
     <label class="sr-only" for="pack_version_id">Company</label>
@@ -71,18 +77,23 @@
             class="field mt-1">
       <option value="">Choose a company</option>
       {% for entry in catalogue %}
-      <option value="{{ entry.id }}">{{ entry.label }}</option>
+      {# values is a form MultiDict, so its ids are strings; entry.id is an int. #}
+      <option value="{{ entry.id }}"
+                {% if values.get('pack_version_id') == entry.id|string %}selected{% endif %}>
+        {{ entry.label }}</option>
       {% endfor %}
     </select>
 
     <label class="mt-3 flex items-center gap-2 text-sm">
-      <input type="radio" name="company_policy" value="choice">
+      <input type="radio" name="company_policy" value="choice"
+               {% if values.get('company_policy') == 'choice' %}checked{% endif %}>
       Students choose from a list
     </label>
     <div class="mt-1 space-y-1">
       {% for entry in catalogue %}
       <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="choice_pack_version_ids" value="{{ entry.id }}">
+        <input type="checkbox" name="choice_pack_version_ids" value="{{ entry.id }}"
+               {% if entry.id|string in values.getlist('choice_pack_version_ids') %}checked{% endif %}>
         {{ entry.label }}
       </label>
       {% endfor %}
@@ -93,8 +104,10 @@
     <div>
       <label class="field-label" for="mode">Documents</label>
       <select id="mode" name="mode" class="field mt-1 w-auto">
-        <option value="paper">On paper</option>
-        <option value="screen">On screen</option>
+        <option value="paper"
+                {% if values.get('mode', 'paper') == 'paper' %}selected{% endif %}>On paper</option>
+        <option value="screen"
+                {% if values.get('mode', 'paper') == 'screen' %}selected{% endif %}>On screen</option>
       </select>
     </div>
     <div>
@@ -116,9 +129,12 @@
       <label class="field-label" for="variant_policy">Variants</label>
       <select id="variant_policy" name="variant_policy"
               class="field mt-1 w-auto">
-        <option value="round_robin">In turn</option>
-        <option value="random">At random</option>
-        <option value="manual">I will assign them</option>
+        <option value="round_robin"
+                {% if values.get('variant_policy', 'round_robin') == 'round_robin' %}selected{% endif %}>In turn</option>
+        <option value="random"
+                {% if values.get('variant_policy', 'round_robin') == 'random' %}selected{% endif %}>At random</option>
+        <option value="manual"
+                {% if values.get('variant_policy', 'round_robin') == 'manual' %}selected{% endif %}>I will assign them</option>
       </select>
     </div>
   </div>
@@ -138,8 +154,10 @@
     <div>
       <label class="field-label" for="late_policy">Late work</label>
       <select id="late_policy" name="late_policy" class="field mt-1 w-auto">
-        <option value="closed">Writing stops at the due date</option>
-        <option value="accept_late">Accept it until a cut-off</option>
+        <option value="closed"
+                {% if values.get('late_policy', 'closed') == 'closed' %}selected{% endif %}>Writing stops at the due date</option>
+        <option value="accept_late"
+                {% if values.get('late_policy', 'closed') == 'accept_late' %}selected{% endif %}>Accept it until a cut-off</option>
       </select>
     </div>
     <div>

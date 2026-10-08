@@ -31,6 +31,9 @@
 </div>
 {% endif %}
 
+{# Loading a pack is cohort-wide, so it is admin-only (I1.10). The control is hidden rather than
+   left to 404, because a button rendered for someone who may not use it is a bug report. #}
+{% if is_admin %}
 <form method="post" enctype="multipart/form-data" class="mb-6 flex flex-wrap items-end gap-3"
       action="{{ url_for('staff.catalogue_upload') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -44,6 +47,7 @@
     The generator makes the zip from the workbook. It is checked before anything is written.
   </p>
 </form>
+{% endif %}
 
 {% if not companies %}
 <p class="text-muted">The catalogue is empty. Upload a pack the generator made.</p>

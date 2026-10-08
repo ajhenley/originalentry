@@ -17,7 +17,7 @@ import re
 import secrets
 
 import pytest
-from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.models import Assignment, Section, SectionStaff, User, Variant, Workspace
 from originalentry.packs import schema
 from originalentry.packs.importer import import_content
 from sqlalchemy import select
@@ -40,6 +40,10 @@ def workspace(session, client):
                    given_name="Ada", family_name="Sowande")
     instructor = User(email=f"hi-{secrets.token_hex(3)}@example.edu", role="instructor")
     session.add_all([section, student, instructor])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=section.id, user_id=instructor.id))
     session.flush()
     assignment = Assignment(section_id=section.id, title="December", company_policy="fixed",
                             fixed_pack_version_id=pv.id)

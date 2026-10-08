@@ -87,6 +87,10 @@ class Config:
         self.SESSION_COOKIE_HTTPONLY = True
         self.SESSION_COOKIE_SAMESITE = "Lax"
         self.SESSION_COOKIE_SECURE = self.IS_PRODUCTION or _bool("FORCE_SECURE_COOKIES", False)
+        # Off means every staff member sees every student's work. It exists because scoping can
+        # lock every teacher out of every class at once, and this change deploys mid-term: with
+        # it, a misfire is a config change rather than a code deploy under pressure.
+        self.SCOPED_VISIBILITY = _bool("SCOPED_VISIBILITY", True)
         # Default is a browser session with a 2-hour idle timeout; the "keep me signed in"
         # 14-day option is applied per-login by the auth blueprint via the remember cookie.
         self.PERMANENT_SESSION_LIFETIME = timedelta(hours=2)

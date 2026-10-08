@@ -23,7 +23,9 @@ from ..ids import new_public_id
 ROLE_STUDENT = "student"
 ROLE_GRADER = "grader"
 ROLE_INSTRUCTOR = "instructor"
-ROLES = (ROLE_STUDENT, ROLE_GRADER, ROLE_INSTRUCTOR)
+ROLE_ADMIN = "admin"
+# The one list of roles; the CLI's --role choices derive from it.
+ROLES = (ROLE_STUDENT, ROLE_GRADER, ROLE_INSTRUCTOR, ROLE_ADMIN)
 
 
 class User(db.Model):
@@ -38,6 +40,9 @@ class User(db.Model):
     session_epoch: Mapped[int] = mapped_column(BigInteger, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_sign_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Offboarding: set, and the account can neither hold a session nor start one. Nothing is
+    # deleted -- their section_staff rows are the only answer to who taught a class last term.
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
         # unique(lower(email)) — case-insensitive uniqueness (D2).
@@ -51,7 +56,10 @@ class User(db.Model):
 
     @property
     def is_active(self) -> bool:
-        return True
+        # Read by Flask-Login's own login_user(), which refuses an inactive user and returns
+        # False. auth.views._complete_sign_in therefore checks deactivated_at before it calls
+        # login_user: otherwise a deactivated person is redirected with no session and no reason.
+        return self.deactivated_at is None
 
     @property
     def is_anonymous(self) -> bool:
@@ -86,6 +94,32 @@ class Enrollment(db.Model):
     section: Mapped[Section] = relationship()
     user: Mapped[User] = relationship()
     # The composite primary key already enforces one enrollment per (section, user).
+
+
+class SectionStaff(db.Model):
+    """Who teaches a section.
+
+    A join table rather than an owner column on Section, because a course is commonly co-taught
+    and because a teaching assistant has to be attachable to one section rather than to all of
+    them. One teacher is one row.
+
+    ``added_by_id`` is here so the audit can answer who granted access, which a role column on
+    the user cannot.
+    """
+
+    __tablename__ = "section_staff"
+
+    section_id: Mapped[int] = mapped_column(ForeignKey("section.id"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    added_by_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+
+    section: Mapped[Section] = relationship()
+
+    # What my_section_ids reads once per request; declared here as well as in the migration so
+    # the model and the schema agree and an autogenerate never proposes dropping it.
+    __table_args__ = (Index("ix_section_staff_user", "user_id"),)
+
 
 class StaffAction(db.Model):
     """What staff did, and why (D2).
@@ -150,9 +184,11 @@ __all__ = [
     "User",
     "Section",
     "Enrollment",
+    "SectionStaff",
     "ROLE_STUDENT",
     "ROLE_GRADER",
     "ROLE_INSTRUCTOR",
+    "ROLE_ADMIN",
     "ROLES",
     "StaffAction",
     "LoginToken",

@@ -1,6 +1,6 @@
 """Flask CLI commands (T13.2). The break-glass paths for when email is down, and staff creation.
 
-    flask staff add <email> --role instructor|grader
+    flask staff add <email> --role grader|instructor|admin
     flask auth issue-link <email>     # prints a sign-in link + code for an existing user
     flask auth revoke <email>         # bumps session_epoch, signing out every device
 """
@@ -13,8 +13,11 @@ from flask.cli import AppGroup
 from sqlalchemy import func, select
 
 from .auth import tokens
+from .decorators import ADMIN_ROLES
 from .extensions import db
-from .models import ROLE_GRADER, ROLE_INSTRUCTOR, User
+from .models import ROLE_INSTRUCTOR, ROLE_STUDENT, ROLES, User
+from .services import staff_actions
+from .services.staffing import other_active_admins
 
 
 def _find_user(email: str) -> User | None:
@@ -30,20 +33,66 @@ def register_cli(app: Flask) -> None:
 
     @staff.command("add")
     @click.argument("email")
-    @click.option("--role", type=click.Choice([ROLE_INSTRUCTOR, ROLE_GRADER]), required=True)
+    @click.option(
+        "--role", type=click.Choice([r for r in ROLES if r != ROLE_STUDENT]), required=True
+    )
     @click.option("--given", default="", help="Given name.")
     @click.option("--family", default="", help="Family name.")
     def staff_add(email: str, role: str, given: str, family: str) -> None:
+        """Create a staff account, or re-role an existing one -- and restore its access.
+
+        The break-glass path: a single administrator who has lost their mailbox still needs this
+        to recover, so it is deliberately not role-gated. Shell access is the permission.
+
+        What it must not do is print success without having done the thing. It used to: on an
+        account that had been switched off it echoed "updated as admin" and left the person
+        unable to sign in -- a success message and a locked account, read in a terminal at the
+        worst possible moment. It also demoted the last administrator silently, which no in-app
+        path allows, and re-roled a student account without mentioning the collision the people
+        screen refuses outright.
+        """
         user = _find_user(email)
         if user is None:
             user = User(email=email.strip(), role=role, given_name=given, family_name=family)
             db.session.add(user)
-            action = "created"
-        else:
+            db.session.commit()
+            click.echo(f"{email} created as {role}.")
+            return
+
+        # One address holding a student's marks and a teacher's marking is an integrity problem,
+        # not an inconvenience, and the people screen refuses it outright. This cannot: it is the
+        # recovery path, and the operator may be the only one who can say whether it is really the
+        # same person. So it asks, naming the consequence rather than the rule.
+        if user.role == ROLE_STUDENT:
+            click.confirm(
+                f"{email} has a STUDENT account. Making it staff means one sign-in holds this "
+                f"person's own marks and another person's marking. Continue?", abort=True)
+
+        # No in-app path can reach zero active administrators: services.staffing
+        # .other_active_admins holds that invariant for the demotion route and the deactivation
+        # route alike. This command can, which makes it the whole of the residual risk rather than
+        # a footnote. The same helper, never a second count -- two implementations of one rule is
+        # two chances for them to differ.
+        if (user.role in ADMIN_ROLES and role not in ADMIN_ROLES
+                and not other_active_admins(db.session, user.id)):
+            click.confirm(
+                f"{email} is the LAST ACTIVE ADMINISTRATOR. Demoting them leaves nobody able to "
+                f"reach the screen that makes administrators. Continue?", abort=True)
+
+        notes = []
+        if user.role != role:
+            staff_actions.record(db.session, None, staff_actions.STAFF_ROLE_CHANGED, "user",
+                                 user.id, detail={"from": user.role, "to": role, "via": "cli"})
             user.role = role
-            action = "updated"
+        if user.deactivated_at is not None:
+            # The thing this command existed to do and could not. actor=None throughout, so the
+            # trail says a terminal did it rather than naming somebody who was not signed in.
+            user.deactivated_at = None
+            staff_actions.record(db.session, None, staff_actions.STAFF_REACTIVATED, "user",
+                                 user.id, detail={"via": "cli"})
+            notes.append("reactivated")
         db.session.commit()
-        click.echo(f"{email} {action} as {role}.")
+        click.echo(f"{email} updated as {role}{' (' + ', '.join(notes) + ')' if notes else ''}.")
 
     @auth.command("issue-link")
     @click.argument("email")

@@ -21,15 +21,24 @@ from flask import (
     url_for,
 )
 from flask_login import current_user
+from werkzeug.datastructures import MultiDict
 
+from ..auth import email as auth_email
+from ..auth import tokens
+from ..decorators import ADMIN_ROLES, may_see_section, my_section_ids
+from ..decorators_admin import admin_view
 from ..decorators_staff import staff_view
 from ..extensions import db
 from ..models import (
+    ROLE_ADMIN,
+    ROLE_GRADER,
+    ROLE_INSTRUCTOR,
     AnswerKey,
     Assignment,
     ContentPack,
     PackVersion,
     Section,
+    SectionStaff,
     User,
     Variant,
     Workspace,
@@ -61,6 +70,13 @@ from ..services.grades import (
 from ..services.marks_export import CANVAS, GENERIC, marks_csv
 from ..services.progress import assignment_progress
 from ..services.roster import RosterRefused, import_roster
+from ..services.staffing import (
+    StaffingRefused,
+    deactivate,
+    invite,
+    other_active_admins,
+    reactivate,
+)
 from ..services.submit import ReopenRefused, reopen_workspace
 from ..services.variants import VariantRefused, assign_variant, variants_for
 from .key_record import printable_key
@@ -70,11 +86,32 @@ BATCH = 10  # workspaces graded per request, so nothing comes near the request l
 bp = Blueprint("staff", __name__, url_prefix="/staff")
 
 
+def _scoped() -> bool:
+    """Whether this viewer's lists are narrowed to the sections they teach.
+
+    The second of the two readers of ``SCOPED_VISIBILITY``; ``decorators.may_see_section`` is the
+    other, and owns the rule. A list has no id to ask about, so this asks that function's same two
+    questions in the same order and nothing else. Either entry point should lead you to the other:
+    change the order or the exemption in one and it has to change in both.
+    """
+    return (current_app.config["SCOPED_VISIBILITY"]
+            and current_user.role not in ADMIN_ROLES)
+
+
+def _section_or_404(section_id: int) -> Section:
+    section = db.session.get(Section, section_id)
+    if section is None or not may_see_section(section.id):
+        abort(404)
+    return section
+
+
 def _assignment_or_404(public_id: str) -> Assignment:
     assignment = db.session.execute(
         db.select(Assignment).filter_by(public_id=public_id, archived_at=None)
     ).scalar_one_or_none()
-    if assignment is None:
+    # 404 and not 403, as everywhere else here: a refusal that confirms the assignment exists
+    # tells a teacher about a colleague's section.
+    if assignment is None or not may_see_section(assignment.section_id):
         abort(404)
     return assignment
 
@@ -82,14 +119,19 @@ def _assignment_or_404(public_id: str) -> Assignment:
 @bp.get("/")
 @staff_view
 def index():
-    rows = db.session.execute(
+    query = (
         db.select(Assignment, Section, ContentPack)
         .join(Section, Assignment.section_id == Section.id)
         .outerjoin(PackVersion, Assignment.fixed_pack_version_id == PackVersion.id)
         .outerjoin(ContentPack, PackVersion.content_pack_id == ContentPack.id)
         .where(Assignment.archived_at.is_(None))
         .order_by(Section.name, Assignment.title)
-    ).all()
+    )
+    if _scoped():
+        query = query.join(
+            SectionStaff, SectionStaff.section_id == Assignment.section_id
+        ).where(SectionStaff.user_id == current_user.id)
+    rows = db.session.execute(query).all()
 
     counts = dict(
         db.session.execute(
@@ -112,7 +154,10 @@ def index():
         }
         for assignment, section, pack in rows
     ]
-    return render_template("staff/assignments.html", assignments=assignments)
+    # An empty dashboard and no explanation reads as an outage. It is one sentence, and only when
+    # the reason really is that nobody has attached this person to a section yet.
+    return render_template("staff/assignments.html", assignments=assignments,
+                           teaches_nothing=_scoped() and not my_section_ids())
 
 
 @bp.get("/progress/<assignment>")
@@ -433,25 +478,52 @@ def _parse_when(raw: str | None):
 
 def _possible_prerequisites():
     """Live assignments this one could wait on (M2.5). Ordered by section, then title, because an
-    instructor thinks of them as "November, then December" inside one course."""
-    rows = db.session.execute(
+    instructor thinks of them as "November, then December" inside one course.
+
+    Scoped like every other list here. Its labels are a section's name and an assignment's title,
+    which is a colleague's business and not this teacher's -- and an assignment cannot sensibly
+    wait on one in a section you do not teach anyway.
+    """
+    query = (
         db.select(Assignment, Section)
         .join(Section, Assignment.section_id == Section.id)
         .where(Assignment.archived_at.is_(None))
         .order_by(Section.name, Assignment.title)
-    ).all()
+    )
+    if _scoped():
+        query = query.join(
+            SectionStaff, SectionStaff.section_id == Assignment.section_id
+        ).where(SectionStaff.user_id == current_user.id)
+    rows = db.session.execute(query).all()
     return [
         {"public_id": a.public_id, "label": f"{section.name} · {a.title}"}
         for a, section in rows
     ]
 
 
+def _my_sections():
+    """The sections to offer in the dropdown: yours, or every one of them for an admin."""
+    query = db.select(Section).where(Section.archived_at.is_(None))
+    if _scoped():
+        query = query.join(
+            SectionStaff, SectionStaff.section_id == Section.id
+        ).where(SectionStaff.user_id == current_user.id)
+    return db.session.scalars(query.order_by(Section.name)).all()
+
+
 def _assignment_or_none(public_id: str | None):
+    """The posted prerequisite, if there is one. Scoped for the same reason the posted section id
+    is: filtering the dropdown is not a permission check, and an assignment in a section you do
+    not teach is not one you may name here. It reads as absent rather than as an error, which is
+    what an id you were never offered is."""
     if not (public_id or "").strip():
         return None
-    return db.session.execute(
+    found = db.session.execute(
         db.select(Assignment).filter_by(public_id=public_id.strip(), archived_at=None)
     ).scalar_one_or_none()
+    if found is None or not may_see_section(found.section_id):
+        return None
+    return found
 
 
 @bp.get("/assignments/new")
@@ -460,11 +532,9 @@ def assignment_new():
     return render_template(
         "staff/assignment_new.html",
         catalogue=_catalogue(),
-        sections=db.session.scalars(
-            db.select(Section).where(Section.archived_at.is_(None)).order_by(Section.name)
-        ).all(),
+        sections=_my_sections(),
         prerequisites=_possible_prerequisites(),
-        values={},
+        values=MultiDict(),
         errors={},
     )
 
@@ -506,6 +576,11 @@ def assignment_create():
         section = db.session.get(Section, form.get("section_id", type=int) or 0)
         if section is None:
             errors["section_id"] = "Choose the section this assignment is for."
+        # Filtering the dropdown is not a permission check: a crafted POST would otherwise plant
+        # an assignment in a colleague's section. A form error at 422 rather than a 404, because
+        # this route is reached by submitting a form.
+        if section is not None and not may_see_section(section.id):
+            errors["section_id"] = "That section is not one you teach."
 
     due_at = _parse_when(form.get("due_at"))
     late_until = _parse_when(form.get("late_until"))
@@ -519,9 +594,7 @@ def assignment_create():
         return render_template(
             "staff/assignment_new.html",
             catalogue=catalogue,
-            sections=db.session.scalars(
-                db.select(Section).where(Section.archived_at.is_(None)).order_by(Section.name)
-            ).all(),
+            sections=_my_sections(),
             prerequisites=_possible_prerequisites(),
             values=form,
             errors=errors,
@@ -567,9 +640,7 @@ def assignment_clone(assignment: str):
 @bp.get("/sections/<int:section_id>/availability")
 @staff_view
 def section_availability(section_id: int):
-    section = db.session.get(Section, section_id)
-    if section is None:
-        abort(404)
+    section = _section_or_404(section_id)
     available = multicompany.available_content_pack_ids(db.session, section_id)
     packs = db.session.execute(
         db.select(ContentPack).order_by(ContentPack.company_name)
@@ -584,9 +655,7 @@ def section_availability(section_id: int):
 @bp.post("/sections/<int:section_id>/availability")
 @staff_view
 def section_availability_set(section_id: int):
-    section = db.session.get(Section, section_id)
-    if section is None:
-        abort(404)
+    _section_or_404(section_id)  # for the refusal only; the ids below are all this needs
     content_pack_id = request.form.get("content_pack_id", type=int)
     available = request.form.get("available") == "1"
     if content_pack_id:
@@ -606,9 +675,7 @@ def section_roster_import(section_id: int):
 
     Importing an address does not make it anyone's account — sign-in is still a link sent to that
     address — so this enrols people, and the people themselves prove the address is theirs."""
-    section = db.session.get(Section, section_id)
-    if section is None:
-        abort(404)
+    section = _section_or_404(section_id)
     back = redirect(url_for("staff.section_availability", section_id=section_id))
 
     upload = request.files.get("roster")
@@ -645,9 +712,7 @@ def section_roster_import(section_id: int):
 @bp.post("/sections/<int:section_id>/join-code")
 @staff_view
 def section_rotate_code(section_id: int):
-    section = db.session.get(Section, section_id)
-    if section is None:
-        abort(404)
+    section = _section_or_404(section_id)
     rotate_join_code(db.session, section, actor=current_user)
     db.session.commit()
     flash(f"{section.name} now joins with {section.join_code}.")
@@ -725,7 +790,7 @@ def answer_key_print(pack_version_id: int, variant_code: str):
 
 
 @bp.post("/catalogue")
-@staff_view
+@admin_view
 def catalogue_upload():
     upload = request.files.get("pack")
     if upload is None or not upload.filename:
@@ -842,4 +907,192 @@ def assignment_checkpoints(assignment: str):
                         gates_stage=gates, actor=current_user)
     db.session.commit()
     flash(f"Checkpoint {ordinal} updated.")
+    return back
+
+
+# ── people (Task 5): staff accounts, roles and which sections each teaches ─────────────────────
+
+# Two different jobs, kept apart. ASSIGNABLE_ROLES is who this screen *manages*: grader is in it
+# so the accounts that already hold that role still appear and can still be re-roled or switched
+# off. OFFERED_ROLES is what it *offers*, and grader is not on it.
+#
+# Not cosmetic. Nothing in the app branches on grader versus instructor -- the spec says so in
+# as many words, and giving grader real limits was declined -- so a screen that offers "grader"
+# invites an administrator to pick it for a teaching assistant believing it is the lesser
+# permission. It is not: that account reads every mark in every section attached to it. Offering
+# a choice that does nothing, on the screen that grants access to student marks, is worse than
+# offering no choice.
+ASSIGNABLE_ROLES = (ROLE_INSTRUCTOR, ROLE_GRADER, ROLE_ADMIN)
+OFFERED_ROLES = ((ROLE_INSTRUCTOR, "Teacher"), (ROLE_ADMIN, "Admin"))
+OFFERED_VALUES = frozenset(value for value, _label in OFFERED_ROLES)
+# What a stored role is called on screen. A grader displays as Teacher, with the stored role noted
+# beside it so an administrator can still see what the database holds.
+ROLE_LABELS = {ROLE_INSTRUCTOR: "Teacher", ROLE_GRADER: "Teacher", ROLE_ADMIN: "Admin"}
+_STAFF_NOTE = ("The sign-in link lasts fifteen minutes. If it has lapsed, they can still sign "
+               "in from the sign-in page with this address.")
+
+
+@bp.get("/people")
+@admin_view
+def people():
+    staff = db.session.scalars(
+        db.select(User).where(User.role.in_(ASSIGNABLE_ROLES)).order_by(User.email)).all()
+    sections = db.session.scalars(db.select(Section).order_by(Section.name)).all()
+    attached: dict[int, set[int]] = {}
+    # Which sections still have somebody active on them. Read off the same pass as `attached`
+    # rather than a second query: deactivating a teacher does not detach them, so a section can
+    # be fully attached and still have nobody who can open it.
+    staffed_by_active: set[int] = set()
+    for section_id, user_id, deactivated_at in db.session.execute(
+            db.select(SectionStaff.section_id, SectionStaff.user_id, User.deactivated_at)
+            .join(User, User.id == SectionStaff.user_id)).all():
+        attached.setdefault(user_id, set()).add(section_id)
+        if deactivated_at is None:
+            staffed_by_active.add(section_id)
+    # Task 2 attached every existing section to every existing staff member so nothing broke on
+    # deploy; a section with several teachers is where that still needs pruning.
+    teachers_per_section = {
+        s.id: sum(1 for ids in attached.values() if s.id in ids) for s in sections}
+    return render_template(
+        "staff/people.html", staff=staff, sections=sections, attached=attached,
+        teachers_per_section=teachers_per_section, roles=OFFERED_ROLES, role_labels=ROLE_LABELS,
+        offered_values=OFFERED_VALUES,
+        needs_teacher=[s for s in sections if s.id not in staffed_by_active],
+        crowded=sum(1 for n in teachers_per_section.values() if n > 1))
+
+
+@bp.post("/people")
+@admin_view
+def people_add():
+    role = request.form.get("role") or ROLE_INSTRUCTOR
+    if role not in OFFERED_VALUES:
+        flash("Choose a staff role.")
+        return redirect(url_for("staff.people"))
+    address = (request.form.get("email") or "").strip()
+    if "@" not in address:
+        flash("Enter an email address.")
+        return redirect(url_for("staff.people"))
+    try:
+        user = invite(db.session, email=address, role=role,
+                      given=(request.form.get("given_name") or "").strip(),
+                      family=(request.form.get("family_name") or "").strip(),
+                      actor=current_user)
+    except StaffingRefused as refused:
+        db.session.rollback()
+        flash(str(refused))
+        return redirect(url_for("staff.people"))
+    except tokens.RateLimited as limited:
+        db.session.rollback()
+        flash(str(limited))
+        return redirect(url_for("staff.people"))
+    except auth_email.EmailError:
+        db.session.rollback()
+        flash("The invitation email could not be sent, so no account was made. Try again.")
+        return redirect(url_for("staff.people"))
+    db.session.commit()
+    flash(f"{user.email} added and emailed a sign-in link. {_STAFF_NOTE}")
+    return redirect(url_for("staff.people"))
+
+
+def _person_or_404(public_id: str) -> User:
+    target = db.session.execute(
+        db.select(User).filter_by(public_id=public_id)).scalar_one_or_none()
+    if target is None or target.role not in ASSIGNABLE_ROLES:
+        abort(404)
+    return target
+
+
+@bp.post("/people/<public_id>/role")
+@admin_view
+def people_role(public_id: str):
+    target = _person_or_404(public_id)
+    back = redirect(url_for("staff.people"))
+    new_role = request.form.get("role") or ""
+    if new_role not in OFFERED_VALUES:
+        flash("Choose a staff role.")
+        return back
+    if target.role in ADMIN_ROLES and new_role not in ADMIN_ROLES:
+        # One implementation of the last-admin rule, shared with services.staffing.deactivate:
+        # demotion and deactivation are two ways of taking the same powers away, and the same
+        # rule written twice is two chances for the two to differ. The lock it holds, and why no
+        # test here can prove it, are documented on the helper.
+        if not other_active_admins(db.session, target.id):
+            flash("That is the last administrator. Make someone else an administrator first.")
+            return back
+    if target.id == current_user.id:
+        flash("You cannot change your own role.")
+        return back
+    if new_role != target.role:
+        staff_actions.record(db.session, current_user, staff_actions.STAFF_ROLE_CHANGED, "user",
+                             target.id, detail={"from": target.role, "to": new_role})
+        target.role = new_role
+        db.session.commit()
+        flash(f"{target.email} is now {new_role}.")
+    return back
+
+
+@bp.post("/people/<public_id>/sections")
+@admin_view
+def people_sections(public_id: str):
+    target = _person_or_404(public_id)
+    section = db.session.get(Section, request.form.get("section_id", type=int) or 0)
+    if section is None:
+        # An empty attach list posts no section_id; that is a missing choice, not a missing page.
+        flash("Choose a section.")
+        return redirect(url_for("staff.people"))
+    row = db.session.get(SectionStaff, (section.id, target.id))
+    if request.form.get("attach") and row is None:
+        db.session.add(SectionStaff(section_id=section.id, user_id=target.id,
+                                    added_by_id=current_user.id))
+        staff_actions.record(db.session, current_user, staff_actions.SECTION_STAFF_ADDED,
+                             "section", section.id, detail={"user_id": target.id})
+        flash(f"{target.email} now teaches {section.name}.")
+    elif request.form.get("detach") and row is not None:
+        db.session.delete(row)
+        staff_actions.record(db.session, current_user, staff_actions.SECTION_STAFF_REMOVED,
+                             "section", section.id, detail={"user_id": target.id})
+        flash(f"{target.email} no longer teaches {section.name}.")
+    db.session.commit()
+    return redirect(url_for("staff.people"))
+
+
+@bp.post("/people/<public_id>/active")
+@admin_view
+def people_active(public_id: str):
+    """Switch a staff account off, or back on.
+
+    Off, not gone: the account and its ``section_staff`` rows stay, because those rows are the
+    only answer to who taught a class last term. A section left with nobody active says so on
+    this screen, so nobody has to remember which ones they are.
+    """
+    target = _person_or_404(public_id)
+    back = redirect(url_for("staff.people"))
+    switching_off = bool(request.form.get("deactivate"))
+    switching_on = bool(request.form.get("reactivate"))
+    if switching_off == switching_on:
+        # Both fields are read, and neither direction is the fallback. Reading only one made the
+        # other the default for any POST that did not name it -- so an empty or crafted body
+        # silently switched an account back on and wrote an audit row saying an administrator had
+        # asked for it. A security control must not default to "off".
+        flash("Choose whether to deactivate or reactivate that account.")
+        return back
+    was_off = target.deactivated_at is not None
+    try:
+        if switching_off:
+            deactivate(db.session, target=target, actor=current_user)
+        else:
+            reactivate(db.session, target=target, actor=current_user)
+    except StaffingRefused as refused:
+        db.session.rollback()
+        flash(str(refused))
+        return back
+    db.session.commit()
+    if switching_off and was_off:
+        flash(f"{target.email} was already switched off. Nothing changed.")
+    elif switching_off:
+        flash(f"{target.email} is no longer active. Their sections and record are untouched.")
+    elif was_off:
+        flash(f"{target.email} is active again, and teaches the sections they did before.")
+    else:
+        flash(f"{target.email} was already active. Nothing changed.")
     return back

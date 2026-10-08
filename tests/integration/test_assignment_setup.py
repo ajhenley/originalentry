@@ -5,10 +5,20 @@ section, make an assignment on a company from the catalogue, hand out a join cod
 student enrolled and working. Cloning last term's assignment with new dates is one action.
 """
 
+import copy
+import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from originalentry.models import Assignment, Enrollment, Section, User, Variant, Workspace
+from originalentry.models import (
+    Assignment,
+    Enrollment,
+    Section,
+    SectionStaff,
+    User,
+    Variant,
+    Workspace,
+)
 from originalentry.packs import schema
 from originalentry.packs.importer import import_answer_keys, import_content
 from originalentry.services.assignments import (
@@ -213,3 +223,154 @@ def test_archived_assignments_are_left_alone(session, catalogue):
         select(func.count()).select_from(Assignment).where(Assignment.section_id == section.id)
     ).scalar_one() == 1
     assert isinstance(section, Section)
+
+
+@pytest.fixture
+def pack_version(catalogue, session):
+    session.commit()      # survive the view's rollback on our own, whatever order fixtures run in
+    return catalogue[0]
+
+
+@pytest.fixture
+def instructor(catalogue, session):
+    session.commit()
+    return catalogue[1]
+
+
+@pytest.fixture
+def section(session, instructor):
+    # commit() releases a savepoint (conftest: join_transaction_mode="create_savepoint"), so the
+    # row survives the view's rollback before a refused re-render and is still removed at teardown.
+    sec = Section(name="ACCT 1010-02", join_code="keep-join")
+    session.add(sec)
+    session.flush()
+    # The instructor teaches it. Scoped visibility (Task 4) keeps a section you do not teach out
+    # of the dropdown, and out of a form you may post -- and this test reads that dropdown back.
+    session.add(SectionStaff(section_id=sec.id, user_id=instructor.id))
+    session.commit()
+    return sec
+
+
+def _control(page: str, tag: str, attr: str, name: str, value: str) -> bool:
+    """Whether the <option>/<input> named `name` with this value carries `attr`, however wrapped."""
+    if tag == "option":
+        block = re.search(rf'<select[^>]*name="{name}".*?</select>', page, re.S)
+        assert block, f"no {name} select on the page"
+        scope = block.group(0)
+    else:
+        scope = page
+    pattern = (rf'<option[^>]*value="{re.escape(value)}"[^>]*>' if tag == "option"
+               else rf'<input[^>]*name="{name}"[^>]*value="{re.escape(value)}"[^>]*>')
+    found = re.search(pattern, scope)
+    assert found, f"{name} has no {tag} for {value}"
+    return re.search(rf'\b{attr}\b', found.group(0)) is not None
+
+
+def test_a_rejected_form_keeps_every_control_the_user_set(client, session, instructor, pack_version,
+                                                          section):
+    """A validation error on one field must not silently reset the other fourteen.
+
+    This is the bug that told an instructor to "Choose the company this assignment uses" about a
+    company they had chosen: the error was a late cut-off, the re-render dropped the company, and
+    the second submit complained about the company.
+    """
+    client.sign_in(instructor)
+
+    response = client.post("/staff/assignments/new", data={
+        "title": "Riverbend, section B",
+        "company_policy": "fixed",
+        "pack_version_id": str(pack_version.id),
+        "section_choice": "existing",
+        "section_id": str(section.id),
+        "mode": "screen",
+        "variant_policy": "manual",
+        "late_policy": "accept_late",
+        "due_at": "2026-12-15T17:00",
+        "late_until": "2026-12-01T17:00",      # before the due date: the one real error
+    })
+
+    assert response.status_code == 422
+    page = response.get_data(as_text=True)
+    assert "Late work needs a cut-off after the due date" in page
+
+    # Every control the user set must come back set.
+    assert _control(page, "option", "selected", "pack_version_id", str(pack_version.id)), \
+        "the company was dropped"
+    assert _control(page, "option", "selected", "section_id", str(section.id)), \
+        "the section was dropped"
+    assert _control(page, "option", "selected", "mode", "screen"), "the documents mode was dropped"
+    assert _control(page, "option", "selected", "variant_policy", "manual"), \
+        "the version policy was dropped"
+    assert _control(page, "option", "selected", "late_policy", "accept_late"), \
+        "the late policy was dropped"
+    assert _control(page, "input", "checked", "company_policy", "fixed"), \
+        "the company policy radio was dropped"
+    assert _control(page, "input", "checked", "section_choice", "existing"), \
+        "the section choice radio was dropped"
+    assert 'value="Riverbend, section B"' in page, "the title was dropped"
+
+
+def test_a_rejected_choice_form_keeps_the_ticked_companies(client, session, instructor,
+                                                           pack_version, section):
+    """company_policy=choice with two ticked companies: the getlist branch of the template."""
+    data = copy.deepcopy(testco_alpha.PACK)
+    data["company"]["slug"] = "setup-second-co"
+    data["company"]["name"] = "Setup Second Co"
+    second = import_content(session, schema.load_pack(data), source_sha256="setup2" + "0" * 58)
+    import_answer_keys(session, second, {"A": schema.load_answer_key(testco_alpha.KEY_A)})
+    session.commit()
+    client.sign_in(instructor)
+
+    response = client.post("/staff/assignments/new", data={
+        "title": "Riverbend, choice",
+        "company_policy": "choice",
+        "choice_pack_version_ids": [str(pack_version.id), str(second.id)],
+        "section_choice": "existing",
+        "section_id": str(section.id),
+        "late_policy": "accept_late",
+        "due_at": "2026-12-15T17:00",
+        "late_until": "2026-12-01T17:00",
+    })
+
+    assert response.status_code == 422
+    page = response.get_data(as_text=True)
+    assert "Late work needs a cut-off after the due date" in page
+    assert _control(page, "input", "checked", "company_policy", "choice"), \
+        "the choice radio was dropped"
+    assert not _control(page, "input", "checked", "company_policy", "fixed"), \
+        "the fixed radio is checked as well"
+    assert _control(page, "input", "checked", "choice_pack_version_ids", str(pack_version.id)), \
+        "the first ticked company was dropped"
+    assert _control(page, "input", "checked", "choice_pack_version_ids", str(second.id)), \
+        "the second ticked company was dropped"
+
+
+def test_a_rejected_form_keeps_a_new_section_the_user_was_making(client, session, instructor,
+                                                                 pack_version):
+    """section_choice=new: create_section runs before validation fails, then the view rolls back."""
+    client.sign_in(instructor)
+
+    response = client.post("/staff/assignments/new", data={
+        "title": "Riverbend, new section",
+        "company_policy": "fixed",
+        "pack_version_id": str(pack_version.id),
+        "section_choice": "new",
+        "section_name": "ACCT 1010-77",
+        "section_term": "Spring 2027",
+        "late_policy": "accept_late",
+        "due_at": "2026-12-15T17:00",
+        "late_until": "2026-12-01T17:00",
+    })
+
+    assert response.status_code == 422
+    page = response.get_data(as_text=True)
+    assert "Late work needs a cut-off after the due date" in page
+    assert _control(page, "input", "checked", "section_choice", "new"), \
+        "the new-section radio was dropped"
+    assert not _control(page, "input", "checked", "section_choice", "existing"), \
+        "the existing radio is checked as well"
+    assert 'value="ACCT 1010-77"' in page, "the new section's name was dropped"
+    assert 'value="Spring 2027"' in page, "the new section's term was dropped"
+    assert session.scalar(select(func.count()).select_from(Section)
+                          .where(Section.name == "ACCT 1010-77")) == 0, \
+        "a refused form must not leave its half-made section behind"

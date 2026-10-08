@@ -34,7 +34,7 @@
         {{ w.name }}</a>
     </li>
     {% endfor %}
-    {% elif current_user.role in ('instructor', 'grader') %}
+    {% elif is_staff %}
     <li>
       <a class="block px-3 py-2 hover:bg-tint" href="{{ url_for('staff.index') }}">Console</a>
     </li>

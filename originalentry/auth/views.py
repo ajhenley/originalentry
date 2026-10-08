@@ -28,11 +28,10 @@ from flask import (
 from flask_login import login_user, logout_user
 from sqlalchemy import func, select
 
+from ..decorators import STAFF_ROLES
 from ..extensions import db
 from ..models import (
     PURPOSE_JOIN,
-    ROLE_GRADER,
-    ROLE_INSTRUCTOR,
     Enrollment,
     LoginToken,
     Section,
@@ -44,7 +43,6 @@ from . import tokens
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-STAFF_ROLES = {ROLE_GRADER, ROLE_INSTRUCTOR}
 _APP_BASE = "APP_BASE_URL"
 
 
@@ -212,6 +210,24 @@ def _complete_sign_in(token: LoginToken):
         db.session.rollback()
         return render_template("auth/link_expired.html"), 200
 
+    # Both sign-in paths finish here -- the code POST (/auth/code) and the magic-link POST
+    # (/auth/verify) -- so this is the one place that can refuse a deactivated account and say so.
+    # A check in the code view alone would let somebody holding a still-valid link be signed in
+    # and then bounced by the user loader on their next request, with nothing said about why.
+    #
+    # It must also come before login_user() below: User.is_active is deactivated_at is None, and
+    # Flask-Login's login_user() refuses an inactive user by itself and merely returns False --
+    # which would leave them on a redirect with no session and no explanation. This check is what
+    # turns that silence into a reason.
+    #
+    # Naming the state is E1-safe: a matching code or link proves they receive that mailbox. E1
+    # governs the request step, which is untouched. The token stays consumed -- committing it
+    # means a refused attempt cannot be retried, and tells a holder nothing a first try did not.
+    if user.deactivated_at is not None:
+        db.session.commit()
+        flash("That account is no longer active. Ask your administrator.")
+        return redirect(url_for("auth.sign_in_form"))
+
     user.last_sign_in_at = datetime.now(UTC)
     keep = bool(session.pop("auth_keep", False)) and user.role not in STAFF_ROLES
     session.pop("auth_email", None)
@@ -239,6 +255,15 @@ def _join_user(token: LoginToken) -> User | None:
     user = db.session.scalars(
         select(User).where(func.lower(User.email) == token.email.lower())
     ).one_or_none()
+    # Before anything is written. This is not a lookup -- below, it enrols the person and opens a
+    # workspace for every open assignment in the section -- and _complete_sign_in's refusal runs
+    # after it and commits. Without this, an offboarded teacher who still knew a live join code
+    # for one of their old sections could put themselves on that section's roster permanently, as
+    # a student counted in its progress, on a sign-in that was then refused. Returning the user
+    # (not None) is what makes that refusal say "no longer active" rather than "link expired",
+    # and leaves the token consumed.
+    if user is not None and user.deactivated_at is not None:
+        return user
     if user is None:
         user = User(
             email=token.email,

@@ -7,7 +7,7 @@ against the pure engine and once against a workspace read back out of the databa
 """
 
 import pytest
-from flask import g, has_app_context
+from flask import g
 from flask.testing import FlaskClient
 from originalentry.app import create_app
 from originalentry.extensions import db
@@ -51,11 +51,6 @@ class _Client(FlaskClient):
         with self.session_transaction() as flask_session:
             flask_session["_user_id"] = user.get_id()  # "public_id:session_epoch"
             flask_session["_fresh"] = True
-        # This harness holds one app context open for the whole test, and Flask reuses it for
-        # each request rather than pushing a fresh one. Flask-Login caches the loaded user on
-        # ``g``, so without this a second sign-in in the same test would be ignored.
-        if has_app_context():
-            g.pop("_login_user", None)
 
 
 @pytest.fixture
@@ -72,14 +67,39 @@ def client(app, session):
     original = dict(engines)
     engines[None] = connection
 
+    # Every request inside a test begins with the per-request caches cleared, the way a production
+    # request does by getting a fresh app context. This harness holds **one** app context open for
+    # the whole test and Flask reuses it per request, so without this hook: Flask-Login answers
+    # from the user it cached on ``g`` (flask_login/utils.py:_get_user), and
+    # decorators.my_section_ids returns the sections it loaded for whoever was signed in before.
+    # Either one silently makes a test vacuous -- sign in as A, act, sign in as B or change A's
+    # account, act again, and the second request is answered from the first request's beliefs. A
+    # test asserting that a revoked or deactivated session dies passes without the loader ever
+    # running. It lives here rather than in each test because a test that forgets it does not
+    # fail; it passes, saying nothing.
+    #
+    # **Exactly these two keys, and never the whole of ``g``.** flask_wtf.generate_csrf also
+    # caches on ``g`` (flask_wtf/csrf.py:50) and base.html:7 renders that token into every page.
+    # Clearing it per request re-serialises the token through URLSafeTimedSerializer, whose
+    # timestamp has one-second resolution, which would turn the byte-for-byte E1 comparison in
+    # tests/integration/test_deactivation.py into a timing coin-flip.
+    def _fresh_request_caches() -> None:
+        g.pop("_login_user", None)       # flask_login's per-context current_user
+        g.pop("_my_section_ids", None)   # decorators.my_section_ids
+
     db.session.remove()
     db.session.registry.set(session)
     app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
     app.test_client_class = _Client
 
     try:
+        # Registered inside the try, so the finally below always removes it again. ``app`` is
+        # session-scoped: a hook left behind by a fixture that raised on its way in would stay
+        # registered for every later test in the run.
+        app.before_request_funcs.setdefault(None, []).append(_fresh_request_caches)
         yield app.test_client()
     finally:
+        app.before_request_funcs[None].remove(_fresh_request_caches)
         db.session.registry.clear()
         engines.clear()
         engines.update(original)

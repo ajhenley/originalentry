@@ -10,7 +10,7 @@ import json
 import zipfile
 
 import pytest
-from originalentry.models import ContentPack, PackVersion, User
+from originalentry.models import ROLE_ADMIN, ContentPack, PackVersion, User
 from originalentry.packs.importing import PackImportRefused, import_pack_zip
 from sqlalchemy import func, select
 
@@ -131,6 +131,8 @@ def test_a_pack_that_says_correct_still_loads(session, instructor):
 
 
 def test_the_upload_screen_shows_the_author_what_it_noticed(client, session, instructor):
+    # Loading a pack is cohort-wide, so the screen is admin-only (Task 4).
+    instructor.role = ROLE_ADMIN
     session.commit()
     client.sign_in(instructor)
 

@@ -6,23 +6,63 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import abort, g, render_template
+from flask import abort, current_app, g, render_template
 from flask_login import current_user, login_required
 
 from . import messages
 from .extensions import db
 from .models import (
+    ROLE_ADMIN,
     ROLE_GRADER,
     ROLE_INSTRUCTOR,
+    Assignment,
     ContentPack,
     PackVersion,
+    SectionStaff,
     User,
     Variant,
     Workspace,
 )
 from .presentation import build_company
 
-STAFF_ROLES = frozenset({ROLE_GRADER, ROLE_INSTRUCTOR})
+STAFF_ROLES = frozenset({ROLE_GRADER, ROLE_INSTRUCTOR, ROLE_ADMIN})
+ADMIN_ROLES = frozenset({ROLE_ADMIN})
+
+
+def my_section_ids() -> frozenset[int]:
+    """The sections this staff member teaches, loaded once per request.
+
+    Cached on ``g`` because workspace_view runs on every /w/ route and a console page checks
+    several times: one query per request, not one per check.
+    """
+    if not hasattr(g, "_my_section_ids"):
+        g._my_section_ids = frozenset(db.session.scalars(
+            db.select(SectionStaff.section_id).filter_by(user_id=current_user.id)
+        ).all())
+    return g._my_section_ids
+
+
+def may_see_section(section_id: int) -> bool:
+    """Whether the signed-in staff member may see this section's students.
+
+    One function, because a scoping rule implemented in four places is a scoping rule with four
+    chances to differ: a half-disabled guard is worse than either state.
+
+    ``SCOPED_VISIBILITY`` has **two** readers that decide what somebody may see, not one: this
+    function, and ``staff.views._scoped``. Every route with an id to ask about asks here; a list
+    query has no id, so ``_scoped`` asks these same two questions in the same order for those.
+    Two named helpers is the shape that is safe; a flag checked inline at a call site is the shape
+    that is not, because that is what leaves half the routes scoped and half not. Change the order
+    or the exemption in one and it has to change in the other.
+
+    ``grep SCOPED_VISIBILITY`` finds two more, and neither decides anything: ``app.py`` logs a
+    warning at startup when it is off, and ``layouts/staff.html`` shows the banner that says so.
+    """
+    if not current_app.config["SCOPED_VISIBILITY"]:
+        return True
+    if current_user.role in ADMIN_ROLES:
+        return True
+    return section_id in my_section_ids()
 
 
 def workspace_view(view):
@@ -43,7 +83,10 @@ def workspace_view(view):
             abort(404)
 
         is_owner = ws.student_id == current_user.id
-        is_staff = current_user.role in STAFF_ROLES
+        # Staff see a student's books only for a section they teach. An admin sees all of them.
+        # One scalar to reach the section; may_see_section caches the rest per request.
+        is_staff = current_user.role in STAFF_ROLES and may_see_section(
+            db.session.scalar(db.select(Assignment.section_id).filter_by(id=ws.assignment_id)))
         if not (is_owner or is_staff):
             abort(404)
         if ws.archived_at is not None and not is_staff:

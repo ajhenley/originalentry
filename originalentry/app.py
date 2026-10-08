@@ -46,6 +46,10 @@ def create_app(config=None) -> Flask:
     app.config.update(cfg.as_flask_mapping())
     app.extensions["originalentry_config"] = cfg
 
+    if not app.config["SCOPED_VISIBILITY"]:
+        app.logger.warning(
+            "SCOPED_VISIBILITY is off: every staff member can see every student's work.")
+
     # Error monitoring (T13). The config has always read SENTRY_DSN; without this nothing was ever
     # sent, so a production 500 was invisible until a student reported it. Initialised only when a
     # DSN is set, so dev and tests send nothing. send_default_pii stays off: this app's users are
@@ -125,6 +129,25 @@ def _register_jinja(app: Flask) -> None:
             return ""
         return "Account" if current_user.role in STAFF_ROLES else "Your workspaces"
 
+    def _viewer_is_staff() -> bool:
+        # A computed boolean rather than the frozenset: templates ask "is this viewer staff?" and
+        # must not carry an opinion about which roles those are (decorators.STAFF_ROLES owns it).
+        from flask_login import current_user
+
+        from .decorators import STAFF_ROLES
+
+        return bool(current_user.is_authenticated and current_user.role in STAFF_ROLES)
+
+    def _viewer_is_admin() -> bool:
+        # The same rule as _viewer_is_staff, for the same reason: a template asks "may this viewer
+        # do the cohort-wide things?" and must not carry an opinion about which roles those are
+        # (decorators.ADMIN_ROLES owns it).
+        from flask_login import current_user
+
+        from .decorators import ADMIN_ROLES
+
+        return bool(current_user.is_authenticated and current_user.role in ADMIN_ROLES)
+
     @app.context_processor
     def _inject_workspace_context():
         # The workspace decorator sets these on g; expose them to base/layout templates.
@@ -141,6 +164,8 @@ def _register_jinja(app: Flask) -> None:
             # each view. It queries only for a signed-in student (D6 rule 3).
             "my_workspaces": _account_workspaces(),
             "account_label": _account_label(),
+            "is_staff": _viewer_is_staff(),
+            "is_admin": _viewer_is_admin(),
             "grading_messages": messages.grading_batch_strings(),
             "switch_targets": getattr(g, "switch_targets", []),
             # The date the public documents carry, in one place so they cannot disagree.
@@ -188,6 +213,11 @@ def _register_login(app: Flask) -> None:
             db.select(User).filter_by(public_id=public_id)
         ).scalar_one_or_none()
         if user is None or str(user.session_epoch) != epoch:
+            return None
+        # One chokepoint for every live session, whatever cookie is carrying it. Returning None
+        # here only kills the session; auth.views._complete_sign_in is what refuses a *new*
+        # sign-in with a reason, so nobody is bounced without being told why.
+        if user.deactivated_at is not None:
             return None
         return user
 

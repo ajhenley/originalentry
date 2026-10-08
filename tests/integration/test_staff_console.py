@@ -8,9 +8,11 @@ from datetime import UTC, datetime
 
 import pytest
 from originalentry.models import (
+    ROLE_ADMIN,
     Assignment,
     PackVersion,
     Section,
+    SectionStaff,
     User,
     Variant,
     Workspace,
@@ -36,6 +38,10 @@ def section(session):
     student = User(email="student@example.edu", given_name="Sam", family_name="Rivera")
     instructor = User(email="instructor@example.edu", role="instructor")
     session.add_all([sec, student, instructor])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=sec.id, user_id=instructor.id))
     session.flush()
     assignment = Assignment(section_id=sec.id, title="December cycle", company_policy="fixed",
                             fixed_pack_version_id=pv.id)
@@ -198,6 +204,9 @@ def test_the_catalogue_lists_the_companies_and_takes_an_upload(client, section, 
     from tests.packs import testco_alpha
 
     _, _, _, instructor = section
+    # Loading a pack is cohort-wide, so the screen is admin-only (Task 4).
+    instructor.role = ROLE_ADMIN
+    session.flush()
     client.sign_in(instructor)
 
     body = client.get("/staff/catalogue").get_data(as_text=True)
@@ -227,6 +236,9 @@ def test_a_pack_that_fails_validation_is_refused_with_its_problems(client, secti
     from tests.packs import testco_alpha
 
     _, _, _, instructor = section
+    # Loading a pack is cohort-wide, so the screen is admin-only (Task 4).
+    instructor.role = ROLE_ADMIN
+    session.flush()
     client.sign_in(instructor)
 
     broken = json.loads(json.dumps(testco_alpha.PACK))

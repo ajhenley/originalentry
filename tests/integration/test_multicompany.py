@@ -11,6 +11,7 @@ from originalentry.models import (
     Enrollment,
     PackVersion,
     Section,
+    SectionStaff,
     User,
     Workspace,
 )
@@ -127,6 +128,10 @@ def test_staff_creates_a_choice_assignment(client, session):
     section = Section(name="Sec", join_code=f"C{secrets.token_hex(3).upper()}")
     instructor = User(email=f"i-{secrets.token_hex(3)}@example.edu", role="instructor")
     session.add_all([section, instructor])
+    session.flush()
+    # The instructor teaches this section. Without the row, scoped visibility (Task 4)
+    # refuses them from their own class.
+    session.add(SectionStaff(section_id=section.id, user_id=instructor.id))
     session.flush()
     client.sign_in(instructor)
 

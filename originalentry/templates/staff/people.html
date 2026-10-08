@@ -1,0 +1,121 @@
+{% extends "layouts/staff.html" %}
+{% block heading %}People{% endblock %}
+
+{% block console %}
+<p class="mb-4 text-sm text-muted">
+  Staff accounts, their roles, and the sections each teaches. A teacher sees only the sections
+  attached to them.
+  {% if crowded %}
+  <strong>{{ crowded }} section{{ "s are" if crowded != 1 else " is" }} attached to more than one
+  teacher</strong>: when this was introduced every section was attached to every teacher, so prune
+  the ones that should not be shared.
+  {% endif %}
+</p>
+
+{% if needs_teacher %}
+<p class="mb-4 text-sm">
+  {% for s in needs_teacher %}
+  <strong>{{ s.name }} needs a teacher</strong>: nobody active is attached to it, so nobody can
+  see this class's students or mark their work.<br>
+  {% endfor %}
+</p>
+{% endif %}
+
+<form method="post" action="{{ url_for('staff.people_add') }}" class="panel mb-6 grid gap-3">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Email <input type="email" name="email" required autocomplete="off"></label>
+  <label>Given name <input type="text" name="given_name"></label>
+  <label>Family name <input type="text" name="family_name"></label>
+  <label>Role
+    <select name="role">
+      {% for value, label in roles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+    </select>
+  </label>
+  <button type="submit" class="btn btn--small">Add and email a sign-in link</button>
+</form>
+
+<div class="panel overflow-x-auto" role="region" tabindex="0" aria-label="Staff">
+  <table class="data-table">
+    <caption>Staff</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="text-left">Person</th>
+        <th scope="col" class="text-left">Role</th>
+        <th scope="col" class="text-left">Sections</th>
+        <th scope="col" class="text-left">Last sign-in</th>
+        <th scope="col" class="text-left">Active</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in staff %}
+      <tr>
+        <td>{{ u.given_name }} {{ u.family_name }}<br><span class="text-sm">{{ u.email }}</span></td>
+        <td>
+          <form method="post" action="{{ url_for('staff.people_role', public_id=u.public_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="role" aria-label="Role for {{ u.email }}">
+              {% for value, label in roles %}
+              <option value="{{ value }}" {% if value == u.role %}selected{% endif %}>
+                {{ label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn--outline btn--small">Change</button>
+            {% if u.role not in offered_values %}
+            {# A role this app no longer offers (grader). No option matches it, so the select shows
+               Teacher -- which is right, because nothing in the app branches on the difference --
+               and the stored value is named here so an administrator can still see what the
+               database holds. #}
+            <span class="text-sm text-muted">{{ role_labels.get(u.role, u.role) }}
+              (stored role: {{ u.role }})</span>
+            {% endif %}
+          </form>
+        </td>
+        <td>
+          {% for s in sections if s.id in attached.get(u.id, ()) %}
+          <form method="post" class="inline"
+                action="{{ url_for('staff.people_sections', public_id=u.public_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="section_id" value="{{ s.id }}">
+            {{ s.name }}
+            <button type="submit" name="detach" value="1" class="btn btn--outline btn--small">
+              Detach</button>
+          </form><br>
+          {% else %}
+          <span class="text-sm text-muted">None</span><br>
+          {% endfor %}
+          {% set attachable = sections | rejectattr('id', 'in', attached.get(u.id, ())) | list %}
+          {% if attachable %}
+          <form method="post" action="{{ url_for('staff.people_sections', public_id=u.public_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="section_id" aria-label="Section to attach to {{ u.email }}">
+              {% for s in attachable %}
+              <option value="{{ s.id }}">{{ s.name }} ({{ teachers_per_section[s.id] }})</option>
+              {% endfor %}
+            </select>
+            <button type="submit" name="attach" value="1" class="btn btn--outline btn--small">
+              Attach</button>
+          </form>
+          {% endif %}
+        </td>
+        <td class="text-sm">
+          {{ u.last_sign_in_at.strftime('%-d %b %Y') if u.last_sign_in_at else 'Never' }}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('staff.people_active', public_id=u.public_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if u.deactivated_at %}
+            <span class="text-sm text-muted">No longer active</span>
+            <button type="submit" name="reactivate" value="1" class="btn btn--outline btn--small">
+              Reactivate</button>
+            {% else %}
+            <button type="submit" name="deactivate" value="1" class="btn btn--outline btn--small">
+              Deactivate</button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

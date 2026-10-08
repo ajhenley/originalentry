@@ -21,7 +21,7 @@
 </p>
 {% endif %}
 
-<form method="post" action="{{ url_for('staff.people_add') }}" class="panel mb-6 grid gap-3">
+<form method="post" action="{{ url_for('staff.people_add') }}" class="panel mb-6 grid gap-3 p-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label>Email <input type="email" name="email" required autocomplete="off"></label>
   <label>Given name <input type="text" name="given_name"></label>

@@ -23,15 +23,35 @@
 
 <form method="post" action="{{ url_for('staff.people_add') }}" class="panel mb-6 grid gap-3 p-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label>Email <input type="email" name="email" required autocomplete="off"></label>
-  <label>Given name <input type="text" name="given_name"></label>
-  <label>Family name <input type="text" name="family_name"></label>
-  <label>Role
-    <select name="role">
+  {# field-label above field, as every other form here does it: the label is display:block and
+     the control is width:100%, so the controls line up on one left edge instead of each
+     starting wherever its label text happened to end. bg-paper because .field's own background
+     is white, the same as the panel it sits on, leaving only the border to say where the
+     control is. #}
+  <div>
+    <label class="field-label" for="new-email">Email</label>
+    <input id="new-email" name="email" type="email" required autocomplete="off"
+           class="field mt-1 bg-paper">
+  </div>
+  <div>
+    <label class="field-label" for="new-given">Given name</label>
+    <input id="new-given" name="given_name" type="text" class="field mt-1 bg-paper">
+  </div>
+  <div>
+    <label class="field-label" for="new-family">Family name</label>
+    <input id="new-family" name="family_name" type="text" class="field mt-1 bg-paper">
+  </div>
+  <div>
+    <label class="field-label" for="new-role">Role</label>
+    <select id="new-role" name="role" class="field mt-1 w-auto bg-paper">
       {% for value, label in roles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
     </select>
-  </label>
-  <button type="submit" class="btn btn--small">Add and email a sign-in link</button>
+  </div>
+  {# Wrapped, as assignment_new.html does it: a bare button is a grid item and stretches the
+     full width of the panel. #}
+  <div class="flex gap-2">
+    <button type="submit" class="btn btn--small">Add and email a sign-in link</button>
+  </div>
 </form>
 
 <div class="panel overflow-x-auto" role="region" tabindex="0" aria-label="Staff">

@@ -1,0 +1,102 @@
+{# One concept, and who is behind it.
+
+   Two shapes, because the two groups carry different evidence. A process concept is scored, so
+   each student has marks for it. A topic concept is recognised from an error signature, which is
+   a boolean per student -- there is nothing to average, and the students with nothing detected
+   are listed rather than scored, because detection bails entirely on empty books and silence is
+   not understanding. #}
+{% extends "layouts/staff.html" %}
+{% block heading %}{{ detail.label }}{% endblock %}
+
+{% block console %}
+<p class="mb-4 text-sm text-muted">
+  {{ section.name }} · {{ assignment.title }} ·
+  <a class="underline"
+     href="{{ url_for('staff.diagnostics', assignment=assignment.public_id) }}">Back to
+    diagnostics</a>
+</p>
+
+{% if detail.group == "process" %}
+<section class="mb-8" aria-labelledby="marks">
+  <h2 id="marks" class="mb-2">Marks on this concept</h2>
+  <p class="mb-2 text-sm text-muted">Lowest first, over submitted work.</p>
+  {% if not detail.marks %}
+  <p class="text-muted">Nobody has marks on this concept yet.</p>
+  {% else %}
+  <div class="panel overflow-x-auto" role="region" aria-label="Marks on this concept" tabindex="0">
+    <table class="data-table">
+      <caption>{{ detail.marks | length }} student{{ "" if detail.marks | length == 1 else "s" }}</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="text-left">Student</th>
+          <th scope="col" class="text-right">Marks</th>
+          <th scope="col" class="text-right">Share</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in detail.marks %}
+        <tr>
+          <th scope="row" class="text-left font-normal">{{ row.student.name }}</th>
+          <td class="figure text-right">{{ row.points | round(1) }} / {{ row.max_points | round(1) }}</td>
+          <td class="figure text-right">{{ row.percent | round | int }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
+{% else %}
+<section class="mb-8" aria-labelledby="who">
+  <h2 id="who" class="mb-2">What they did</h2>
+  <p class="mb-2 max-w-prose text-sm text-muted">
+    Grouped by the misconception the engine recognised, in the pack's own words.
+  </p>
+  {% if not detail.mistakes %}
+  <p class="text-muted">Nothing recognised for this concept yet.</p>
+  {% else %}
+  {% for group in detail.mistakes %}
+  <div class="panel overflow-x-auto mb-4" role="region"
+       aria-label="{{ group.label }}" tabindex="0">
+    <table class="data-table">
+      <caption>{{ group.label }} · {{ group.students | length }}
+        student{{ "" if group.students | length == 1 else "s" }}</caption>
+      <thead><tr><th scope="col" class="text-left">Student</th></tr></thead>
+      <tbody>
+        {% for student in group.students %}
+        <tr><th scope="row" class="text-left font-normal">{{ student.name }}</th></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+  {% endif %}
+</section>
+
+<section class="mb-8" aria-labelledby="clear">
+  <h2 id="clear" class="mb-2">Nothing detected</h2>
+  <p class="mb-2 max-w-prose text-sm text-muted">
+    No signature for this concept was recognised in their work. That is not evidence they
+    understand it: they may have misunderstood it in a way no signature matches, or never reached
+    the documents it lives on.
+  </p>
+  {% if not detail.clear %}
+  <p class="text-muted">Everybody triggered something.</p>
+  {% else %}
+  <div class="panel overflow-x-auto" role="region" aria-label="Nothing detected" tabindex="0">
+    <table class="data-table">
+      <caption>{{ detail.clear | length }}
+        student{{ "" if detail.clear | length == 1 else "s" }}</caption>
+      <thead><tr><th scope="col" class="text-left">Student</th></tr></thead>
+      <tbody>
+        {% for student in detail.clear %}
+        <tr><th scope="row" class="text-left font-normal">{{ student.name }}</th></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

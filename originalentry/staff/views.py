@@ -71,6 +71,7 @@ from ..services.grades import (
     ungraded_count,
 )
 from ..services.marks_export import CANVAS, GENERIC, marks_csv
+from ..services.mastery import SUPPORT_THRESHOLD, assignment_mastery, concept_detail
 from ..services.progress import assignment_progress
 from ..services.roster import RosterRefused, import_roster
 from ..services.staffing import (
@@ -452,11 +453,35 @@ def grading_comment(assignment: str, workspace: str):
 @staff_view
 def diagnostics(assignment: str):
     found = _assignment_or_404(assignment)
+    # Computed once and handed to both: the mastery blocks and the sections below describe the
+    # same cohort, so they must read it once rather than twice.
+    cohort = cohort_diagnostics(db.session, found)
     return render_template(
         "staff/diagnostics.html",
         assignment=found,
         section=db.session.get(Section, found.section_id),
-        diagnostics=cohort_diagnostics(db.session, found),
+        diagnostics=cohort,
+        mastery=assignment_mastery(db.session, found, diagnostics=cohort),
+        support_threshold=SUPPORT_THRESHOLD,
+    )
+
+
+@bp.get("/diagnostics/<assignment>/concept/<concept_key>")
+@staff_view
+def concept(assignment: str, concept_key: str):
+    """Who is behind one concept. Scoped by its parent, like every console screen with an id."""
+    found = _assignment_or_404(assignment)
+    try:
+        detail = concept_detail(db.session, found, concept_key)
+    except LookupError:
+        # 404 and not 403 for a concept that does not exist or has been retired, the same way the
+        # rest of the console refuses: a different answer would say which keys are real.
+        abort(404)
+    return render_template(
+        "staff/concept.html",
+        assignment=found,
+        section=db.session.get(Section, found.section_id),
+        detail=detail,
     )
 
 

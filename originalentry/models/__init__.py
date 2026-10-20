@@ -2,6 +2,16 @@
 Flask-Migrate can see them. Grouped Content / People / Work per T2.
 """
 
+from .concepts import (
+    GROUP_PROCESS,
+    GROUP_TOPIC,
+    GROUPS,
+    KIND_COMPONENT,
+    KIND_SIGNATURE,
+    KINDS,
+    Concept,
+    ConceptTag,
+)
 from .content import (
     Account,
     AccountOpeningBalance,
@@ -61,6 +71,14 @@ from .work import (
 )
 
 __all__ = [
+    "Concept",
+    "ConceptTag",
+    "GROUP_PROCESS",
+    "GROUP_TOPIC",
+    "GROUPS",
+    "KIND_COMPONENT",
+    "KIND_SIGNATURE",
+    "KINDS",
     # people
     "User",
     "Section",

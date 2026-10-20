@@ -8,6 +8,7 @@ everything about *which* workspaces and *which* marks: the population rule, grad
 from __future__ import annotations
 
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 from originalentry.extensions import db
@@ -28,7 +29,8 @@ from originalentry.models import (
 )
 from originalentry.packs import schema
 from originalentry.packs.importer import import_answer_keys, import_content
-from originalentry.services.grades import record_run, set_override
+from originalentry.services.diagnostics import SignatureCount
+from originalentry.services.grades import final_marks, record_run, set_override
 from originalentry.services.mastery import (
     SUPPORT_THRESHOLD,
     assignment_mastery,
@@ -99,12 +101,23 @@ def test_only_submitted_work_counts(session):
     would contribute 0/full to every concept it touches and drag every percentage toward zero."""
     assignment, workspaces, grader = _world(session, students=2, join_code="mastery-open")
     _submit_and_grade(session, workspaces[0], grader)
-    # workspaces[1] is left open and ungraded.
+    # Graded but never handed in -- the ordinary mid-term state, since grade_section grades every
+    # live workspace. Graded on purpose: if it were left ungraded too, final_marks would return
+    # None for it and the exclusion would be over-determined, so an implementation pooling over
+    # everyone would pass this test clean.
+    _grade_without_submitting(session, workspaces[1], grader, "unused_signature", "unused")
 
     report = assignment_mastery(session, assignment)
 
     assert (report.submitted, report.total) == (1, 2)
     assert report.concepts, "the submitted workspace produced no concepts"
+    # The pooled denominator is one student's worth of the pack, not two.
+    one_student = final_marks(session, workspaces[0])
+    triage_max = sum(c.max_points for c in one_student.components if c.key == "triage")
+    pooled = {c.key: c.max_points for c in report.concepts}
+    assert pooled["document_triage"] == triage_max, (
+        f"pooled {pooled['document_triage']} against one student's {triage_max}: unsubmitted work "
+        f"is in the denominator")
 
 
 def test_a_reopened_workspace_drops_out_of_the_population(session):
@@ -149,21 +162,34 @@ def test_an_override_moves_the_concept_it_belongs_to(session):
 
 
 def test_needs_support_counts_students_below_the_threshold(session):
-    """Counted over the submitted population, from the same final marks as the percentage."""
-    assignment, workspaces, grader = _world(session, join_code="mastery-support")
-    _submit_and_grade(session, workspaces[0], grader)
-    marks_before = assignment_mastery(session, assignment)
+    """Counted over the submitted population, from the same final marks as the percentage.
 
-    # Drive this student below the line by hand, whatever the pack's own marks came to.
-    for component in ("triage", "entry_accuracy"):
-        set_override(session, workspaces[0], component, points=0.0,
-                     reason="Below the support line on purpose", actor=grader)
+    Driven UPWARD, and this matters. An untouched submitted workspace already scores zero on more
+    than half of testco_alpha's hundred points -- an empty book agrees with itself, which is not
+    worth marks -- so it is below the seventy-percent line before the test does anything.
+    Overriding components *down* to zero, as an earlier version of this test did, changed nothing
+    and the assertion held for any implementation: one that ignored overrides, one that never read
+    SUPPORT_THRESHOLD, one that returned len(population).
+    """
+    assignment, workspaces, grader = _world(session, students=2, join_code="mastery-support")
+    for workspace in workspaces:
+        _submit_and_grade(session, workspace, grader)
+
+    before = assignment_mastery(session, assignment)
+    assert before.needs_support == 2, (
+        "both untouched submissions should start below the line; the fixture has changed")
+
+    # Everything to full marks, so this one is unambiguously clear of the line whatever the pack
+    # weights happen to be.
+    for component in final_marks(session, workspaces[0]).components:
+        set_override(session, workspaces[0], component.key, points=component.max_points,
+                     reason="Full marks by hand, to cross the support line", actor=grader)
     session.commit()
 
     after = assignment_mastery(session, assignment)
     assert after.needs_support == 1, (
-        f"threshold is {SUPPORT_THRESHOLD}; before={marks_before.needs_support} after="
-        f"{after.needs_support}")
+        f"threshold is {SUPPORT_THRESHOLD}; one student is now at full marks and the other "
+        f"untouched, so exactly one needs support, not {after.needs_support}")
 
 
 # ── Block B and the drill-down ──────────────────────────────────────────────────────────
@@ -179,6 +205,20 @@ def _tag_signature(session, signature_key: str, concept_key: str) -> None:
     concept = session.scalars(db.select(Concept).filter_by(key=concept_key)).one()
     session.add(ConceptTag(concept_id=concept.id, artifact_kind=KIND_SIGNATURE,
                            artifact_key=signature_key))
+    session.commit()
+
+
+def _grade_without_submitting(session, workspace, grader, key: str, label: str,
+                              confident: bool = True):
+    """Graded but never handed in, with one detected signature.
+
+    grade_section grades every live workspace regardless of status, so this is an ordinary state
+    mid-term -- and it is the state where Block A's population and Block B's diverge.
+    """
+    result = grade_workspace(session, workspace)
+    record_run(session, workspace,
+               replace(result, signatures=(DetectedSignature(key, label, confident),)),
+               created_by=grader)
     session.commit()
 
 
@@ -375,3 +415,107 @@ def test_the_two_blocks_name_their_populations(client, session):
 
     assert "1 of 2 submitted" in page, "Block A does not name its population"
     assert "across everyone graded" in page, "Block B does not name its population"
+
+
+def test_the_drill_down_covers_the_same_population_block_b_counts(session):
+    """A count you can click must list the people it counted.
+
+    Block B comes from cohort_diagnostics, whose population is every live workspace with a run --
+    deliberately broader than Block A's submitted-only, because a count does not dilute the way a
+    rate does. If the drill-down narrowed to submitted work, a teacher would read "6 students",
+    click, and be shown four names with nothing on either page explaining where the other two
+    went. That is the spec's "figure that contradicts the screen it sits on".
+    """
+    assignment, workspaces, grader = _world(session, students=2, join_code="mastery-popmatch")
+    _tag_signature(session, "depreciation_missed", "depreciation")
+    _grade_with_signature(session, workspaces[0], grader,
+                          "depreciation_missed", "Depreciation was never recorded")
+    _grade_without_submitting(session, workspaces[1], grader,
+                              "depreciation_missed", "Depreciation was never recorded")
+
+    report = assignment_mastery(session, assignment)
+    counted = report.mistakes[0].mistakes[0].students
+    detail = concept_detail(session, assignment, "depreciation")
+    listed = len(detail.mistakes[0].students)
+
+    assert counted == 2, "Block B should count the graded-but-unsubmitted student too"
+    assert listed == counted, f"Block B counted {counted}, the drill-down lists {listed}"
+
+
+def test_the_drill_down_leaves_out_merely_possible_detections(session):
+    """Block B counts only confident detections -- cohort_diagnostics splits them, and
+    group_mistakes reads the confident tally. A drill-down that listed the balance-only
+    possibilities too would show more students than the count that led to it, in the opposite
+    direction from the population bug above."""
+    assignment, workspaces, grader = _world(session, students=2, join_code="mastery-possible")
+    _tag_signature(session, "depreciation_missed", "depreciation")
+    _grade_with_signature(session, workspaces[0], grader,
+                          "depreciation_missed", "Depreciation was never recorded")
+    _grade_without_submitting(session, workspaces[1], grader,
+                              "depreciation_missed", "Depreciation was never recorded",
+                              confident=False)
+
+    report = assignment_mastery(session, assignment)
+    detail = concept_detail(session, assignment, "depreciation")
+
+    assert report.mistakes[0].mistakes[0].students == 1, "only the confident one is counted"
+    assert len(detail.mistakes[0].students) == 1, "the possible detection was listed as a fact"
+
+
+def test_nothing_submitted_says_so_rather_than_blaming_the_tagging(session, client):
+    """Review Focus 1, on the page rather than in the service.
+
+    `not mastery.weakest` is true both when nothing is tagged and when nobody has submitted. The
+    tagging sentence is an actionable falsehood in the second case: the teacher goes looking for a
+    tagging problem that does not exist.
+    """
+    assignment, _workspaces, _grader = _world(session, join_code="mastery-nosub-screen")
+    admin = staff_account(session, "screen-nosub@example.edu", role=ROLE_ADMIN)
+    client.sign_in(admin)
+
+    page = client.get(f"/staff/diagnostics/{assignment.public_id}").get_data(as_text=True)
+
+    assert "Nothing has been submitted yet" in page
+    assert "carries a concept yet" not in page, "blamed the tagging for an empty population"
+
+
+def test_assignment_mastery_uses_the_diagnostics_it_is_given(session):
+    """The view already computes cohort_diagnostics for the sections below this one. Recomputing
+    it inside assignment_mastery ran a latest_run per workspace, the dispositions query, the
+    activity-events query, the triage tallies and the quartiles a second time for one page -- and
+    let the two blocks disagree by running against different reads.
+
+    Falsifiable: a recomputation would find no signatures in this fixture, so freight could only
+    appear if the passed-in diagnostics was used.
+    """
+    assignment, workspaces, grader = _world(session, join_code="mastery-given-diag")
+    _submit_and_grade(session, workspaces[0], grader)
+    # freight is already tagged by the seed migration -- tagging it here trips
+    # uq_concept_tag_artifact, which is the constraint doing its job.
+    given = SimpleNamespace(
+        signatures=(SignatureCount(key="freight", label="Freight on the wrong account",
+                                   students=4, possible=0),),
+        graded=9, total=12)
+
+    report = assignment_mastery(session, assignment, diagnostics=given)
+
+    assert report.top_mistake.key == "freight"
+    assert report.top_mistake.students == 4
+
+
+def test_the_screen_does_not_present_a_signature_tally_as_a_rate(session, client):
+    """Block B says "a count, not a rate: a misconception nobody triggered may simply never have
+    been reached". The designed-errors block below it carried a column headed "Share of those
+    graded", dividing the same tallies by everyone graded -- a student who enters nothing is
+    graded, detect returns nothing for them, so they sit in the denominator and never the
+    numerator and the rate falls as the class does less. A teacher reading top to bottom got both
+    claims about the same numbers.
+    """
+    assignment, workspaces, grader = _world(session, join_code="mastery-no-rate")
+    _submit_and_grade(session, workspaces[0], grader)
+    admin = staff_account(session, "screen-norate@example.edu", role=ROLE_ADMIN)
+    client.sign_in(admin)
+
+    page = client.get(f"/staff/diagnostics/{assignment.public_id}").get_data(as_text=True)
+
+    assert "Share of those graded" not in page

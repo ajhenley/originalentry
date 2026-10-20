@@ -129,8 +129,12 @@ def _workspaces(session, assignment) -> tuple[list, list]:
     in-progress work would drag every percentage toward zero in proportion to how early in the
     term somebody looked, which is the opposite of degrading gracefully.
 
-    ``submission_status`` rather than ``status == "submitted"`` or ``submitted_at is not None``:
-    the three disagree for a workspace that was submitted and then reopened.
+    ``submission_status`` is named for the lateness and closed-never-handed-in semantics it adds,
+    not because it disagrees with ``status == "submitted"`` -- it branches on exactly that, so the
+    two agree and both drop a reopened workspace. Only ``submitted_at is not None`` would keep
+    one, and keeping it would be wrong twice over: a reopened book is in flux, scored against the
+    pack's full weights while the student starts over, so a teacher who reopened work to let
+    somebody fix it would watch the class's mastery fall.
     """
     everyone = list(session.scalars(
         db.select(Workspace).where(
@@ -141,8 +145,15 @@ def _workspaces(session, assignment) -> tuple[list, list]:
     return everyone, submitted
 
 
-def assignment_mastery(session, assignment) -> MasteryReport:
-    """Block A of the Diagnostics screen: ranked mastery, and who needs support."""
+def assignment_mastery(session, assignment, *, diagnostics=None) -> MasteryReport:
+    """Both blocks of the Diagnostics screen: ranked mastery, and the mistakes.
+
+    ``diagnostics`` lets the caller hand in a ``CohortDiagnostics`` it already has. The view does,
+    for the sections below this one, and recomputing it here would run a ``latest_run`` per
+    workspace, the dispositions query, the activity-events query, the triage tallies and the
+    quartiles a second time for one page -- and would let the two blocks disagree by running
+    against two different reads of the same data.
+    """
     everyone, population = _workspaces(session, assignment)
 
     marks = [m for m in (final_marks(session, w) for w in population) if m is not None]
@@ -150,8 +161,8 @@ def assignment_mastery(session, assignment) -> MasteryReport:
     # Block B's population is cohort_diagnostics' -- every live workspace with a run, broader
     # than Block A's submitted-only. Deliberate: a count does not dilute the way a rate does, so
     # there is no reason to narrow it, and narrowing would change an existing section's numbers.
-    groups = group_mistakes(list(cohort_diagnostics(session, assignment).signatures),
-                            _signature_tags(session))
+    cohort = diagnostics if diagnostics is not None else cohort_diagnostics(session, assignment)
+    groups = group_mistakes(list(cohort.signatures), _signature_tags(session))
     return MasteryReport(
         submitted=len(population),
         total=len(everyone),
@@ -295,7 +306,7 @@ def concept_detail(session, assignment, concept_key: str) -> ConceptDetail:
     detection bails entirely on empty books and silence is not understanding.
     """
     concept = _live_concept(session, concept_key)
-    _everyone, population = _workspaces(session, assignment)
+    everyone, population = _workspaces(session, assignment)
 
     if concept.group == GROUP_PROCESS:
         keys = {artifact for artifact, (ckey, _l) in _component_tags(session).items()
@@ -322,11 +333,18 @@ def concept_detail(session, assignment, concept_key: str) -> ConceptDetail:
     by_signature: dict[str, list[StudentRef]] = {}
     labels: dict[str, str] = {}
     clear: list[StudentRef] = []
-    for workspace in population:
+    # The topic shape walks EVERYONE with a run, not the submitted population: that is the
+    # population Block B's counts come from, and a count you can click has to list the people it
+    # counted. Narrowing here would show four names under a heading that said six, with nothing
+    # on either page saying where the other two went.
+    for workspace in everyone:
         run = latest_run(session, workspace)
         if run is None:
             continue
-        found = [s for s in run.result.signatures if s.key in wanted]
+        # Confident detections only, because that is the tally group_mistakes reads
+        # (cohort_diagnostics splits them). A balance-only "possible" listed here as a fact would
+        # put more names on the page than the count that led to it.
+        found = [s for s in run.result.signatures if s.key in wanted and s.confident]
         ref = _student_ref(session, workspace)
         if not found:
             clear.append(ref)

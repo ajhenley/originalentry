@@ -34,9 +34,21 @@
     {%- if mastery.needs_support %} · {{ mastery.needs_support }}
     below {{ support_threshold | round | int }}%{% endif %}
   </p>
-  {# Not "no rows": with nothing tagged every component pools into Untagged, so there IS a row
-     and it is the one thing nobody can reteach. mastery.weakest is None in exactly that case. #}
-  {% if not mastery.weakest %}
+  {# Three states, and they are different problems to take to somebody.
+
+     Nobody has submitted: there is no population, so there is nothing to rank and nothing wrong.
+     Saying "no component carries a concept" here would be an actionable falsehood -- the teacher
+     goes looking for a tagging problem that does not exist.
+
+     Nothing is tagged: Block A is NOT empty, because every component pools into Untagged, so a
+     condition on mastery.concepts never fires. mastery.weakest is None in exactly that case,
+     since Untagged is never offered as the weakest.
+
+     Otherwise: the ranked list. #}
+  {% if not mastery.submitted %}
+  <p class="max-w-prose text-muted">Nothing has been submitted yet, so there is nothing to
+    rank.</p>
+  {% elif not mastery.weakest %}
   <p class="max-w-prose text-muted">No component on this assignment carries a concept yet, so
     there is nothing to rank.{% if mastery.concepts %} Its marks are all in the Untagged row
     below.{% endif %}</p>
@@ -127,7 +139,7 @@
         <tr>
           <th scope="col" class="text-left">Error</th>
           <th scope="col" class="text-right">Students</th>
-          <th scope="col" class="text-left">Share of those graded</th>
+          <th scope="col" class="text-left">Compared with the cohort</th>
           <th scope="col" class="text-right">Possible</th>
         </tr>
       </thead>
@@ -146,8 +158,11 @@
       </tbody>
     </table>
   </div>
-  <p class="mt-2 text-xs text-muted">
-    "Possible" means the balances look like that error but no single document showed it.
+  <p class="mt-2 max-w-prose text-xs text-muted">
+    "Possible" means the balances look like that error but no single document showed it. The bar
+    compares the counts with each other; it is not a rate. A student who entered nothing is
+    graded and triggers no error at all, so dividing these tallies by everybody graded would make
+    a class that did less of the work look like a class that understood more.
   </p>
   {% endif %}
 </section>

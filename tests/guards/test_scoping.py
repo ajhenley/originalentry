@@ -57,12 +57,17 @@ FILTERED_COVERED_BY = {
         "test_scoped_console.test_a_crafted_create_naming_another_teachers_section_is_refused",
 }
 
-# Only needed by the refusal half: both guards abort before any view body reads these.
+# Needed by the refusal half, where both guards abort before any view body reads these -- with
+# one exception, concept_key, noted below.
 PLACEHOLDERS = {"key": "sales", "ref": "D01", "entry_id": "1", "statement_type": "trial_balance",
                 "kind": "customer", "section": "chart", "run_id": "1",
                 "pack_version_id": "1", "variant_code": "A",
-                # A real seeded concept, so the refusal walk exercises the scoping gate rather
-                # than stopping at the 404 an unknown key would raise first.
+                # The one exception to the line above: concept_key IS read by a view body, so
+                # the ADMISSION walks need it to be a real seeded concept. staff.concept raises
+                # LookupError on an unknown key and the view turns that into a 404, which those
+                # walks would report as "refused the section's own teacher" -- and the obvious
+                # repair would be an ADMISSION_BLIND entry, retiring the only admission coverage
+                # this route has. The refusal walk does not care: _assignment_or_404 aborts first.
                 "concept_key": "document_triage"}
 
 # Routes the admission half cannot judge, and WHY. Each 404s for the section's own teacher on the

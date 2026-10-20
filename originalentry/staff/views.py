@@ -453,12 +453,15 @@ def grading_comment(assignment: str, workspace: str):
 @staff_view
 def diagnostics(assignment: str):
     found = _assignment_or_404(assignment)
+    # Computed once and handed to both: the mastery blocks and the sections below describe the
+    # same cohort, so they must read it once rather than twice.
+    cohort = cohort_diagnostics(db.session, found)
     return render_template(
         "staff/diagnostics.html",
         assignment=found,
         section=db.session.get(Section, found.section_id),
-        diagnostics=cohort_diagnostics(db.session, found),
-        mastery=assignment_mastery(db.session, found),
+        diagnostics=cohort,
+        mastery=assignment_mastery(db.session, found, diagnostics=cohort),
         support_threshold=SUPPORT_THRESHOLD,
     )
 

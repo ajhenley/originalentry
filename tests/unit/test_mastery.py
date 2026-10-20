@@ -181,3 +181,4 @@ def test_untagged_is_never_offered_as_the_weakest_concept():
     mixed = rank_concepts([_marks(("mystery", 0, 10), ("triage", 5, 10))], TAGS)
     assert [c.key for c in mixed] == ["document_triage", "untagged"]
     assert weakest_concept(mixed).key == "document_triage"
+

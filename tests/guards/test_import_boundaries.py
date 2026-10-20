@@ -13,6 +13,33 @@ LEDGER = ROOT / "ledger"
 #: and asserts the marks are identical -- that test cannot fail, because tags live in a table the
 #: engine never queries. A guard that can fail beats a demonstration that cannot.
 TAGGING_MODULES = {"originalentry.models.concepts", "originalentry.services.mastery"}
+#: Checked by module suffix and by imported name, because neither alone is enough. The module is
+#: matched on its tail so a relative `..services.mastery` and an absolute
+#: `originalentry.services.mastery` are the same offence -- resolving relative imports properly
+#: would need each file's package path and buys nothing here. The names are matched because
+#: Concept and ConceptTag are re-exported from models/__init__, so the module a violation names
+#: would be `..models`, which grading/ imports legitimately on almost every line.
+TAGGING_SUFFIXES = ("services.mastery", "models.concepts")
+TAGGING_NAMES = {"Concept", "ConceptTag"}
+
+
+def _tagging_offences(path: pathlib.Path) -> list[str]:
+    """Every import in this file that would let a concept tag reach a grade."""
+    found: list[str] = []
+    tree = ast.parse(path.read_text(), filename=str(path))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.endswith(TAGGING_SUFFIXES):
+                    found.append(alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            module = (node.module or "").lstrip(".")
+            names = {alias.name for alias in node.names}
+            if module.endswith(TAGGING_SUFFIXES):
+                found.append(f"{'.' * node.level}{module}")
+            for name in sorted(names & TAGGING_NAMES):
+                found.append(f"{'.' * node.level}{module}.{name}")
+    return found
 FORBIDDEN_TOP = {"flask", "sqlalchemy", "psycopg"}
 FORBIDDEN_INTERNAL = {"originalentry.models", "originalentry.grading"}
 EXEMPT = {"snapshot.py"}
@@ -47,9 +74,47 @@ def test_grading_never_imports_the_tagging_side():
     offenders: list[str] = []
     paths = list((ROOT / "grading").rglob("*.py")) + [ROOT / "services" / "grades.py"]
     for path in paths:
-        for mod in _imported_modules(path):
-            if mod in TAGGING_MODULES:
-                offenders.append(f"{path.relative_to(ROOT)} imports {mod}")
+        for offence in _tagging_offences(path):
+            offenders.append(f"{path.relative_to(ROOT)} imports {offence}")
     assert not offenders, (
         "a concept tag must never be an input to a grade: " + "; ".join(offenders)
     )
+
+
+#: Every spelling that would really be used. The first two are the idiom: 34 of the 55 ImportFrom
+#: nodes under grading/ and in grades.py are relative, and Concept/ConceptTag are re-exported from
+#: models/__init__, so `from ..models import ConceptTag` is the natural way to introduce the
+#: violation and the least visible.
+OFFENDING_SPELLINGS = (
+    "from ..services.mastery import assignment_mastery",
+    "from ..models import ConceptTag",
+    "from originalentry.services.mastery import assignment_mastery",
+    "from originalentry.models import Concept",
+    "from ..models.concepts import ConceptTag",
+    "import originalentry.services.mastery",
+)
+
+
+def test_the_tagging_scan_would_catch_a_real_one(tmp_path):
+    """Guards the guard, which previously could not fail.
+
+    _imported_modules records an ImportFrom only when node.level == 0 -- absolute imports -- so a
+    check built on it saw none of the relative imports this codebase actually uses. A green safety
+    net over the one anti-goal the spec says is enforced structurally is worse than no net, because
+    nobody looks again.
+    """
+    for source in OFFENDING_SPELLINGS:
+        offender = tmp_path / "offender.py"
+        offender.write_text(source + "\n")
+        assert _tagging_offences(offender), f"the scan did not catch: {source}"
+
+
+def test_the_tagging_scan_does_not_cry_wolf(tmp_path):
+    innocent = tmp_path / "innocent.py"
+    innocent.write_text(
+        "from ..models import Workspace\n"
+        "from ..services.grades import final_marks\n"
+        "from .conceptual_helpers import something\n"
+    )
+
+    assert _tagging_offences(innocent) == []

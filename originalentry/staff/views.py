@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 
 from flask import (
     Blueprint,
@@ -49,7 +50,7 @@ from ..models.work import LATE_ACCEPT, LATE_CLOSED
 from ..packs import schema
 from ..packs.importing import PackImportRefused, import_pack_zip
 from ..packs.validate import warn_pack
-from ..services import multicompany, staff_actions
+from ..services import audit, multicompany, staff_actions
 from ..services.accommodations import clear_accommodation, set_accommodation
 from ..services.assignments import (
     archive_and_restart,
@@ -1196,3 +1197,44 @@ def people_active(public_id: str):
     else:
         flash(f"{target.email} was already active. Nothing changed.")
     return back
+
+
+# ── Activity log (the durable audit trail) ───────────────────────────────────────────────
+# Admin-only, because the rows name people: it is the one console screen that reports on staff as
+# well as students, which is a different trust level from marking a class.
+
+def _activity_rows(q: str | None, limit: int):
+    return audit.recent(db.session, q=q or None, limit=limit)
+
+
+@bp.get("/activity")
+@admin_view
+def activity():
+    q = (request.args.get("q") or "").strip()
+    rows = _activity_rows(q, audit.DEFAULT_LIMIT)
+    return render_template("staff/activity.html", rows=rows, q=q, limit=audit.DEFAULT_LIMIT)
+
+
+@bp.get("/activity/export.csv")
+@admin_view
+def activity_export():
+    """The same view, as a CSV, up to the service's hard limit. Everything the dashboard shows and
+    nothing it hides -- the IP is already stored hashed, so the export cannot leak an address."""
+    q = (request.args.get("q") or "").strip()
+    rows = _activity_rows(q, audit.MAX_LIMIT)
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["at", "actor", "role", "action", "method", "status",
+                     "target_type", "target_id", "ip_hash", "detail"])
+    for r in rows:
+        writer.writerow([
+            r.at.isoformat() if r.at else "", r.actor_label or "", r.actor_role or "",
+            r.action, r.method or "", r.status if r.status is not None else "",
+            r.target_type or "", r.target_id if r.target_id is not None else "",
+            r.ip_hash or "", json.dumps(r.detail or {}, sort_keys=True),
+        ])
+    return Response(
+        buffer.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="activity-log.csv"'},
+    )

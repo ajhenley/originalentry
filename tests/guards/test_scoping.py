@@ -31,6 +31,8 @@ ADMIN_ONLY = {              # owned, but gated by role rather than by section
     "staff.people_sections": "staff management",
     "staff.people_active": "staff management",
     "staff.students": "every student in the install, so admin-only rather than section-scoped",
+    "staff.activity": "the whole install's audit trail, and it names staff; admin-only",
+    "staff.activity_export": "the same audit trail as a CSV; admin-only",
 }
 FILTERED = {                # scoped by what the query returns, not by refusing the request
     "staff.index": "the assignment list is filtered to the sections you teach",

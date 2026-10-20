@@ -87,8 +87,49 @@ def create_app(config=None) -> Flask:
     init_security(app)
     init_errors(app)
     _register_health(app)
+    _register_audit(app)
 
     return app
+
+
+def _register_audit(app: Flask) -> None:
+    """Record every privileged request and every sign-in attempt into the durable AuditLog.
+
+    One hook is the whole of the staff/auth capture: it fires after the view, so it sees the final
+    status and -- for a sign-in -- the user the request authenticated as. Students' own traffic is
+    deliberately not recorded here; their light, purgeable telemetry stays in activity_event
+    (services/activity.py), which is the retention split the feature was scoped around.
+
+    Logging never breaks a response: a failure to write the row is rolled back and swallowed. The
+    row is committed on its own, after the view has committed its work.
+    """
+    from flask import request
+    from flask_login import current_user
+
+    from .services import audit
+
+    @app.after_request
+    def _audit(response):
+        try:
+            role = getattr(current_user, "role", None) if current_user.is_authenticated else None
+            if not audit.should_audit(
+                request.blueprint, request.endpoint, role, current_user.is_authenticated
+            ):
+                return response
+            audit.record(
+                db.session,
+                action=request.endpoint or request.path,
+                actor=current_user if current_user.is_authenticated else None,
+                method=request.method,
+                status=response.status_code,
+                ip=request.remote_addr,
+                # Route parameters only -- ids and slugs, never a form body or a typed credential.
+                detail={"params": request.view_args} if request.view_args else {},
+            )
+            db.session.commit()
+        except Exception:  # logging must never turn a good response into an error
+            db.session.rollback()
+        return response
 
 
 def _register_cli(app: Flask) -> None:

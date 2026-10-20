@@ -142,6 +142,50 @@ class StaffAction(db.Model):
     __table_args__ = (Index("ix_staff_action_target", "target_table", "target_id", "created_at"),)
 
 
+class AuditLog(db.Model):
+    """A durable, actor-attributed record of every privileged request and every sign-in attempt.
+
+    This is the comprehensive "who did what, when" the other two trails do not give on their own.
+    ``StaffAction`` records only the reason-bearing *mutations* a staff member chose to explain;
+    ``activity_event`` records student work, is PII-light and is deleted when a workspace is purged
+    (D4). Neither covers staff *reads* (viewing an answer key, exporting marks), staff navigation,
+    or authentication -- the things an integrity or security report turns on.
+
+    Retention is the deliberate other half of that split: this table is **durable**. It is not
+    touched by the workspace purge, and it snapshots the actor's label so the record still names a
+    person after their account is gone. That makes it audit-grade, which is why it is written only
+    for staff/admin requests and for authentication -- never for a student's routine page views,
+    whose light, purgeable telemetry stays in ``activity_event``.
+
+    The IP is stored hashed, the same one-way way ``login_token`` stores it (never a raw address),
+    and ``detail`` holds ids and route parameters only, never form bodies or typed credentials.
+    """
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Null for an anonymous actor -- a failed sign-in has no user yet. The label is a snapshot
+    # (the email at the time) so the row still names someone after the account is deactivated.
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    actor_label: Mapped[str | None] = mapped_column(String(320))
+    actor_role: Mapped[str | None] = mapped_column(String(16))
+    # The endpoint name ("staff.answer_key_print", "auth.sign_in"); reads as the action taken.
+    action: Mapped[str] = mapped_column(String(80))
+    method: Mapped[str | None] = mapped_column(String(8))
+    status: Mapped[int | None] = mapped_column(BigInteger)
+    target_type: Mapped[str | None] = mapped_column(String(40))
+    target_id: Mapped[int | None] = mapped_column(BigInteger)
+    ip_hash: Mapped[str | None] = mapped_column(String(64))
+    detail: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+    __table_args__ = (
+        Index("ix_audit_log_at", "at"),
+        Index("ix_audit_log_actor", "actor_id", "at"),
+        Index("ix_audit_log_action", "action", "at"),
+    )
+
+
 # Token purposes (E2).
 PURPOSE_SIGN_IN = "sign_in"
 PURPOSE_JOIN = "join"

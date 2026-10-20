@@ -78,6 +78,11 @@ def purge_section(session: Session, section: Section, actor=None) -> PurgeSummar
         _del(delete(PostingRun).where(PostingRun.workspace_id.in_(workspace_ids)))
         _del(delete(Disposition).where(Disposition.workspace_id.in_(workspace_ids)))
         _del(delete(CheckpointAttempt).where(CheckpointAttempt.workspace_id.in_(workspace_ids)))
+        # activity_event is the student's own PII-light telemetry and goes with the workspace.
+        # audit_log is deliberately NOT purged here: it is the durable, actor-attributed trail of
+        # privileged actions and sign-ins, and an audit record that vanished with the data it was
+        # meant to hold someone accountable for would be no audit record at all. It carries no
+        # workspace_id, so it is out of this delete by construction; this note is why.
         _del(delete(ActivityEvent).where(ActivityEvent.workspace_id.in_(workspace_ids)))
         _del(delete(StatementLine).where(StatementLine.draft_id.in_(draft_ids_subq)))
         _del(delete(StatementDraft).where(StatementDraft.workspace_id.in_(workspace_ids)))

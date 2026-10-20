@@ -1,0 +1,52 @@
+{% extends "layouts/staff.html" %}
+{% block heading %}Activity log{% endblock %}
+
+{% block console %}
+<p class="mb-4 text-sm text-muted">
+  Every privileged action and every sign-in attempt, newest first. This is the durable record —
+  it is never purged, and it names the person. Students' own work is tracked separately, per
+  assignment, under <a class="underline" href="{{ url_for('staff.index') }}">Assignments</a>.
+  Showing up to {{ limit }} rows.
+</p>
+
+<form method="get" action="{{ url_for('staff.activity') }}" class="mb-4 flex flex-wrap gap-2">
+  <label class="sr-only" for="q">Filter by person or action</label>
+  <input id="q" name="q" value="{{ q }}" placeholder="Filter by email or action…"
+         class="field w-72">
+  <button type="submit" class="btn">Filter</button>
+  {% if q %}<a class="nav-link self-center" href="{{ url_for('staff.activity') }}">Clear</a>{% endif %}
+  <a class="nav-link self-center ml-auto"
+     href="{{ url_for('staff.activity_export', q=q) }}">Download CSV</a>
+</form>
+
+{% if not rows %}
+<p class="text-sm text-muted">No activity recorded yet{{ " for that filter" if q else "" }}.</p>
+{% else %}
+<table class="w-full border-collapse text-sm">
+  <thead>
+    <tr class="text-left border-b">
+      <th class="py-1 pr-3">When</th>
+      <th class="py-1 pr-3">Who</th>
+      <th class="py-1 pr-3">Role</th>
+      <th class="py-1 pr-3">Action</th>
+      <th class="py-1 pr-3">Method</th>
+      <th class="py-1 pr-3">Status</th>
+      <th class="py-1 pr-3">Detail</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr class="border-b align-top">
+      <td class="py-1 pr-3 whitespace-nowrap">{{ r.at.strftime("%Y-%m-%d %H:%M") if r.at }}</td>
+      <td class="py-1 pr-3">{{ r.actor_label or "—" }}</td>
+      <td class="py-1 pr-3">{{ r.actor_role or "anon" }}</td>
+      <td class="py-1 pr-3 font-mono">{{ r.action }}</td>
+      <td class="py-1 pr-3">{{ r.method or "" }}</td>
+      <td class="py-1 pr-3">{{ r.status if r.status is not none else "" }}</td>
+      <td class="py-1 pr-3 font-mono text-xs text-muted">{{ r.detail if r.detail else "" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

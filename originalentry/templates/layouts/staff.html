@@ -22,6 +22,8 @@
          {% if request.path == url_for('staff.students') %}aria-current="page"{% endif %}>Students</a>
       <a href="{{ url_for('staff.people') }}" class="nav-link"
          {% if request.path == url_for('staff.people') %}aria-current="page"{% endif %}>People</a>
+      <a href="{{ url_for('staff.activity') }}" class="nav-link"
+         {% if request.path == url_for('staff.activity') %}aria-current="page"{% endif %}>Activity</a>
       {% endif %}
       {% with tone = 'dark' %}{% include "_account_menu.html" with context %}{% endwith %}
     </nav>

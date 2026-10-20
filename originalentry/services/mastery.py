@@ -22,8 +22,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..extensions import db
-from ..models import KIND_COMPONENT, Concept, ConceptTag, Workspace
-from .grades import SUBMITTED, SUBMITTED_LATE, final_marks, submission_status
+from ..models import (
+    GROUP_PROCESS,
+    KIND_COMPONENT,
+    KIND_SIGNATURE,
+    Concept,
+    ConceptTag,
+    User,
+    Workspace,
+)
+from .diagnostics import SignatureCount, cohort_diagnostics
+from .grades import SUBMITTED, SUBMITTED_LATE, final_marks, latest_run, submission_status
 
 #: Below this share of an assignment's marks, a student is counted as needing support. A starting
 #: guess, to be revised once a term of real data exists -- not a config flag, because it is not a
@@ -56,6 +65,8 @@ class MasteryReport:
     needs_support: int
     concepts: tuple[ConceptMastery, ...] = ()
     weakest: ConceptMastery | None = None
+    mistakes: tuple["ConceptMistakes", ...] = ()
+    top_mistake: SignatureCount | None = None
 
 
 def rank_concepts(marks: list, tags: dict[str, tuple[str, str]]) -> tuple[ConceptMastery, ...]:
@@ -123,10 +134,198 @@ def assignment_mastery(session, assignment) -> MasteryReport:
 
     marks = [m for m in (final_marks(session, w) for w in population) if m is not None]
     concepts = rank_concepts(marks, _component_tags(session))
+    # Block B's population is cohort_diagnostics' -- every live workspace with a run, broader
+    # than Block A's submitted-only. Deliberate: a count does not dilute the way a rate does, so
+    # there is no reason to narrow it, and narrowing would change an existing section's numbers.
+    groups = group_mistakes(list(cohort_diagnostics(session, assignment).signatures),
+                            _signature_tags(session))
     return MasteryReport(
         submitted=len(population),
         total=len(everyone),
         needs_support=sum(1 for m in marks if m.percent < SUPPORT_THRESHOLD),
         concepts=concepts,
         weakest=concepts[0] if concepts else None,
+        mistakes=groups,
+        top_mistake=top_mistake(groups),
     )
+
+
+@dataclass(frozen=True)
+class ConceptMistakes:
+    """One concept's detected misconceptions, ranked by how many students made each.
+
+    No aggregate student count: summing the signatures would double-count a student who triggered
+    two of them, and there is no cheap way to count distinct students across signatures from the
+    counts alone. The group is ranked by its highest single count instead, and the numbers stay on
+    the signatures where they are true.
+    """
+
+    key: str
+    label: str
+    mistakes: tuple[SignatureCount, ...]
+
+    @property
+    def highest(self) -> int:
+        return max((m.students for m in self.mistakes), default=0)
+
+
+@dataclass(frozen=True)
+class StudentRef:
+    workspace_public_id: str
+    name: str
+
+
+@dataclass(frozen=True)
+class StudentMark:
+    student: StudentRef
+    points: float
+    max_points: float
+
+    @property
+    def percent(self) -> float:
+        return 100 * self.points / self.max_points if self.max_points else 0.0
+
+
+@dataclass(frozen=True)
+class SignatureStudents:
+    signature_key: str
+    label: str
+    students: tuple[StudentRef, ...]
+
+
+@dataclass(frozen=True)
+class ConceptDetail:
+    key: str
+    label: str
+    group: str
+    marks: tuple[StudentMark, ...] = ()
+    mistakes: tuple[SignatureStudents, ...] = ()
+    clear: tuple[StudentRef, ...] = ()
+
+
+def group_mistakes(counts: list, tags: dict[str, tuple[str, str]]) -> tuple[ConceptMistakes, ...]:
+    """Group detected signatures under their concept, ranked by headcount.
+
+    A signature with no tag is dropped: it is a mistake no concept can be named for, and this
+    block is organised by concept. The guard in tests/guards/test_concept_tags.py is what keeps
+    that from being a silent gap for a real pack.
+
+    A signature nobody triggered is dropped too. ``cohort_diagnostics`` seeds every signature the
+    pack declares at zero, so its whole catalogue arrives whether or not anybody made the mistake.
+    """
+    grouped: dict[str, list[SignatureCount]] = {}
+    labels: dict[str, str] = {}
+    for count in counts:
+        if count.students <= 0:
+            continue
+        tag = tags.get(count.key)
+        if tag is None:
+            continue
+        concept_key, concept_label = tag
+        labels[concept_key] = concept_label
+        grouped.setdefault(concept_key, []).append(count)
+
+    groups = [
+        ConceptMistakes(
+            key=key,
+            label=labels[key],
+            mistakes=tuple(sorted(found, key=lambda m: (-m.students, m.key))),
+        )
+        for key, found in grouped.items()
+    ]
+    groups.sort(key=lambda g: (-g.highest, g.key))
+    return tuple(groups)
+
+
+def top_mistake(groups: tuple[ConceptMistakes, ...]) -> SignatureCount | None:
+    """The single most common misconception across every concept, for the callout."""
+    everything = [m for group in groups for m in group.mistakes]
+    if not everything:
+        return None
+    return max(everything, key=lambda m: (m.students, m.key))
+
+
+def _signature_tags(session) -> dict[str, tuple[str, str]]:
+    rows = session.execute(
+        db.select(ConceptTag.artifact_key, Concept.key, Concept.label)
+        .join(Concept, ConceptTag.concept_id == Concept.id)
+        .where(ConceptTag.artifact_kind == KIND_SIGNATURE, Concept.retired_at.is_(None))
+    ).all()
+    return {artifact_key: (key, label) for artifact_key, key, label in rows}
+
+
+def _live_concept(session, concept_key: str) -> Concept:
+    concept = session.scalars(
+        db.select(Concept).where(Concept.key == concept_key, Concept.retired_at.is_(None))
+    ).first()
+    if concept is None:
+        raise LookupError(concept_key)
+    return concept
+
+
+def _student_ref(session, workspace) -> StudentRef:
+    student = session.get(User, workspace.student_id)
+    name = " ".join(
+        part for part in ((student.given_name or ""), (student.family_name or "")) if part
+    ).strip() if student else ""
+    return StudentRef(workspace_public_id=workspace.public_id,
+                      name=name or (student.email if student else workspace.public_id))
+
+
+def concept_detail(session, assignment, concept_key: str) -> ConceptDetail:
+    """Who is behind one concept. Raises ``LookupError`` for an unknown or retired concept, which
+    the view turns into ``abort(404)``.
+
+    Two shapes, because the groups carry different evidence. A process concept has marks per
+    student. A topic concept has a boolean per student per signature -- so there is nothing to
+    average, and the students with nothing detected are listed rather than scored, because
+    detection bails entirely on empty books and silence is not understanding.
+    """
+    concept = _live_concept(session, concept_key)
+    _everyone, population = _workspaces(session, assignment)
+
+    if concept.group == GROUP_PROCESS:
+        keys = {artifact for artifact, (ckey, _l) in _component_tags(session).items()
+                if ckey == concept_key}
+        marks = []
+        for workspace in population:
+            final = final_marks(session, workspace)
+            if final is None:
+                continue
+            parts = [c for c in final.components if c.key in keys]
+            if not parts:
+                continue
+            marks.append(StudentMark(
+                student=_student_ref(session, workspace),
+                points=sum(c.points for c in parts),
+                max_points=sum(c.max_points for c in parts),
+            ))
+        marks.sort(key=lambda m: (m.percent, m.student.workspace_public_id))
+        return ConceptDetail(key=concept.key, label=concept.label, group=concept.group,
+                             marks=tuple(marks))
+
+    wanted = {artifact for artifact, (ckey, _l) in _signature_tags(session).items()
+              if ckey == concept_key}
+    by_signature: dict[str, list[StudentRef]] = {}
+    labels: dict[str, str] = {}
+    clear: list[StudentRef] = []
+    for workspace in population:
+        run = latest_run(session, workspace)
+        if run is None:
+            continue
+        found = [s for s in run.result.signatures if s.key in wanted]
+        ref = _student_ref(session, workspace)
+        if not found:
+            clear.append(ref)
+            continue
+        for signature in found:
+            labels[signature.key] = signature.label
+            by_signature.setdefault(signature.key, []).append(ref)
+
+    mistakes = tuple(sorted(
+        (SignatureStudents(signature_key=key, label=labels[key], students=tuple(refs))
+         for key, refs in by_signature.items()),
+        key=lambda s: (-len(s.students), s.signature_key),
+    ))
+    return ConceptDetail(key=concept.key, label=concept.label, group=concept.group,
+                         mistakes=mistakes, clear=tuple(clear))

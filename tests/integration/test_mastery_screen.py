@@ -8,12 +8,29 @@ everything about *which* workspaces and *which* marks: the population rule, grad
 from __future__ import annotations
 
 import pytest
+from dataclasses import replace
+
+from originalentry.extensions import db
+from originalentry.grading.models import DetectedSignature
 from originalentry.grading.workspace import grade_workspace
-from originalentry.models import Assignment, Section, User, Variant, Workspace
+from originalentry.models import (
+    KIND_SIGNATURE,
+    Assignment,
+    Concept,
+    ConceptTag,
+    Section,
+    User,
+    Variant,
+    Workspace,
+)
 from originalentry.packs import schema
 from originalentry.packs.importer import import_answer_keys, import_content
 from originalentry.services.grades import record_run, set_override
-from originalentry.services.mastery import SUPPORT_THRESHOLD, assignment_mastery
+from originalentry.services.mastery import (
+    SUPPORT_THRESHOLD,
+    assignment_mastery,
+    concept_detail,
+)
 from originalentry.services.submit import submit_workspace
 from sqlalchemy import select
 
@@ -143,3 +160,128 @@ def test_needs_support_counts_students_below_the_threshold(session):
     assert after.needs_support == 1, (
         f"threshold is {SUPPORT_THRESHOLD}; before={marks_before.needs_support} after="
         f"{after.needs_support}")
+
+
+# ── Block B and the drill-down ──────────────────────────────────────────────────────────
+
+def _tag_signature(session, signature_key: str, concept_key: str) -> None:
+    """Tag a fixture pack's signature onto a seeded concept.
+
+    testco_alpha declares its own signatures, which the production seed deliberately does not tag
+    -- the seed covers the thirteen keys real packs declare. Tagging one here is test setup, not a
+    gap in the seed, and tests/guards/test_concept_tags.py only walks packs/*/source.json so it
+    does not demand fixture signatures be tagged.
+    """
+    concept = session.scalars(db.select(Concept).filter_by(key=concept_key)).one()
+    session.add(ConceptTag(concept_id=concept.id, artifact_kind=KIND_SIGNATURE,
+                           artifact_key=signature_key))
+    session.commit()
+
+
+def _grade_with_signature(session, workspace, grader, key: str, label: str):
+    """Submit and grade, then record a run carrying one detected signature.
+
+    Doctoring the result is the honest way to test the grouping: making the student commit the
+    exact wrong entry a detector watches for would test the detector, which grading/ already has
+    its own tests for.
+    """
+    submit_workspace(session, workspace)
+    result = grade_workspace(session, workspace)
+    record_run(session, workspace,
+               replace(result, signatures=(DetectedSignature(key, label, True),)),
+               created_by=grader)
+    session.commit()
+
+
+def test_the_mistakes_block_groups_detected_signatures_under_their_concept(session):
+    assignment, workspaces, grader = _world(session, join_code="mastery-mistakes")
+    _tag_signature(session, "depreciation_missed", "depreciation")
+    _grade_with_signature(session, workspaces[0], grader,
+                          "depreciation_missed", "Depreciation was never recorded")
+
+    report = assignment_mastery(session, assignment)
+
+    assert [g.key for g in report.mistakes] == ["depreciation"]
+    assert [m.key for m in report.mistakes[0].mistakes] == ["depreciation_missed"]
+    assert report.mistakes[0].mistakes[0].students == 1
+    assert report.top_mistake.key == "depreciation_missed"
+
+
+def test_concept_detail_for_a_process_concept_lists_students_lowest_first(session):
+    assignment, workspaces, grader = _world(session, students=2, join_code="mastery-detail-proc")
+    for workspace in workspaces:
+        _submit_and_grade(session, workspace, grader)
+    set_override(session, workspaces[1], "triage", points=9.0,
+                 reason="One student ahead of the other", actor=grader)
+    session.commit()
+
+    detail = concept_detail(session, assignment, "document_triage")
+
+    assert detail.group == "process"
+    assert [m.points for m in detail.marks] == [0.0, 9.0], "not sorted lowest first"
+    assert detail.mistakes == () and detail.clear == ()
+
+
+def test_concept_detail_for_a_topic_concept_groups_students_under_each_signature(session):
+    assignment, workspaces, grader = _world(session, students=2, join_code="mastery-detail-topic")
+    _tag_signature(session, "depreciation_missed", "depreciation")
+    _grade_with_signature(session, workspaces[0], grader,
+                          "depreciation_missed", "Depreciation was never recorded")
+    _submit_and_grade(session, workspaces[1], grader)   # nothing detected for this one
+
+    detail = concept_detail(session, assignment, "depreciation")
+
+    assert detail.group == "topic"
+    assert detail.marks == (), "a topic concept has no marks of its own"
+    assert [s.signature_key for s in detail.mistakes] == ["depreciation_missed"]
+    assert len(detail.mistakes[0].students) == 1
+
+
+def test_concept_detail_lists_students_with_nothing_detected_separately(session):
+    """Absence of a signature is not evidence of understanding -- detection bails entirely on
+    empty books -- so they are listed, never counted as mastery."""
+    assignment, workspaces, grader = _world(session, students=2, join_code="mastery-detail-clear")
+    _tag_signature(session, "depreciation_missed", "depreciation")
+    _grade_with_signature(session, workspaces[0], grader,
+                          "depreciation_missed", "Depreciation was never recorded")
+    _submit_and_grade(session, workspaces[1], grader)
+
+    detail = concept_detail(session, assignment, "depreciation")
+
+    assert len(detail.clear) == 1
+    triggered = {s.workspace_public_id for s in detail.mistakes[0].students}
+    assert {s.workspace_public_id for s in detail.clear} & triggered == set()
+
+
+def test_concept_detail_raises_for_an_unknown_concept(session):
+    """Review Focus 3. The view turns LookupError into abort(404) rather than rendering an empty
+    page that looks valid."""
+    assignment, _workspaces, _grader = _world(session, join_code="mastery-detail-404")
+
+    with pytest.raises(LookupError):
+        concept_detail(session, assignment, "no_such_concept")
+
+
+def test_concept_detail_raises_for_a_retired_concept(session):
+    assignment, _workspaces, _grader = _world(session, join_code="mastery-detail-retired")
+    concept = session.scalars(db.select(Concept).filter_by(key="closing")).one()
+    concept.retired_at = db.func.now()
+    session.commit()
+
+    with pytest.raises(LookupError):
+        concept_detail(session, assignment, "closing")
+
+
+def test_a_choice_assignment_does_not_raise(session):
+    """Review Focus 5. fixed_pack_version_id is None and diagnostics._keys_by_variant returns {},
+    so the mistakes block has no catalogue to seed from."""
+    assignment, workspaces, grader = _world(session, join_code="mastery-choice")
+    assignment.company_policy = "choice"
+    assignment.fixed_pack_version_id = None
+    session.commit()
+    _submit_and_grade(session, workspaces[0], grader)
+
+    report = assignment_mastery(session, assignment)
+
+    assert report.submitted == 1
+    assert report.concepts, "process mastery should still pool: component keys are global"

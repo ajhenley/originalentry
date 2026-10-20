@@ -8,7 +8,8 @@ tests/integration/test_mastery_screen.py.
 from __future__ import annotations
 
 from originalentry.services.grades import ComponentMark, FinalMarks
-from originalentry.services.mastery import rank_concepts
+from originalentry.services.diagnostics import SignatureCount
+from originalentry.services.mastery import group_mistakes, rank_concepts, top_mistake
 
 #: component key -> (concept key, concept label), as assignment_mastery builds it from concept_tag.
 TAGS = {
@@ -99,3 +100,62 @@ def test_a_concept_with_zero_available_marks_reads_as_zero_percent_not_a_crash()
     report = rank_concepts([_marks(("triage", 0, 0))], TAGS)
 
     assert _by_key(report)["document_triage"].percent == 0.0
+
+
+# ── Block B: the mistakes, grouped ──────────────────────────────────────────────────────
+
+def _count(key: str, students: int, possible: int = 0) -> SignatureCount:
+    return SignatureCount(key=key, label=f"label for {key}", students=students, possible=possible)
+
+
+SIGNATURE_TAGS = {
+    "earlydisc": ("cash_discounts", "Cash discounts and discount periods"),
+    "shortpay": ("cash_discounts", "Cash discounts and discount periods"),
+    "freight": ("shipping_terms", "Shipping terms and freight"),
+}
+
+
+def test_signatures_group_under_their_concept_and_untagged_ones_are_dropped():
+    """A signature with no tag is a mistake no concept can be named for, so it has no place in a
+    block organised by concept. The guard in tests/guards/test_concept_tags.py is what stops that
+    being a silent gap for a real pack."""
+    groups = group_mistakes(
+        [_count("earlydisc", 4), _count("freight", 2), _count("not_tagged_at_all", 9)],
+        SIGNATURE_TAGS)
+
+    assert [g.key for g in groups] == ["cash_discounts", "shipping_terms"]
+    assert "not_tagged_at_all" not in [m.key for g in groups for m in g.mistakes]
+
+
+def test_concept_groups_rank_by_their_highest_single_count_not_a_sum():
+    """Summing would double-count a student who triggered two signatures of one concept. Here
+    cash_discounts sums to 6 but its highest is 3, so a sum would wrongly outrank freight's 5."""
+    groups = group_mistakes(
+        [_count("earlydisc", 3), _count("shortpay", 3), _count("freight", 5)], SIGNATURE_TAGS)
+
+    assert [g.key for g in groups] == ["shipping_terms", "cash_discounts"]
+
+
+def test_signatures_within_a_group_are_ranked_too():
+    groups = group_mistakes([_count("earlydisc", 1), _count("shortpay", 8)], SIGNATURE_TAGS)
+
+    assert [m.key for m in groups[0].mistakes] == ["shortpay", "earlydisc"]
+
+
+def test_a_signature_nobody_triggered_is_not_a_mistake_to_report():
+    """cohort_diagnostics seeds every declared signature at zero, so the pack's whole catalogue
+    arrives whether or not anybody made the mistake."""
+    groups = group_mistakes([_count("earlydisc", 0), _count("freight", 3)], SIGNATURE_TAGS)
+
+    assert [g.key for g in groups] == ["shipping_terms"]
+
+
+def test_top_mistake_is_the_highest_count_across_every_group():
+    groups = group_mistakes(
+        [_count("earlydisc", 2), _count("freight", 7)], SIGNATURE_TAGS)
+
+    assert top_mistake(groups).key == "freight"
+
+
+def test_top_mistake_is_none_when_nothing_was_detected():
+    assert top_mistake(group_mistakes([], SIGNATURE_TAGS)) is None

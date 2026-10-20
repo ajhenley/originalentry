@@ -99,6 +99,19 @@ def rank_concepts(marks: list, tags: dict[str, tuple[str, str]]) -> tuple[Concep
     return tuple(ranked)
 
 
+def weakest_concept(concepts: tuple[ConceptMastery, ...]) -> ConceptMastery | None:
+    """The lowest-scoring real concept, for the callout.
+
+    Never the untagged row. "Review Untagged before the next assignment" is not advice anybody
+    can act on -- it is a completeness row, there so nothing silently vanishes from the view, not
+    a thing that can be taught. When it is the only row there is nothing to recommend at all.
+    """
+    for concept in concepts:
+        if concept.key != UNTAGGED:
+            return concept
+    return None
+
+
 def _component_tags(session) -> dict[str, tuple[str, str]]:
     rows = session.execute(
         db.select(ConceptTag.artifact_key, Concept.key, Concept.label)
@@ -144,7 +157,7 @@ def assignment_mastery(session, assignment) -> MasteryReport:
         total=len(everyone),
         needs_support=sum(1 for m in marks if m.percent < SUPPORT_THRESHOLD),
         concepts=concepts,
-        weakest=concepts[0] if concepts else None,
+        weakest=weakest_concept(concepts),
         mistakes=groups,
         top_mistake=top_mistake(groups),
     )

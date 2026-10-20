@@ -14,11 +14,14 @@ from originalentry.extensions import db
 from originalentry.grading.models import DetectedSignature
 from originalentry.grading.workspace import grade_workspace
 from originalentry.models import (
+    KIND_COMPONENT,
     KIND_SIGNATURE,
+    ROLE_ADMIN,
     Assignment,
     Concept,
     ConceptTag,
     Section,
+    SectionStaff,
     User,
     Variant,
     Workspace,
@@ -35,6 +38,7 @@ from originalentry.services.submit import submit_workspace
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
+from tests.scoping_world import staff_account
 
 pytestmark = pytest.mark.db
 
@@ -285,3 +289,89 @@ def test_a_choice_assignment_does_not_raise(session):
 
     assert report.submitted == 1
     assert report.concepts, "process mastery should still pool: component keys are global"
+
+
+# ── The screen and the drill-down route ─────────────────────────────────────────────────
+
+def _teaches(session, assignment, teacher):
+    session.add(SectionStaff(section_id=assignment.section_id, user_id=teacher.id))
+    session.commit()
+
+
+def test_a_teacher_sees_mastery_for_their_own_section(client, session):
+    assignment, workspaces, grader = _world(session, join_code="mastery-screen-own")
+    _submit_and_grade(session, workspaces[0], grader)
+    teacher = staff_account(session, "screen-own@example.edu")
+    _teaches(session, assignment, teacher)
+    client.sign_in(teacher)
+
+    page = client.get(f"/staff/diagnostics/{assignment.public_id}")
+
+    assert page.status_code == 200
+    assert "Mastery by concept" in page.get_data(as_text=True)
+
+
+def test_a_teacher_is_refused_another_sections_mastery(client, session):
+    """404, never 403: a refusal must not confirm the assignment exists."""
+    assignment, _workspaces, _grader = _world(session, join_code="mastery-screen-other")
+    outsider = staff_account(session, "screen-outsider@example.edu")
+    client.sign_in(outsider)
+
+    assert client.get(f"/staff/diagnostics/{assignment.public_id}").status_code == 404
+    assert client.get(
+        f"/staff/diagnostics/{assignment.public_id}/concept/document_triage").status_code == 404
+
+
+def test_an_admin_sees_both(client, session):
+    assignment, workspaces, grader = _world(session, join_code="mastery-screen-admin")
+    _submit_and_grade(session, workspaces[0], grader)
+    admin = staff_account(session, "screen-admin@example.edu", role=ROLE_ADMIN)
+    client.sign_in(admin)
+
+    assert client.get(f"/staff/diagnostics/{assignment.public_id}").status_code == 200
+    assert client.get(
+        f"/staff/diagnostics/{assignment.public_id}/concept/document_triage").status_code == 200
+
+
+def test_an_unknown_concept_key_is_a_404(client, session):
+    """Review Focus 3, through the route: concept_detail raises LookupError and the view turns it
+    into a 404 rather than rendering an empty page that looks valid."""
+    assignment, _workspaces, _grader = _world(session, join_code="mastery-screen-404")
+    admin = staff_account(session, "screen-404@example.edu", role=ROLE_ADMIN)
+    client.sign_in(admin)
+
+    assert client.get(
+        f"/staff/diagnostics/{assignment.public_id}/concept/no_such_concept").status_code == 404
+
+
+def test_an_assignment_with_no_tagged_component_says_so(client, session):
+    """Review Focus 2. An empty Block A must explain itself, not sit silently under a callout
+    naming nothing."""
+    assignment, workspaces, grader = _world(session, join_code="mastery-screen-untagged")
+    _submit_and_grade(session, workspaces[0], grader)
+    session.execute(db.delete(ConceptTag).where(ConceptTag.artifact_kind == KIND_COMPONENT))
+    session.commit()
+    admin = staff_account(session, "screen-untagged@example.edu", role=ROLE_ADMIN)
+    client.sign_in(admin)
+
+    page = client.get(f"/staff/diagnostics/{assignment.public_id}").get_data(as_text=True)
+
+    # Block A is not empty here -- every component pooled into Untagged -- so the screen has to
+    # explain itself rather than offer "Review Untagged before the next assignment", which is the
+    # advice it would otherwise print.
+    assert "No component on this assignment carries a concept yet" in page
+    assert "Review Untagged" not in page
+
+
+def test_the_two_blocks_name_their_populations(client, session):
+    """Block A is submitted work; Block B is everything graded. Two different questions, each
+    stated, so neither contradicts the other or the CSV beside them."""
+    assignment, workspaces, grader = _world(session, students=2, join_code="mastery-screen-pop")
+    _submit_and_grade(session, workspaces[0], grader)
+    admin = staff_account(session, "screen-pop@example.edu", role=ROLE_ADMIN)
+    client.sign_in(admin)
+
+    page = client.get(f"/staff/diagnostics/{assignment.public_id}").get_data(as_text=True)
+
+    assert "1 of 2 submitted" in page, "Block A does not name its population"
+    assert "across everyone graded" in page, "Block B does not name its population"

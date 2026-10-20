@@ -71,6 +71,7 @@ from ..services.grades import (
     ungraded_count,
 )
 from ..services.marks_export import CANVAS, GENERIC, marks_csv
+from ..services.mastery import SUPPORT_THRESHOLD, assignment_mastery, concept_detail
 from ..services.progress import assignment_progress
 from ..services.roster import RosterRefused, import_roster
 from ..services.staffing import (
@@ -457,6 +458,27 @@ def diagnostics(assignment: str):
         assignment=found,
         section=db.session.get(Section, found.section_id),
         diagnostics=cohort_diagnostics(db.session, found),
+        mastery=assignment_mastery(db.session, found),
+        support_threshold=SUPPORT_THRESHOLD,
+    )
+
+
+@bp.get("/diagnostics/<assignment>/concept/<concept_key>")
+@staff_view
+def concept(assignment: str, concept_key: str):
+    """Who is behind one concept. Scoped by its parent, like every console screen with an id."""
+    found = _assignment_or_404(assignment)
+    try:
+        detail = concept_detail(db.session, found, concept_key)
+    except LookupError:
+        # 404 and not 403 for a concept that does not exist or has been retired, the same way the
+        # rest of the console refuses: a different answer would say which keys are real.
+        abort(404)
+    return render_template(
+        "staff/concept.html",
+        assignment=found,
+        section=db.session.get(Section, found.section_id),
+        detail=detail,
     )
 
 

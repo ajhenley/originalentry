@@ -9,7 +9,12 @@ from __future__ import annotations
 
 from originalentry.services.diagnostics import SignatureCount
 from originalentry.services.grades import ComponentMark, FinalMarks
-from originalentry.services.mastery import group_mistakes, rank_concepts, top_mistake
+from originalentry.services.mastery import (
+    group_mistakes,
+    rank_concepts,
+    top_mistake,
+    weakest_concept,
+)
 
 #: component key -> (concept key, concept label), as assignment_mastery builds it from concept_tag.
 TAGS = {
@@ -159,3 +164,20 @@ def test_top_mistake_is_the_highest_count_across_every_group():
 
 def test_top_mistake_is_none_when_nothing_was_detected():
     assert top_mistake(group_mistakes([], SIGNATURE_TAGS)) is None
+
+
+def test_untagged_is_never_offered_as_the_weakest_concept():
+    """"Review Untagged before the next assignment" is not advice anybody can act on.
+
+    Untagged is a completeness row, not a concept, so it cannot be the callout's subject -- and
+    when it is the only row there is nothing to recommend at all.
+    """
+    only_untagged = rank_concepts([_marks(("mystery", 1, 10))], TAGS)
+    assert only_untagged[0].key == "untagged"
+    assert weakest_concept(only_untagged) is None
+
+    # Untagged sorts last whatever its percentage -- 0% here, below triage's 50% -- so the
+    # callout's subject is not simply the first row.
+    mixed = rank_concepts([_marks(("mystery", 0, 10), ("triage", 5, 10))], TAGS)
+    assert [c.key for c in mixed] == ["document_triage", "untagged"]
+    assert weakest_concept(mixed).key == "document_triage"

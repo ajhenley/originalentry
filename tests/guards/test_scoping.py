@@ -60,7 +60,10 @@ FILTERED_COVERED_BY = {
 # Only needed by the refusal half: both guards abort before any view body reads these.
 PLACEHOLDERS = {"key": "sales", "ref": "D01", "entry_id": "1", "statement_type": "trial_balance",
                 "kind": "customer", "section": "chart", "run_id": "1",
-                "pack_version_id": "1", "variant_code": "A"}
+                "pack_version_id": "1", "variant_code": "A",
+                # A real seeded concept, so the refusal walk exercises the scoping gate rather
+                # than stopping at the 404 an unknown key would raise first.
+                "concept_key": "document_triage"}
 
 # Routes the admission half cannot judge, and WHY. Each 404s for the section's own teacher on the
 # fixture pack for a reason that has nothing to do with scoping, so a 404 here would be a false

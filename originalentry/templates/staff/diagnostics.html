@@ -12,6 +12,108 @@
        href="{{ url_for('staff.diagnostics_export', assignment=assignment.public_id) }}">Export the cohort as CSV</a>
 </p>
 
+{# Mastery and the mistakes. Two blocks, two measures, never ranked against each other: a share
+   of marks for what is scored, a headcount for what is only recognised. Each names its own
+   population, because they differ -- Block A is submitted work, since a component's max_points is
+   the pack's full weight and unstarted work would drag every percentage toward zero; Block B is
+   everyone graded, because a count does not dilute the way a rate does. #}
+{% if mastery.weakest or mastery.top_mistake %}
+<p class="callout callout--trouble mb-4 max-w-prose">
+  {%- if mastery.weakest %}<strong>Review {{ mastery.weakest.label }} before the next
+  assignment.</strong>{% endif %}
+  {%- if mastery.top_mistake %} The most common mistake was {{ mastery.top_mistake.label }}
+  ({{ mastery.top_mistake.students }} student{{ "" if mastery.top_mistake.students == 1 else "s" }}).{% endif -%}
+</p>
+{% endif %}
+
+<section class="mb-8" aria-labelledby="mastery">
+  <h2 id="mastery" class="mb-2">Mastery by concept</h2>
+  <p class="mb-2 text-sm text-muted">
+    A share of the marks available, pooled across the cohort ·
+    {{ mastery.submitted }} of {{ mastery.total }} submitted
+    {%- if mastery.needs_support %} · {{ mastery.needs_support }}
+    below {{ support_threshold | round | int }}%{% endif %}
+  </p>
+  {# Not "no rows": with nothing tagged every component pools into Untagged, so there IS a row
+     and it is the one thing nobody can reteach. mastery.weakest is None in exactly that case. #}
+  {% if not mastery.weakest %}
+  <p class="max-w-prose text-muted">No component on this assignment carries a concept yet, so
+    there is nothing to rank.{% if mastery.concepts %} Its marks are all in the Untagged row
+    below.{% endif %}</p>
+  {% endif %}
+  {% if mastery.concepts %}
+  <div class="panel overflow-x-auto" role="region" aria-label="Mastery by concept" tabindex="0">
+    <table class="data-table">
+      <caption>Weakest first</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="text-left">Concept</th>
+          <th scope="col" class="text-right">Mastery</th>
+          <th scope="col" class="text-left">&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in mastery.concepts %}
+        <tr>
+          <th scope="row" class="text-left font-normal">
+            {%- if row.key == "untagged" %}{{ row.label }}
+            {%- else %}<a class="underline"
+               href="{{ url_for('staff.concept', assignment=assignment.public_id,
+                                concept_key=row.key) }}">{{ row.label }}</a>{% endif -%}
+          </th>
+          <td class="figure text-right">{{ row.percent | round | int }}%</td>
+          <td>
+            <meter min="0" max="100" value="{{ row.percent | round | int }}"
+                   aria-label="{{ row.label }}: {{ row.percent | round | int }}% of marks"></meter>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
+<section class="mb-8" aria-labelledby="mistakes">
+  <h2 id="mistakes" class="mb-2">Most common mistakes</h2>
+  <p class="mb-2 text-sm text-muted">
+    How many students the engine recognised each one in, across everyone graded. A count, not a
+    rate: a misconception nobody triggered may simply never have been reached.
+  </p>
+  {% if not mastery.mistakes %}
+  <p class="text-muted">Nothing recognised yet.</p>
+  {% else %}
+  <div class="panel overflow-x-auto" role="region" aria-label="Most common mistakes" tabindex="0">
+    <table class="data-table">
+      <caption>Grouped by concept</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="text-left">Concept</th>
+          <th scope="col" class="text-left">What they did</th>
+          <th scope="col" class="text-right">Students</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in mastery.mistakes %}
+        {% for row in group.mistakes %}
+        <tr>
+          <th scope="row" class="text-left font-normal">
+            {%- if loop.first %}<a class="underline"
+               href="{{ url_for('staff.concept', assignment=assignment.public_id,
+                                concept_key=group.key) }}">{{ group.label }}</a>
+            {%- else %}&nbsp;{% endif -%}
+          </th>
+          <td class="text-sm">{{ row.label }}</td>
+          <td class="figure text-right">{{ row.students }}</td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
 <section class="mb-8" aria-labelledby="designed-errors">
   <h2 id="designed-errors" class="mb-2">The errors this company was built around</h2>
   {% if not diagnostics.signatures %}

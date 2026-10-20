@@ -7,9 +7,9 @@ everything about *which* workspaces and *which* marks: the population rule, grad
 
 from __future__ import annotations
 
-import pytest
 from dataclasses import replace
 
+import pytest
 from originalentry.extensions import db
 from originalentry.grading.models import DetectedSignature
 from originalentry.grading.workspace import grade_workspace

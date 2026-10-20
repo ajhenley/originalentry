@@ -7,8 +7,8 @@ tests/integration/test_mastery_screen.py.
 
 from __future__ import annotations
 
-from originalentry.services.grades import ComponentMark, FinalMarks
 from originalentry.services.diagnostics import SignatureCount
+from originalentry.services.grades import ComponentMark, FinalMarks
 from originalentry.services.mastery import group_mistakes, rank_concepts, top_mistake
 
 #: component key -> (concept key, concept label), as assignment_mastery builds it from concept_tag.

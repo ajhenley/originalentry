@@ -65,7 +65,7 @@ class MasteryReport:
     needs_support: int
     concepts: tuple[ConceptMastery, ...] = ()
     weakest: ConceptMastery | None = None
-    mistakes: tuple["ConceptMistakes", ...] = ()
+    mistakes: tuple[ConceptMistakes, ...] = ()
     top_mistake: SignatureCount | None = None
 
 

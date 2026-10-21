@@ -147,17 +147,44 @@ def _names_a_student(statement: ast.AST) -> bool:
 
 
 def _names_one_workspace(statement: ast.AST) -> bool:
-    """Whether this statement is keyed by a workspace's own ``public_id``.
+    """Whether this statement is keyed by a **workspace's own** ``public_id``.
 
-    ``staff/views._workspace_or_404`` is written ``filter_by(public_id=..., assignment_id=...)``:
-    it returns the one workspace a teacher clicked on, which is how they reach their own practice
-    copy from the console, and a question about one named row cannot be a question about a class.
-    It was always meant to be outside this guard's business -- the docstring above has said so
-    since the first version -- but until ``filter_by`` became visible, saying it in prose was
-    enough. Now the scan can see the query, so the exemption has to be in the code.
+    ``staff/views._workspace_or_404`` is written
+    ``filter_by(public_id=..., assignment_id=..., archived_at=None)``: it returns the one workspace
+    a teacher clicked on, which is how they reach their own practice copy from the console, and a
+    question about one named row cannot be a question about a class. That exemption was always
+    meant to be outside this guard's business, but until ``filter_by`` became visible, saying so
+    in prose was enough.
+
+    **The breadth of it was a hole, and the same class of hole this guard exists to close.** A
+    first version returned True for a ``public_id`` keyword *anywhere* in the statement, which
+    exempted two cohort reads that reach a class through some **other** model's public id::
+
+        select(Workspace).where(
+            Workspace.assignment_id.in_(select(Assignment.id).filter_by(public_id=pid)))
+        select(Workspace).join(Assignment, ...).filter_by(public_id=pid)
+
+    Reaching a class by its assignment's public id is how a URL does it throughout this codebase,
+    so both are plausible spellings; both were silently exempt; both are pinned below now.
+
+    So a ``public_id`` keyword only exempts when it sits in the **same** ``filter_by`` call as the
+    ``assignment_id`` this scan matched on -- the actual shape of ``_workspace_or_404``. A keyword
+    does not name its model, and that co-location is the only thing that ties the ``public_id`` to
+    the workspace rather than to whatever was joined or sub-selected last. Requiring instead that
+    the call sit on a ``select(Workspace)`` would not do: ``select(Workspace).join(Assignment)
+    .filter_by(public_id=...)`` does sit on one, and filters the Assignment.
+
+    A ``Workspace.public_id ==`` comparison needs no such care -- it names the model itself.
+
+    The conservative direction is deliberate. ``select(Workspace).filter_by(public_id=pid)
+    .where(Workspace.assignment_id == x)`` -- the two keys in separate calls -- would be reported
+    although it is a single-row lookup. Nothing in the tree writes that, and if somebody does, the
+    guard says so and they merge the keys or route through the chokepoint. A false report is
+    noise; a false exemption is the failure this whole design is against.
     """
     for node in ast.walk(statement):
-        if "public_id" in _filter_by_keywords(node):
+        keywords = _filter_by_keywords(node)
+        if "public_id" in keywords and "assignment_id" in keywords:
             return True
         if isinstance(node, ast.Compare) and _is_workspace_column(node.left, "public_id"):
             return True
@@ -198,8 +225,12 @@ def _assignment_queries(path: pathlib.Path) -> list[Query]:
     a single line instead would read ``Workspace.assignment_id == assignment.id,`` as a cohort
     read in every per-person query in the codebase.
     """
-    text = path.read_text()
-    tree = ast.parse(text, filename=str(path))
+    return _assignment_queries_in(path.read_text(), filename=str(path))
+
+
+def _assignment_queries_in(text: str, *, filename: str = "<source>") -> list[Query]:
+    """The same scan over source text, so a test can hand it one real function's source."""
+    tree = ast.parse(text, filename=filename)
     parents = _parents(tree)
     found: dict[int, Query] = {}
     for node in ast.walk(tree):
@@ -343,6 +374,15 @@ COHORT_SPELLINGS = (
     # new module could have carried it.
     "rows = db.session.scalars(db.select(Workspace)"
     ".filter_by(assignment_id=assignment.id, archived_at=None)).all()",
+    # Reaching the class through the *assignment's* public id. Both of these were exempted by a
+    # ``public_id`` keyword that belonged to another model, which is the hole review found in the
+    # fix for the hole above. Neither the INNOCENT case nor the real _workspace_or_404 exercised a
+    # nested lookup, because both are flat.
+    "rows = session.scalars(select(Workspace).where("
+    "Workspace.assignment_id.in_(select(Assignment.id).filter_by(public_id=pid)))).all()",
+    "rows = session.execute(select(Workspace)"
+    ".join(Assignment, Workspace.assignment_id == Assignment.id)"
+    ".filter_by(public_id=pid)).all()",
 )
 
 #: And the ones that must not be reported. The first two are per-person, the third goes through
@@ -392,6 +432,29 @@ def test_the_scan_would_catch_a_cohort_read_in_any_of_its_spellings(tmp_path):
         offender = tmp_path / "offender.py"
         offender.write_text(source + "\n")
         assert _offenders(offender), f"the scan did not catch: {source}"
+
+
+def test_the_real_single_workspace_lookup_is_still_exempt():
+    """The exemption has to keep working on the code it was written for.
+
+    Read off ``staff.views._workspace_or_404`` itself rather than a copy of its shape: the two
+    tmp_path lists pin spellings somebody might write, and this pins the one somebody did. If that
+    function is ever rewritten, this follows it -- and if it starts looking like a cohort read,
+    that is a real finding rather than a stale fixture. A teacher reaching their own practice copy
+    from the console must never be an offender.
+    """
+    import inspect
+    import textwrap
+
+    from originalentry.staff import views
+
+    source = textwrap.dedent(inspect.getsource(views._workspace_or_404))
+    statement = next(q.statement for q in _assignment_queries_in(source))
+
+    assert _names_one_workspace(statement), (
+        "_workspace_or_404 no longer reads as a single-row lookup; it would now be reported as a "
+        "cohort read, and excluding practice copies from it is how a teacher loses their own copy"
+    )
 
 
 def test_the_one_home_scan_sees_a_second_definition_and_not_a_practice_copy_being_made(tmp_path):

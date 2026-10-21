@@ -129,19 +129,56 @@ def _queries_an_assignment(node: ast.AST) -> bool:
             or "assignment_id" in _filter_by_keywords(node))
 
 
+def _is_none(node: ast.AST) -> bool:
+    """``None`` written out, which in a query means IS NULL and so pins nothing to anybody."""
+    return isinstance(node, ast.Constant) and node.value is None
+
+
+def _pins_column(node: ast.AST, column: str) -> ast.AST | None:
+    """What ``Workspace.<column>`` is pinned **equal** to here, or None if it is not pinned.
+
+    ``==`` and nothing else, and this is the correction at the heart of this predicate. Every
+    exemption in this file used to ask "is this column *mentioned*?", where the question that
+    makes an exemption safe is "is this column pinned to **one value**?" Those come apart on every
+    other operator, and the gap exempted real cohort reads::
+
+        Workspace.public_id != ws.public_id    # the rest of the class
+        Workspace.public_id > cursor           # keyset pagination of a roster
+        Workspace.student_id != current_user.id # the class except me
+
+    The last one is the worst of the three: it still admits a *co-instructor's* practice copy,
+    because a practice copy is per-owner and nothing limits an assignment to one teacher.
+
+    An earlier docstring here reasoned that ``Workspace.public_id ==`` "needs no such care -- it
+    names the model itself". That inference was wrong, and worth leaving on the record: naming the
+    model establishes *which* key column, never that the statement is keyed to one row.
+
+    A chained comparison (``a == b == c``) is not a pin either, so a single operator is required.
+    """
+    if not (isinstance(node, ast.Compare) and _is_workspace_column(node.left, column)):
+        return None
+    if len(node.ops) != 1 or not isinstance(node.ops[0], ast.Eq):
+        return None
+    return node.comparators[0]
+
+
 def _names_a_student(statement: ast.AST) -> bool:
-    """Whether this statement filters ``Workspace.student_id`` down to a particular person."""
+    """Whether this statement pins ``Workspace.student_id`` to a particular person."""
     for node in ast.walk(statement):
-        if isinstance(node, ast.Compare) and _is_workspace_column(node.left, "student_id"):
-            if any(not _is_model_column(other) for other in node.comparators):
-                return True
-        # ``Workspace.student_id.in_(ids)`` -- a named set of people, not a cohort.
+        pinned = _pins_column(node, "student_id")
+        if pinned is not None and not _is_model_column(pinned):
+            return True
+        # ``Workspace.student_id.in_(ids)`` -- a named set of people, not a cohort. A *subquery*
+        # argument is a different animal: ``in_(select(User.id))`` is every student there is, so
+        # the exemption stops at a call. A list, a tuple or a local name of ids still exempts,
+        # which is the real idiom (``staff/views.py:1098``).
         if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
                 and node.func.attr == "in_"
-                and _is_workspace_column(node.func.value, "student_id")):
+                and _is_workspace_column(node.func.value, "student_id")
+                and not any(isinstance(arg, ast.Call) for arg in node.args)):
             return True
         student = _filter_by_keywords(node).get("student_id")
-        if student is not None and not _is_model_column(student):
+        if student is not None and not _is_model_column(student) and not _is_none(student):
             return True
     return False
 
@@ -174,7 +211,10 @@ def _names_one_workspace(statement: ast.AST) -> bool:
     the call sit on a ``select(Workspace)`` would not do: ``select(Workspace).join(Assignment)
     .filter_by(public_id=...)`` does sit on one, and filters the Assignment.
 
-    A ``Workspace.public_id ==`` comparison needs no such care -- it names the model itself.
+    A ``Workspace.public_id`` comparison exempts only when it is an **equality**: see
+    ``_pins_column``, where the same correction had to be made for ``student_id``. "The class
+    except this one workspace" and "the roster after this cursor" are cohort reads written with
+    the very same column.
 
     The conservative direction is deliberate. ``select(Workspace).filter_by(public_id=pid)
     .where(Workspace.assignment_id == x)`` -- the two keys in separate calls -- would be reported
@@ -184,9 +224,11 @@ def _names_one_workspace(statement: ast.AST) -> bool:
     """
     for node in ast.walk(statement):
         keywords = _filter_by_keywords(node)
-        if "public_id" in keywords and "assignment_id" in keywords:
+        public, assignment = keywords.get("public_id"), keywords.get("assignment_id")
+        if (public is not None and assignment is not None
+                and not _is_none(public) and not _is_none(assignment)):
             return True
-        if isinstance(node, ast.Compare) and _is_workspace_column(node.left, "public_id"):
+        if _pins_column(node, "public_id") is not None:
             return True
     return False
 
@@ -293,6 +335,15 @@ def test_every_cohort_read_goes_through_the_chokepoint():
         + "\n  ".join(offenders)
         + "\n(a site needing its own joins composes class_workspace_clause(); repeating the "
           "practice condition inline is the thing this guard forbids)"
+        # Said here because this is the sentence somebody reads at 5pm with a red suite. If one
+        # of these really is a single-row lookup, the chokepoint is the WRONG repair: it carries
+        # staff_practice.is_(False), so routing a per-person lookup through it 404s a teacher out
+        # of their own practice copy -- the one thing this feature exists to give them. Pin the
+        # row instead: both keys in one filter_by, or an `==` on public_id.
+        + "\nIf one of these is really a single-row or per-person lookup, do NOT route it through "
+          "the chokepoint -- that excludes practice copies and locks a teacher out of their own "
+          "copy. Pin the row instead: public_id and assignment_id in ONE filter_by(), or an "
+          "`==` comparison (an `!=`, `>` or `in_(select(...))` pins nothing and is a cohort read)."
     )
 
 
@@ -383,6 +434,22 @@ COHORT_SPELLINGS = (
     "rows = session.execute(select(Workspace)"
     ".join(Assignment, Workspace.assignment_id == Assignment.id)"
     ".filter_by(public_id=pid)).all()",
+    # Mentioning a key column is not being keyed to one row. Each of these is a cohort read
+    # written with the very column that used to exempt it, and each was exempt in silence until
+    # the exemptions started asking about the *operator* rather than the column.
+    "rest = session.scalars(select(Workspace).where("
+    "Workspace.assignment_id == assignment.id, Workspace.public_id != ws.public_id)).all()",
+    "page = session.scalars(select(Workspace).where("
+    "Workspace.assignment_id == assignment.id, Workspace.public_id > cursor)).all()",
+    # The worst of them: it still admits a *co-instructor's* practice copy, because a practice
+    # copy is per-owner and nothing limits an assignment to one teacher.
+    "others = session.scalars(select(Workspace).where("
+    "Workspace.assignment_id == assignment.id, Workspace.student_id != current_user.id)).all()",
+    "nobody = session.scalars(db.select(Workspace).filter_by("
+    "assignment_id=assignment.id, student_id=None)).all()",
+    # ``in_`` of a subquery is every student there is, not a named set of people.
+    "everyone = session.scalars(select(Workspace).where("
+    "Workspace.assignment_id == assignment.id, Workspace.student_id.in_(select(User.id)))).all()",
 )
 
 #: And the ones that must not be reported. The first two are per-person, the third goes through
@@ -406,6 +473,10 @@ INNOCENT_SPELLINGS = (
     ".filter_by(public_id=public_id, assignment_id=assignment.id, archived_at=None))",
     # Task 6 has to be able to *make* a practice copy. A constructor is a write, not a query.
     "ws = Workspace(assignment_id=assignment.id, student_id=teacher.id, staff_practice=True)",
+    # A named set of people still exempts: this is the real idiom, and tightening ``in_`` to
+    # refuse a *subquery* must not refuse a list of ids.
+    "rows = session.execute(select(Workspace.student_id, func.count()).where("
+    "Workspace.assignment_id == assignment.id, Workspace.student_id.in_(ids)))",
 )
 
 #: What the one-home scan must catch, and must not. Both spellings of a second definition, and

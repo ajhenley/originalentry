@@ -127,6 +127,15 @@ class Workspace(db.Model):
     reopened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # A teacher's own private copy of their assignment, worked the way a student works one. The
+    # ``student_id`` is the teacher's, so ownership is ordinary; this flag is what tells the two
+    # write gates to let them type (``workspaces.is_own_practice``) and what keeps the copy out of
+    # every class-level number. Not null, with a server default, so no existing row and no
+    # unflagged insert can leave it undecided -- an ambiguous NULL here would read as "maybe
+    # writable by staff".
+    staff_practice: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=db.text("false")
+    )
 
     __table_args__ = (
         UniqueConstraint("id", "pack_version_id"),  # composite-FK target (D5)

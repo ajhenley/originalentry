@@ -25,6 +25,7 @@ from .models import (
     Workspace,
 )
 from .presentation import build_company
+from .workspaces import is_own_practice
 
 STAFF_ROLES = frozenset({ROLE_GRADER, ROLE_INSTRUCTOR, ROLE_ADMIN})
 ADMIN_ROLES = frozenset({ROLE_ADMIN})
@@ -154,7 +155,16 @@ def workspace_view(view):
             db.session.get(Variant, ws.variant_id).code if ws.variant_id else None
         )
         g.company = company
-        g.read_only = is_staff or ws.archived_at is not None or ws.status == "submitted"
+        # Staff are read-only in a student's books -- but not in their own practice copy, which
+        # they are working the way a student does. The same definition the write path's
+        # ``_check_gates`` consults, because a screen that lets you type and a write path that
+        # refuses you is worse than either answer alone. Archived and submitted are untouched: a
+        # practice copy that has been handed in reads as a student's does.
+        g.read_only = (
+            (is_staff and not is_own_practice(ws, current_user))
+            or ws.archived_at is not None
+            or ws.status == "submitted"
+        )
         if is_staff and not is_owner:
             # Staff see whose books these are, on every page of them (I2.4).
             student = db.session.get(User, ws.student_id)

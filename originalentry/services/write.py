@@ -25,6 +25,7 @@ from ..models import (
     Assignment,
     Workspace,
 )
+from ..workspaces import is_own_practice
 from .errors import WriteRefused
 
 
@@ -44,14 +45,25 @@ def effective_close(assignment: Assignment) -> datetime | None:
 
 
 def _check_gates(session: Session, workspace: Workspace, actor) -> None:
-    if actor.role != ROLE_STUDENT or actor.id != workspace.student_id:
+    # The one definition of who may write, shared with decorators.workspace_view. This gate and
+    # that one must never disagree: relax only the decorator and chapter problems become writable
+    # while every write through here is still refused.
+    own_practice = is_own_practice(workspace, actor)
+    if not own_practice and (actor.role != ROLE_STUDENT or actor.id != workspace.student_id):
         # Staff view is read-only; the write path never runs for them.
         raise WriteRefused(messages.READ_ONLY_SUBMITTED)
     if workspace.status == "submitted":
+        # A practice copy is read-only once handed in too: that is part of the experience its
+        # owner is checking. Start over is how they get a writable one back.
         raise WriteRefused(messages.READ_ONLY_SUBMITTED)
     if workspace.variant_id is None:
-        # A manual-variant assignment the instructor has not handed out yet (I1.3).
+        # A manual-variant assignment the instructor has not handed out yet (I1.3). Their own copy
+        # has nothing to work on either.
         raise WriteRefused(messages.WAITING_FOR_VARIANT)
+    if own_practice:
+        # The deadline is the only gate a practice copy skips, and it has to: a teacher preparing
+        # next term's assignment works a copy whose window has not opened, or has long closed.
+        return
     # Local import: accommodations reads the write path's own rules, so importing it at module
     # level would be circular.
     from .accommodations import close_for

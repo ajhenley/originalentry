@@ -13,6 +13,9 @@ from .concepts import (
     ConceptTag,
 )
 from .content import (
+    KIND_PRACTICE_SET,
+    KIND_PROBLEM_SET,
+    PACK_KINDS,
     Account,
     AccountOpeningBalance,
     AnswerKey,
@@ -64,6 +67,7 @@ from .work import (
     JournalEntryRevision,
     PostingRun,
     PostingRunEntry,
+    ProblemAttempt,
     SectionPackAvailability,
     StatementDraft,
     StatementLine,
@@ -97,6 +101,9 @@ __all__ = [
     "PURPOSE_STAFF_CODE",
     # content
     "ContentPack",
+    "KIND_PRACTICE_SET",
+    "KIND_PROBLEM_SET",
+    "PACK_KINDS",
     "PackVersion",
     "Variant",
     "Account",
@@ -120,6 +127,7 @@ __all__ = [
     "PostingRun",
     "PostingRunEntry",
     "CheckpointAttempt",
+    "ProblemAttempt",
     "StatementDraft",
     "StatementLine",
     "GradeRun",

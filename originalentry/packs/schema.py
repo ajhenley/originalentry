@@ -35,6 +35,10 @@ class Company(_Model):
     monogram: str = Field(min_length=1, max_length=3)
     course_tags: list[str] = []
     scope_tags: list[str] = []
+    # Chapter metadata, for a problem set only. A practice set omits all three.
+    textbook: str | None = None
+    chapter_label: str | None = None
+    chapter_ordinal: int | None = None
 
 
 class Period(_Model):
@@ -112,6 +116,9 @@ class Document(_Model):
     received_seq: int
     guided: bool = False
     guidance: str | None = None
+    # A chapter problem's prose. ``guidance`` cannot hold it: validate._v10_guided caps a pack at
+    # two guided documents, and a chapter has ten problems that each need their own.
+    stem: str | None = None
     variants: dict[str, DocumentVariant] = {}
 
 

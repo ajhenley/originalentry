@@ -76,6 +76,14 @@
     </nav>
   </div>
 
+  {# A practice copy says so on every page of it, and says it whether or not the copy is also
+     read-only: a live one is writable, so the notice below is empty exactly when a teacher most
+     needs telling that these are their own books and not a student's. The two are separate
+     elements for that reason -- an archived practice copy shows both, the kind and the date. #}
+  {% if own_practice %}
+  <div class="callout callout--attention rounded-none border-l-0 border-t border-t-notice px-4 py-2"
+       role="status">{{ own_practice_message }}</div>
+  {% endif %}
   {% if read_only %}
   <div class="callout callout--attention rounded-none border-l-0 border-t border-t-notice px-4 py-2"
        role="status">{{ read_only_message }}</div>

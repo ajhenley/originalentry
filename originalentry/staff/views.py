@@ -73,6 +73,13 @@ from ..services.grades import (
 )
 from ..services.marks_export import CANVAS, GENERIC, marks_csv
 from ..services.mastery import SUPPORT_THRESHOLD, assignment_mastery, concept_detail
+from ..services.practice import (
+    PracticeOwnerNotStaff,
+    PracticeRefused,
+    open_practice,
+    practice_copy,
+    restart_practice,
+)
 from ..services.progress import assignment_progress
 from ..services.roster import RosterRefused, import_roster
 from ..services.staffing import (
@@ -84,7 +91,7 @@ from ..services.staffing import (
 )
 from ..services.submit import ReopenRefused, reopen_workspace
 from ..services.variants import VariantRefused, assign_variant, variants_for
-from ..workspaces import ALL_ASSIGNMENTS, class_workspace_clause
+from ..workspaces import ALL_ASSIGNMENTS, class_workspace_clause, is_own_practice
 from .key_record import printable_key
 
 BATCH = 10  # workspaces graded per request, so nothing comes near the request limit (I3.7)
@@ -233,6 +240,12 @@ def progress(assignment: str):
         section=section,
         company_slug=company.slug if company else None,
         rows=assignment_progress(db.session, found),
+        # Whether *this* viewer already holds a live copy, so the screen can say so rather than
+        # resuming in silence -- a practice set takes hours, and a second "work this myself"
+        # that quietly handed back the same copy is how an afternoon of work looks lost. A
+        # boolean and never the copy's public id: the id on this page would be the practice copy
+        # appearing on a screen about the class, which is the whole thing this feature avoids.
+        has_practice_copy=practice_copy(db.session, found, current_user) is not None,
         is_problem_set=_is_problem_set(pack_version),
         variant_codes=variants_for(db.session, found.fixed_pack_version_id)
         if found.fixed_pack_version_id else [],
@@ -241,14 +254,105 @@ def progress(assignment: str):
 
 # ── Grading (I3) ─────────────────────────────────────────────────────────────────────────
 
+#: What each console route that reaches a workspace does with a **practice copy**, decided once
+#: per route and written down here rather than seven times in seven route bodies.
+#:
+#: ``_workspace_or_404`` scopes by assignment and section, which is the right scope for a student's
+#: books and the wrong one for a teacher's own: a practice copy is visible to its owner alone --
+#: not to a co-teacher, not to an admin -- and those seven routes are the ones ``workspace_view``
+#: is not on, so nothing else could enforce it. Owner-only is therefore unconditional, and this
+#: mapping answers the *second* question: which of these actions mean anything when the owner
+#: themselves clicks.
+#:
+#: The answer at all seven is "none", and that is a decision rather than a default. Each of these
+#: actions is one person acting on another's work -- marking it, commenting on it for the student
+#: to read, giving it back, extending their deadline, handing them figures, archiving their books
+#: -- and where both people are the same person the action has no meaning. Several would also do
+#: real harm: ``workspace_archive`` goes through ``archive_and_restart``, which opens the fresh
+#: workspace with no ``staff_practice`` and would hand the teacher an ordinary workspace they
+#: cannot write to (``services/practice`` has the long version), and ``progress_variant`` is the
+#: hand-out screen whose exclusion of practice copies is the very reason a manual-variant
+#: assignment is refused a copy at all. Offering an action that is refused, broken or meaningless
+#: is worse than refusing it: the owner's way in is the student screens, and their way back to a
+#: writable copy is start over.
+PRACTICE_REFUSED_AT_THE_CONSOLE = {
+    "staff.grading_detail":
+        "a practice copy is never in a cohort grading run, so this page could only ever show a "
+        "teacher their own empty marks beside four actions that all refuse",
+    "staff.workspace_archive":
+        "archive_and_restart opens the fresh workspace through open_workspace, which sets no "
+        "staff_practice: the teacher would get an ordinary workspace they cannot write to. "
+        "staff.practice_restart is the action that archives a practice copy correctly",
+    "staff.workspace_reopen":
+        "giving work back is one person reopening another's submission; a teacher whose own copy "
+        "is handed in starts over, which is an action of their own",
+    "staff.grading_override":
+        "marking by hand has no meaning where the marker and the marked are the same person, and "
+        "the override would sit in grade records beside real students",
+    "staff.grading_comment":
+        "a comment is written for the student to read once marks are released, and there is no "
+        "second person here to read it",
+    "staff.progress_variant":
+        "this is the hand-out screen, and its exclusion of practice copies is exactly why a "
+        "manual-variant assignment is refused a copy rather than given an unworkable one",
+    "staff.progress_accommodation":
+        "a practice copy ignores opens_at, due_at and the late policy at both write gates, so a "
+        "deadline of its own is a row that changes nothing",
+}
+
+#: Console routes a practice copy **does** accept from its owner. Empty, and the empty set is the
+#: decision above rather than an oversight: a route listed in neither literal is refused, and
+#: ``tests/integration/test_practice_screens.py`` fails until it is listed in one of them, so a
+#: route added next year has to be classified by somebody rather than inherit either answer.
+PRACTICE_ACCEPTED_AT_THE_CONSOLE: frozenset[str] = frozenset()
+
+
+def _practice_is_accepted_here(workspace: Workspace) -> bool:
+    """Whether this route accepts ``workspace`` -- a practice copy -- from this caller.
+
+    Two questions in the one order that is safe: whose copy it is first, so a co-teacher or an
+    admin is refused on every route whatever the mapping says, and only then whether the action
+    this route performs means anything when its owner is the one clicking.
+    """
+    if not is_own_practice(workspace, current_user):
+        return False
+    return (request.endpoint or "") in PRACTICE_ACCEPTED_AT_THE_CONSOLE
+
+
 def _workspace_or_404(assignment: Assignment, public_id: str) -> Workspace:
+    """One workspace of this assignment, by the public id a teacher clicked.
+
+    A single-row lookup, and it must stay recognisable as one: ``public_id`` and ``assignment_id``
+    sit in the same ``filter_by`` call, which is what excuses it from the practice chokepoint
+    (``tests/guards/test_practice_chokepoint.py``). Routing it through ``class_workspaces`` would
+    be the wrong repair -- that query carries ``staff_practice.is_(False)``, so it would 404 a
+    teacher out of their own copy rather than scope anybody.
+
+    A practice copy is refused here, which is the only place it can be: these seven routes carry
+    no ``workspace_view``, and the lookup's own scope -- assignment and section -- admits every
+    colleague who teaches the section and every admin. ``abort(404)``, never 403, so holding a
+    practice copy's public id cannot confirm that it exists. ``PRACTICE_REFUSED_AT_THE_CONSOLE``
+    says, per route, why the owner is refused too.
+    """
     workspace = db.session.execute(
         db.select(Workspace).filter_by(public_id=public_id, assignment_id=assignment.id,
                                        archived_at=None)
     ).scalar_one_or_none()
     if workspace is None:
         abort(404)
+    if workspace.staff_practice and not _practice_is_accepted_here(workspace):
+        abort(404)
     return workspace
+
+
+def _company_slug_of(workspace: Workspace) -> str:
+    """The company slug this workspace's own ``/w/`` URLs carry.
+
+    ``workspace_view`` renders a mismatch page rather than redirecting when the slug is not the
+    workspace's company, so a redirect into a workspace has to carry the right one.
+    """
+    version = db.session.get(PackVersion, workspace.pack_version_id)
+    return db.session.get(ContentPack, version.content_pack_id).slug
 
 
 def _archived_rows(assignment: Assignment) -> list[dict]:
@@ -1018,6 +1122,87 @@ def progress_variant(assignment: str):
     db.session.commit()
     flash(f"Variant {code} handed out. They can record now.")
     return back
+
+
+def _into_my_practice_copy(found: Assignment, action, *, said: str | None = None):
+    """Run ``action`` (open or restart) for the signed-in teacher and land them in the copy.
+
+    One handler for both actions, so the two exception types cannot be told apart differently in
+    two places:
+
+    * ``PracticeRefused`` carries a ``.reason`` written to be printed -- this assignment hands
+      variants out by hand, or lets each student choose a company, or the account already has its
+      own student work in the one live slot. It is flashed, and the teacher is sent back to the
+      screen they clicked on.
+    * ``PracticeOwnerNotStaff`` is a **sibling** of that class and not a subclass, deliberately,
+      and carries no reason at all. It means the sole writer of a flag that bypasses the deadline
+      at both write gates was asked to set it for an account that is not staff: a route wired to
+      the wrong user, or this action reached by somebody who is not staff. Flashing it would say
+      something a teacher cannot tell from "this assignment is student-choice", and nothing would
+      ever notice. ``abort(404)`` is the house answer, and the reason this handler names the two
+      classes separately and catches nothing broader.
+
+    Both roll back first. ``app._register_audit``'s ``after_request`` hook commits the session on
+    every request by a signed-in staff member, so a refusal that left work pending on the session
+    would be committed on the way out.
+    """
+    try:
+        copy = action(db.session, found, current_user, actor=current_user)
+    except PracticeRefused as refused:
+        db.session.rollback()
+        flash(refused.reason)
+        return redirect(url_for("staff.progress", assignment=found.public_id))
+    except PracticeOwnerNotStaff:
+        db.session.rollback()
+        abort(404)
+
+    db.session.commit()
+    if said:
+        flash(said)
+    return redirect(url_for("student.overview", workspace=copy.public_id,
+                            company_slug=_company_slug_of(copy)))
+
+
+@bp.post("/progress/<assignment>/practice")
+@staff_view
+def practice_open(assignment: str):
+    """Work this assignment myself -- or go back to the copy I already have.
+
+    One endpoint for both, because ``open_practice`` returns a live copy exactly as it stands and
+    never resets it. The console says which of the two it is about to do, and offers start over as
+    a separate button beside it; what this endpoint adds is that a double-submitted form or a
+    stale page lands in the same copy rather than colliding with
+    ``uq_workspace_assignment_student_live``.
+
+    Scoped through ``_assignment_or_404`` like every other console route, and that is not a
+    formality here: ``open_practice`` applies **no** section-staff check -- it checks role only --
+    so an instructor who teaches a different section would be admitted by the service. Nothing
+    would leak into a class-level number, because the copy is flagged, but the copy would exist
+    on somebody else's assignment. That lookup is the whole of the refusal. It also pins
+    ``archived_at=None``, which is where the obligation not to offer this on an archived
+    assignment lands: the service deliberately does not ask, because filtering archived
+    assignments is a listing concern everywhere in this codebase.
+
+    No flash on success: the copy's own chrome says what it is on every page of it.
+    """
+    found = _assignment_or_404(assignment)
+    return _into_my_practice_copy(found, open_practice)
+
+
+@bp.post("/progress/<assignment>/practice/restart")
+@staff_view
+def practice_restart(assignment: str):
+    """Start over: archive this copy and open a fresh one.
+
+    A separate button from resume, and separately labelled, because the console must never leave
+    a teacher guessing which of the two a click is about to do. Nothing is destroyed -- the old
+    copy stays, archived, readable and still flagged as theirs -- so this flashes what happened,
+    which is the one thing the page it lands on cannot say.
+    """
+    found = _assignment_or_404(assignment)
+    return _into_my_practice_copy(
+        found, restart_practice,
+        said="Started over. Your old copy is archived and still readable.")
 
 
 @bp.post("/assignments/<assignment>/checkpoints")

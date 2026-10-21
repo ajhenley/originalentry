@@ -98,6 +98,32 @@ def viewing_students_books(student_name: str) -> str:
     return f"Viewing {student_name}'s books. This is read-only."
 
 
+# ── A teacher's own practice copy ───────────────────────────────────────────────────────
+
+#: On every page of a practice copy, standing, beside the read-only notice rather than instead of
+#: it: a live copy is **writable**, so the read-only slot is empty exactly when this matters most.
+#: The anti-goal is a teacher mistaking their own copy for a student's -- they are the only person
+#: who can see it, so nothing else on the screen would ever correct them.
+OWN_PRACTICE_COPY = (
+    "This is your own practice copy of this assignment. Only you can see it, and nothing you do "
+    "in it reaches the class's figures or any student's marks."
+)
+
+
+def viewing_your_archived_books(archived_on: str) -> str:
+    """Your own books, archived and replaced -- which for a practice copy means started over.
+
+    The owner of a practice copy is staff *and* the owner, so ``viewing_archived_books`` above
+    never applied to them and the banner slot rendered nothing: read-only, with no reason given
+    and no date. Which copy this is, and that it is no longer where they work, is the whole of
+    what the banner has to say; the standing notice above says what kind of books they are.
+    """
+    return (
+        f"Archived on {archived_on}. This is an older set of your own books; you now work in a "
+        "fresh set. This is read-only."
+    )
+
+
 def grading_batch_strings() -> dict[str, str]:
     """What the grading progress line may say. Rendered onto the page for batch.js (T8.6).
 

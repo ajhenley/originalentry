@@ -160,8 +160,12 @@ def workspace_view(view):
         # ``_check_gates`` consults, because a screen that lets you type and a write path that
         # refuses you is worse than either answer alone. Archived and submitted are untouched: a
         # practice copy that has been handed in reads as a student's does.
+        # Standing, on every page of a practice copy, and read by layouts/workspace.html beside
+        # the read-only notice rather than inside it: a live practice copy is writable, so the
+        # read-only slot is empty exactly when a teacher most needs telling whose books these are.
+        g.own_practice = is_own_practice(ws, current_user)
         g.read_only = (
-            (is_staff and not is_own_practice(ws, current_user))
+            (is_staff and not g.own_practice)
             or ws.archived_at is not None
             or ws.status == "submitted"
         )
@@ -174,6 +178,14 @@ def workspace_view(view):
                 if ws.archived_at is not None
                 else messages.viewing_students_books(name)
             )
+        elif ws.archived_at is not None:
+            # Their own books, archived and replaced -- which for a practice copy means they
+            # started over. ``is_staff and not is_owner`` is False here, so without this branch
+            # the chain fell through to the else and the banner said nothing at all: read-only,
+            # with no reason given and no date. Restarting a practice copy is what first makes an
+            # archived workspace reachable by the person who owns it.
+            g.read_only_message = messages.viewing_your_archived_books(
+                f"{ws.archived_at:%-d %b %Y}")
         elif ws.status == "submitted":
             g.read_only_message = messages.READ_ONLY_SUBMITTED
         else:

@@ -205,6 +205,11 @@ def _register_jinja(app: Flask) -> None:
             "workspace": getattr(g, "workspace", None),
             "company": getattr(g, "company", None),
             "read_only": getattr(g, "read_only", False),
+            # Whether these books are the viewer's own practice copy. Separate from read_only
+            # because a live practice copy is writable: the two notices answer different
+            # questions and a practice copy that is also archived shows both.
+            "own_practice": getattr(g, "own_practice", False),
+            "own_practice_message": messages.OWN_PRACTICE_COPY,
             # Which kind of pack this workspace holds, so a layout can offer the right navigation
             # rather than links decorators._fence would 404.
             "is_problem_set": getattr(

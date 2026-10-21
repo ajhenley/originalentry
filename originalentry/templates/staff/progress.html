@@ -6,6 +6,41 @@
 {% block console %}
 <p class="mb-4 text-sm text-muted">{{ section.name }} · {{ rows | length }} student{{ '' if rows | length == 1 else 's' }}</p>
 
+{# Work this assignment yourself, in a copy of your own. Two actions and never one: resuming and
+   starting over have different consequences, so an assignment that already has a live copy says
+   so and offers both, rather than letting one button mean whichever the server decides. The copy
+   is per-viewer -- a colleague reading this screen is offered their own, and is told nothing
+   about anybody else's -- and its public id is deliberately not on this page: the table above is
+   about the class, and that is the one place a practice copy must never appear. #}
+<div class="panel mb-6 p-4">
+  {% if has_practice_copy %}
+  <p class="text-sm">You have your own copy of this assignment open. Only you can see it, and
+    nothing in it counts toward the figures below.</p>
+  <div class="mt-2 flex flex-wrap items-center gap-2">
+    <form method="post"
+          action="{{ url_for('staff.practice_open', assignment=assignment.public_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn--outline btn--small">Resume your copy</button>
+    </form>
+    <form method="post"
+          action="{{ url_for('staff.practice_restart', assignment=assignment.public_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn--outline btn--small">Start over</button>
+    </form>
+    <span class="text-xs text-muted">Starting over keeps the copy you have, archived and
+      readable.</span>
+  </div>
+  {% else %}
+  <p class="text-sm">Work this assignment yourself, in a copy of your own. Only you can see it,
+    and nothing in it counts toward the figures below.</p>
+  <form method="post" class="mt-2"
+        action="{{ url_for('staff.practice_open', assignment=assignment.public_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn--outline btn--small">Work this assignment myself</button>
+  </form>
+  {% endif %}
+</div>
+
 {% if not rows %}
 <p class="text-muted">Nobody has been enrolled on this assignment yet.</p>
 {% else %}

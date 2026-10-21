@@ -8,6 +8,15 @@
   Use your browser's Print (⌘P / Ctrl+P) to save this record as a PDF.
 </div>
 
+{# This page does not extend layouts/workspace.html -- it is the record itself, with no chrome --
+   so the standing practice notice has to be said again here, and said *on paper*: no
+   print:hidden. A printed practice record with nothing on it to say so is the clearest possible
+   way for a teacher's own attempts to be mistaken for a student's, which is the one failure this
+   feature exists to prevent. #}
+{% if own_practice %}
+<div class="mb-4 callout callout--attention text-sm" role="status">{{ own_practice_message }}</div>
+{% endif %}
+
 <header class="mb-6">
   <h1 class="text-xl">{{ company.name }}</h1>
   <p class="text-sm text-muted">{{ company.period_label }} · complete record</p>

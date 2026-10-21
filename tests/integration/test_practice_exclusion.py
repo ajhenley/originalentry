@@ -66,6 +66,20 @@ def world(session):
     round-robin count is the one cohort read whose bug is not cosmetic -- it decides which variant
     the next student to join is handed -- and with a single variant in the pack, ``taken % 1`` is
     zero however many workspaces are counted, so the test for it could not fail.
+
+    And a **second assignment**, with a second student's books on it. Without it every test in
+    this file held one assignment, so a cohort read that lost its assignment filter altogether --
+    one token, and the shape ``class_workspace_clause(ALL_ASSIGNMENTS)`` now guards against --
+    would pass all eleven unchanged while listing another class's students. The practice copy is
+    the failure this file is named for; a lost assignment filter is the one it could not see.
+
+    "Unchanged" was measured, and the measurement found something worth writing down: with the
+    filter dropped and no second assignment here, two of these tests still failed -- but they
+    failed on a ``demo-student`` row that lives in the shared Neon development branch, outside
+    this test's transaction. So the old fixture caught a lost filter only when the shared database
+    happened to hold somebody else's workspaces, which is the exact coupling commit cb61565
+    ("two tests coupled to what the shared database happens to hold") was written to remove. The
+    second assignment makes the detection the fixture's own, and deterministic.
     """
     pack_version = import_content(session, schema.load_pack(testco_alpha.PACK),
                                   source_sha256="excl" + "0" * 60)
@@ -90,6 +104,18 @@ def world(session):
     session.add(assignment)
     session.flush()
 
+    other_assignment = Assignment(section_id=section.id, title="November",
+                                  company_policy="fixed",
+                                  fixed_pack_version_id=pack_version.id,
+                                  variant_policy=ROUND_ROBIN)
+    other_student = _user("exclusion-other-student@example.edu", family_name="Othersson")
+    session.add_all([other_assignment, other_student])
+    session.flush()
+    other_workspace = Workspace(assignment_id=other_assignment.id, student_id=other_student.id,
+                                pack_version_id=pack_version.id, variant_id=variant_a.id,
+                                status="in_progress")
+    session.add(other_workspace)
+
     student_workspace = Workspace(assignment_id=assignment.id, student_id=student.id,
                                   pack_version_id=pack_version.id, variant_id=variant_a.id,
                                   status="in_progress")
@@ -104,6 +130,8 @@ def world(session):
     return {
         "teacher": teacher, "student": student, "assignment": assignment,
         "practice": practice, "student_workspace": student_workspace,
+        "other_assignment": other_assignment, "other_student": other_student,
+        "other_workspace": other_workspace,
         "pack_version": pack_version, "variant_a": variant_a, "variant_b": variant_b,
         "slug": session.get(ContentPack, version.content_pack_id).slug,
     }
@@ -135,6 +163,7 @@ def test_the_marks_csv_does_not_carry_the_practice_copy(session, world):
 
     assert world["student"].email in csv, "the export lost the student"
     assert world["teacher"].email not in csv
+    assert world["other_student"].email not in csv, "the export reaches another assignment"
 
 
 def test_the_cohort_diagnostics_ignore_the_practice_copy(session, world):
@@ -162,6 +191,7 @@ def test_the_grading_roster_does_not_list_the_practice_copy(client, session, wor
 
     assert world["student_workspace"].public_id in body, "the roster lost the student"
     assert world["practice"].public_id not in body
+    assert world["other_workspace"].public_id not in body, "the roster reaches another assignment"
 
 
 def test_the_archived_books_list_does_not_list_the_practice_copy(client, session, world):
@@ -174,6 +204,8 @@ def test_the_archived_books_list_does_not_list_the_practice_copy(client, session
 
     assert world["student_workspace"].public_id in body, "the archived list lost the student"
     assert world["practice"].public_id not in body
+    assert world["other_workspace"].public_id not in body, \
+        "the archived list reaches another assignment"
 
 
 def test_the_round_robin_count_ignores_the_practice_copy(session, world):
@@ -194,7 +226,12 @@ def test_the_assignment_list_count_does_not_count_the_practice_copy(client, sess
     found by the guard rather than by the enumeration, and it was telling a teacher of three
     students that they had four.
     """
-    assert live_workspace_counts().get(world["assignment"].id) == 1
+    counts = live_workspace_counts()
+
+    assert counts.get(world["assignment"].id) == 1
+    # The one caller that really does span every assignment, so the other one has to be in there
+    # too: a count keyed per assignment is not evidence that the keying works.
+    assert counts.get(world["other_assignment"].id) == 1
 
 
 # ── the two guards from the inside ─────────────────────────────────────────────────────

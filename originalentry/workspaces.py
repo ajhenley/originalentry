@@ -50,6 +50,26 @@ def is_own_practice(workspace, actor) -> bool:
     return getattr(actor, "id", None) == workspace.student_id
 
 
+#: Ask across **every** assignment in the install, for the one caller that means it: the console's
+#: per-assignment head count, which is a ``group_by`` rather than a filter on one assignment.
+#:
+#: It exists because the alternative was a default argument, and a default argument made
+#: ``class_workspace_clause()`` -- one token from correct, and already in the tree for a reader to
+#: copy -- return the practice and archived conditions while silently dropping the assignment. The
+#: consequence is not a cosmetic count: a per-assignment screen that lost its assignment filter
+#: lists another section's workspaces, which is exactly what ``staff.views._scoped`` and
+#: ``decorators.may_see_section`` exist to prevent. Nothing could have noticed, either -- the guard
+#: checks that the call is written, not what it was passed. Nobody writes this sentinel by
+#: accident, and leaving the argument off is now a ``TypeError``.
+ALL_ASSIGNMENTS = object()
+
+#: Said once, because both of the functions that answer about a single assignment say it.
+_NOT_ONE_ASSIGNMENT = (
+    "ALL_ASSIGNMENTS asks across every assignment in the install; these functions answer about "
+    "one. Compose class_workspace_clause(ALL_ASSIGNMENTS) into your own query instead."
+)
+
+
 def _assignment_id(assignment) -> int:
     """The id of an ``Assignment``, or the id itself.
 
@@ -59,7 +79,7 @@ def _assignment_id(assignment) -> int:
     return getattr(assignment, "id", assignment)
 
 
-def class_workspace_clause(assignment=None, *, archived: bool = False) -> tuple:
+def class_workspace_clause(assignment, *, archived: bool = False) -> tuple:
     """The WHERE criteria for an assignment's **class-facing** workspaces.
 
     Spread into any query that needs its own joins or extra columns::
@@ -77,11 +97,9 @@ def class_workspace_clause(assignment=None, *, archived: bool = False) -> tuple:
     archived list needs -- a practice copy that was archived and replaced is still the teacher's,
     and still has no business on a page about the class's books.
 
-    ``assignment=None`` drops the assignment condition and leaves the other two, for the one
-    caller that asks across every assignment at once: the console's per-assignment head count,
-    which is a ``group_by`` rather than a filter. It is spelled as a default rather than as a
-    second function so that the practice condition still has exactly one home; a caller that
-    means one assignment and passes nothing gets the whole install, so pass the assignment.
+    ``assignment`` is required, and the only way to ask across every assignment at once is to
+    pass ``ALL_ASSIGNMENTS`` and mean it -- see that constant for why it is a sentinel rather than
+    a default. One function either way, so the practice condition still has exactly one home.
     """
     from .models import Workspace
 
@@ -90,7 +108,7 @@ def class_workspace_clause(assignment=None, *, archived: bool = False) -> tuple:
         # The whole of the read side of this feature, written once.
         Workspace.staff_practice.is_(False),
     ]
-    if assignment is not None:
+    if assignment is not ALL_ASSIGNMENTS:
         conditions.insert(0, Workspace.assignment_id == _assignment_id(assignment))
     return tuple(conditions)
 
@@ -110,6 +128,9 @@ def class_workspaces(session, assignment, *, archived: bool = False) -> list:
     """
     from .models import Workspace
 
+    if assignment is ALL_ASSIGNMENTS:
+        raise ValueError(_NOT_ONE_ASSIGNMENT)
+
     return list(
         session.scalars(
             select(Workspace)
@@ -122,6 +143,9 @@ def class_workspaces(session, assignment, *, archived: bool = False) -> list:
 def class_workspace_ids(session, assignment, *, archived: bool = False) -> list[int]:
     """The same set, as ids, for a caller that needs them in an ``IN`` clause."""
     from .models import Workspace
+
+    if assignment is ALL_ASSIGNMENTS:
+        raise ValueError(_NOT_ONE_ASSIGNMENT)
 
     return list(
         session.scalars(

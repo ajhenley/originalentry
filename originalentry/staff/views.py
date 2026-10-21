@@ -84,7 +84,7 @@ from ..services.staffing import (
 )
 from ..services.submit import ReopenRefused, reopen_workspace
 from ..services.variants import VariantRefused, assign_variant, variants_for
-from ..workspaces import class_workspace_clause
+from ..workspaces import ALL_ASSIGNMENTS, class_workspace_clause
 from .key_record import printable_key
 
 BATCH = 10  # workspaces graded per request, so nothing comes near the request limit (I3.7)
@@ -128,8 +128,9 @@ def live_workspace_counts() -> dict[int, int]:
     The console's assignment list calls this column *students*, so a teacher's practice copy
     counted here tells the teacher of three students that they have four -- on the first screen
     they see, about their own section. One ``group_by`` across every assignment rather than a
-    query per row, which is why it composes ``class_workspace_clause()`` with no assignment
-    rather than calling ``class_workspaces`` per row.
+    query per row, which is why it composes ``class_workspace_clause(ALL_ASSIGNMENTS)`` rather
+    than calling ``class_workspaces`` per row. The sentinel is the point: this is the one screen
+    that means every assignment, and it has to say so out loud.
 
     Module level, and named without an underscore, so the exclusion can be tested directly: the
     figure reaches the page as one number in one table cell, and asserting on the rendered HTML
@@ -138,7 +139,7 @@ def live_workspace_counts() -> dict[int, int]:
     return dict(
         db.session.execute(
             db.select(Workspace.assignment_id, db.func.count())
-            .where(*class_workspace_clause())
+            .where(*class_workspace_clause(ALL_ASSIGNMENTS))
             .group_by(Workspace.assignment_id)
         ).all()
     )

@@ -52,8 +52,9 @@ from __future__ import annotations
 
 import ast
 import pathlib
-import re
 from typing import NamedTuple
+
+import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2] / "originalentry"
 
@@ -104,6 +105,30 @@ def _is_model_column(node: ast.AST) -> bool:
             and node.value.id[:1].isupper())
 
 
+def _filter_by_keywords(node: ast.AST) -> dict[str, ast.AST]:
+    """The keywords of a ``filter_by(...)`` call, by name.
+
+    ``filter_by`` is the one query idiom in this codebase that names a column **without ever
+    mentioning the model**, so it is invisible to every check built on attribute access -- and it
+    is already written here twice (``staff/views.py:245``, ``decorators.py:126``), which makes it
+    the next person's natural spelling rather than a hypothetical one. Scoped to ``filter_by``
+    deliberately: a bare search for an ``assignment_id=`` keyword would report
+    ``Workspace(assignment_id=..., student_id=...)``, ``AssignmentChoice(assignment_id=...)`` and
+    six other constructors, none of which is a query.
+    """
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "filter_by"):
+        return {kw.arg: kw.value for kw in node.keywords if kw.arg}
+    return {}
+
+
+def _queries_an_assignment(node: ast.AST) -> bool:
+    """Either spelling of "by assignment": ``Workspace.assignment_id`` or
+    ``filter_by(assignment_id=...)``."""
+    return (_is_workspace_column(node, "assignment_id")
+            or "assignment_id" in _filter_by_keywords(node))
+
+
 def _names_a_student(statement: ast.AST) -> bool:
     """Whether this statement filters ``Workspace.student_id`` down to a particular person."""
     for node in ast.walk(statement):
@@ -115,7 +140,42 @@ def _names_a_student(statement: ast.AST) -> bool:
                 and node.func.attr == "in_"
                 and _is_workspace_column(node.func.value, "student_id")):
             return True
+        student = _filter_by_keywords(node).get("student_id")
+        if student is not None and not _is_model_column(student):
+            return True
     return False
+
+
+def _names_one_workspace(statement: ast.AST) -> bool:
+    """Whether this statement is keyed by a workspace's own ``public_id``.
+
+    ``staff/views._workspace_or_404`` is written ``filter_by(public_id=..., assignment_id=...)``:
+    it returns the one workspace a teacher clicked on, which is how they reach their own practice
+    copy from the console, and a question about one named row cannot be a question about a class.
+    It was always meant to be outside this guard's business -- the docstring above has said so
+    since the first version -- but until ``filter_by`` became visible, saying it in prose was
+    enough. Now the scan can see the query, so the exemption has to be in the code.
+    """
+    for node in ast.walk(statement):
+        if "public_id" in _filter_by_keywords(node):
+            return True
+        if isinstance(node, ast.Compare) and _is_workspace_column(node.left, "public_id"):
+            return True
+    return False
+
+
+def _practice_conditions(path: pathlib.Path) -> bool:
+    """Whether this file writes the practice condition into a query itself, in either spelling.
+
+    ``Workspace.staff_practice`` or ``filter_by(staff_practice=...)``. Read off the syntax tree
+    rather than by regex, so that **constructing** a practice copy --
+    ``Workspace(..., staff_practice=True)``, which Task 6 has to do -- is not mistaken for a
+    second copy of the rule. Matching the text ``staff_practice =`` cannot tell those apart.
+    """
+    tree = ast.parse(path.read_text(), filename=str(path))
+    return any(_is_workspace_column(node, "staff_practice")
+               or "staff_practice" in _filter_by_keywords(node)
+               for node in ast.walk(tree))
 
 
 class Query(NamedTuple):
@@ -143,7 +203,7 @@ def _assignment_queries(path: pathlib.Path) -> list[Query]:
     parents = _parents(tree)
     found: dict[int, Query] = {}
     for node in ast.walk(tree):
-        if not _is_workspace_column(node, "assignment_id"):
+        if not _queries_an_assignment(node):
             continue
         statement: ast.AST | None = node
         while statement is not None and not isinstance(statement, ast.stmt):
@@ -169,7 +229,8 @@ def _asks_about_a_cohort(path: pathlib.Path) -> bool:
 
 def _cohort_reads(path: pathlib.Path) -> list[Query]:
     """The subset that asks a class-level question: nothing in it names a particular student."""
-    return [q for q in _assignment_queries(path) if not _names_a_student(q.statement)]
+    return [q for q in _assignment_queries(path)
+            if not _names_a_student(q.statement) and not _names_one_workspace(q.statement)]
 
 
 def _offenders(path: pathlib.Path) -> list[Query]:
@@ -250,11 +311,10 @@ def test_the_chokepoint_is_the_only_place_the_practice_condition_is_written():
     one is how the nine sites drift apart and how one of them keeps counting a practice copy
     after the other eight stopped.
     """
-    condition = re.compile(r"Workspace\.staff_practice")
     homes = sorted(
         path.relative_to(ROOT.parent).as_posix()
         for path in ROOT.rglob("*.py")
-        if condition.search(path.read_text())
+        if _practice_conditions(path)
     )
     assert homes == [CHOKEPOINT], f"Workspace.staff_practice is filtered on in {homes}"
 
@@ -277,6 +337,12 @@ COHORT_SPELLINGS = (
     # and the archived-books list -- are written exactly like this.
     "rows = session.execute(select(Workspace, User).join(User, Workspace.student_id == User.id)"
     ".where(Workspace.assignment_id == assignment.id))",
+    # ``filter_by`` names the column without naming the model, so it is invisible to every check
+    # built on attribute access. Review found this spelling passing all three list tests in
+    # silence, which is worse than a missing guard: the walker list did not flag it either, so a
+    # new module could have carried it.
+    "rows = db.session.scalars(db.select(Workspace)"
+    ".filter_by(assignment_id=assignment.id, archived_at=None)).all()",
 )
 
 #: And the ones that must not be reported. The first two are per-person, the third goes through
@@ -290,6 +356,28 @@ INNOCENT_SPELLINGS = (
     "rows = class_workspaces(session, assignment)",
     "rows = session.execute(select(Workspace, User).join(User)"
     ".where(*class_workspace_clause(assignment)))",
+    # The same filter_by spelling, per-person.
+    "ws = db.session.scalars(db.select(Workspace)"
+    ".filter_by(assignment_id=assignment.id, student_id=current_user.id)).one_or_none()",
+    # ``staff/views._workspace_or_404``: one named row, which is how a teacher opens their own
+    # practice copy from the console. Reporting it would push somebody into excluding practice
+    # copies from the one query that has to find them.
+    "ws = db.session.scalars(db.select(Workspace)"
+    ".filter_by(public_id=public_id, assignment_id=assignment.id, archived_at=None))",
+    # Task 6 has to be able to *make* a practice copy. A constructor is a write, not a query.
+    "ws = Workspace(assignment_id=assignment.id, student_id=teacher.id, staff_practice=True)",
+)
+
+#: What the one-home scan must catch, and must not. Both spellings of a second definition, and
+#: the three ways ``staff_practice`` is legitimately mentioned.
+SECOND_DEFINITIONS = (
+    "query = select(Workspace).where(Workspace.staff_practice.is_(False))",
+    "rows = db.select(Workspace).filter_by(assignment_id=a.id, staff_practice=False)",
+)
+LEGITIMATE_MENTIONS = (
+    "ws = Workspace(assignment_id=assignment.id, student_id=teacher.id, staff_practice=True)",
+    'flagged = getattr(workspace, "staff_practice", False)',
+    "staff_practice: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)",
 )
 
 
@@ -304,6 +392,48 @@ def test_the_scan_would_catch_a_cohort_read_in_any_of_its_spellings(tmp_path):
         offender = tmp_path / "offender.py"
         offender.write_text(source + "\n")
         assert _offenders(offender), f"the scan did not catch: {source}"
+
+
+def test_the_one_home_scan_sees_a_second_definition_and_not_a_practice_copy_being_made(tmp_path):
+    """Guards the one-home test in both directions.
+
+    It reads the syntax tree rather than matching the text ``staff_practice =``, because text
+    cannot tell a filter from a constructor -- and Task 6 has to construct a practice copy. Text
+    matching would either miss ``filter_by(staff_practice=False)`` or fail on Task 6's own code,
+    and the second is worse: the obvious repair is to delete the test.
+    """
+    for source in SECOND_DEFINITIONS:
+        offender = tmp_path / "offender.py"
+        offender.write_text(source + "\n")
+        assert _practice_conditions(offender), f"a second definition slipped through: {source}"
+    for source in LEGITIMATE_MENTIONS:
+        innocent = tmp_path / "innocent.py"
+        innocent.write_text(source + "\n")
+        assert not _practice_conditions(innocent), f"reported as a second definition: {source}"
+
+
+def test_the_clause_cannot_widen_to_every_assignment_by_accident():
+    """``class_workspace_clause()`` with the argument left off used to return the other two
+    conditions and quietly drop the assignment, which is one token from correct and no longer a
+    question about one class: it puts another section's workspaces into a class list, which is
+    what ``_scoped()`` and ``may_see_section`` exist to prevent. Nothing could notice -- the guard
+    only checks that the call appears, and the exclusion fixture held a single assignment.
+
+    So the omission is a ``TypeError`` now, and the one caller that really does ask across every
+    assignment says so with a sentinel nobody writes by accident.
+    """
+    from originalentry import workspaces
+
+    with pytest.raises(TypeError):
+        workspaces.class_workspace_clause()
+
+    assert len(workspaces.class_workspace_clause(7)) == 3, "an assignment id adds a condition"
+    assert len(workspaces.class_workspace_clause(workspaces.ALL_ASSIGNMENTS)) == 2
+
+    # And the sentinel must not be a way into the other two, which answer about one assignment.
+    for ask in (workspaces.class_workspaces, workspaces.class_workspace_ids):
+        with pytest.raises(ValueError):
+            ask(None, workspaces.ALL_ASSIGNMENTS)
 
 
 def test_the_scan_does_not_cry_wolf(tmp_path):

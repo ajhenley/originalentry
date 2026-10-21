@@ -84,6 +84,10 @@ class ProgressRow:
     last_refused: RefusedSave | None = None
     not_started_flag: bool = False
     variant_code: str | None = None
+    #: Problems this student has worked, for a chapter problem set. Zero for a practice set, where
+    #: the console shows triaged documents and posted journals instead.
+    problems_worked: int = 0
+    problems_total: int = 0
 
 
 def assignment_progress(session: Session, assignment: Assignment) -> list[ProgressRow]:
@@ -111,6 +115,8 @@ def assignment_progress(session: Session, assignment: Assignment) -> list[Progre
         session.execute(select(Variant.id, Variant.code)).all()
     )
     triaged = _triaged_counts(session, ids)
+    problems_worked = _problems_worked(session, ids)
+    problems_total = documents_total
     entries = _entries(session, ids)
     posted_ids = _posted_entry_ids(session, ids)
     statements = _statement_counts(session, ids)
@@ -148,10 +154,31 @@ def assignment_progress(session: Session, assignment: Assignment) -> list[Progre
                     if (o := accommodations.get(ws.student_id)) is not None
                     else None
                 ),
+                problems_worked=problems_worked.get(ws.id, 0),
+                problems_total=problems_total,
                 not_started_flag=_not_started_flag(ws, assignment),
             )
         )
     return rows
+
+
+def _problems_worked(session: Session, ids: list[int]) -> dict[int, int]:
+    """How many of a chapter's problems each student has submitted an attempt at.
+
+    Counts the attempt rows, not the entries: a problem whose answer was revealed without a
+    submission is still a problem the student engaged with, and one they submitted three times is
+    still one problem.
+    """
+    from ..models import ProblemAttempt
+
+    if not ids:
+        return {}
+    rows = session.execute(
+        select(ProblemAttempt.workspace_id, func.count(ProblemAttempt.id))
+        .where(ProblemAttempt.workspace_id.in_(ids))
+        .group_by(ProblemAttempt.workspace_id)
+    ).all()
+    return dict(rows)
 
 
 def _triaged_counts(session: Session, ids: list[int]) -> dict[int, int]:

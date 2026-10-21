@@ -17,8 +17,14 @@
       <tr>
         <th scope="col" class="text-left">Student</th>
         <th scope="col" class="text-left">Stage</th>
+        {# A chapter problem set has no documents to triage and nothing to post: the fence 404s
+           those screens for the student, so counting them here would be counting nothing. #}
+        {% if is_problem_set %}
+        <th scope="col" class="text-left">Problems worked</th>
+        {% else %}
         <th scope="col" class="text-left">Documents</th>
         <th scope="col" class="text-right">Journals posted</th>
+        {% endif %}
         <th scope="col" class="text-left">Handed in</th>
         <th scope="col" class="text-left">Last activity</th>
         <th scope="col" class="text-left">Needs a word about</th>
@@ -60,8 +66,12 @@
           </form>
           {% endif %}
         </td>
+        {% if is_problem_set %}
+        <td class="figure">{{ row.problems_worked }} of {{ row.problems_total }}</td>
+        {% else %}
         <td class="figure">{{ row.documents_triaged }} of {{ row.documents_total }}</td>
         <td class="figure text-right">{{ row.journals_posted }}</td>
+        {% endif %}
         <td>{{ row.submission_status | replace('_', ' ') }}</td>
         <td class="text-xs">{{ row.last_activity_at.strftime('%-d %b %H:%M') if row.last_activity_at else '—' }}</td>
         <td class="text-xs">

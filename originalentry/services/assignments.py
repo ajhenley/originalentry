@@ -95,6 +95,7 @@ def create_assignment(
     variant_policy: str = ROUND_ROBIN,
     guided_mode: bool = True,
     prerequisite: Assignment | None = None,
+    problems_required: int | None = None,
     actor=None,
 ) -> Assignment:
     """A fixed assignment names one company (``pack_version``); a choice assignment offers a list
@@ -116,6 +117,10 @@ def create_assignment(
         late_until=late_until if late_policy == LATE_ACCEPT else None,
         guided_mode=guided_mode,
         prerequisite_assignment_id=prerequisite.id if prerequisite else None,
+        # Null for every practice set. Required for a chapter problem set, and validated by the
+        # caller against the chapter's own problem count -- never defaulted here, because a
+        # denominator nobody chose rescales every mark in the section silently.
+        problems_required=problems_required,
     )
     session.add(assignment)
     session.flush()

@@ -31,6 +31,7 @@ from ..decorators_admin import admin_view
 from ..decorators_staff import staff_view
 from ..extensions import db
 from ..models import (
+    KIND_PROBLEM_SET,
     ROLE_ADMIN,
     ROLE_GRADER,
     ROLE_INSTRUCTOR,
@@ -214,6 +215,7 @@ def progress(assignment: str):
         section=section,
         company_slug=company.slug if company else None,
         rows=assignment_progress(db.session, found),
+        is_problem_set=_is_problem_set(pack_version),
         variant_codes=variants_for(db.session, found.fixed_pack_version_id)
         if found.fixed_pack_version_id else [],
     )
@@ -463,6 +465,9 @@ def diagnostics(assignment: str):
         diagnostics=cohort,
         mastery=assignment_mastery(db.session, found, diagnostics=cohort),
         support_threshold=SUPPORT_THRESHOLD,
+        is_problem_set=_is_problem_set(
+            db.session.get(PackVersion, found.fixed_pack_version_id)
+            if found.fixed_pack_version_id else None),
     )
 
 
@@ -515,9 +520,30 @@ def _catalogue():
     ).all()
     return [
         {"id": version.id, "label": f"{pack.company_name} · v{version.version}",
-         "company_name": pack.company_name, "has_images": version.has_images}
+         "company_name": pack.company_name, "has_images": version.has_images,
+         # A chapter problem set is picked and configured differently: the form needs to know
+         # which rows are chapters, and how many problems each has, so an instructor sees the
+         # ceiling before `problems_required` is refused rather than after.
+         "kind": pack.kind,
+         "is_problem_set": pack.kind == KIND_PROBLEM_SET,
+         "chapter_label": pack.chapter_label,
+         "textbook": pack.textbook,
+         "problem_count": len((version.manifest or {}).get("documents", []))
+         if pack.kind == KIND_PROBLEM_SET else None}
         for version, pack in rows
     ]
+
+
+def _problem_count(pack_version) -> int:
+    """How many problems a chapter pack holds, which is the ceiling on problems_required."""
+    return len((pack_version.manifest or {}).get("documents", []))
+
+
+def _is_problem_set(pack_version) -> bool:
+    if pack_version is None:
+        return False
+    pack = db.session.get(ContentPack, pack_version.content_pack_id)
+    return pack is not None and pack.kind == KIND_PROBLEM_SET
 
 
 def _parse_when(raw: str | None):
@@ -648,6 +674,27 @@ def assignment_create():
                                        or late_until <= due_at):
         errors["late_until"] = "Late work needs a cut-off after the due date."
 
+    # How many of a chapter's problems count. Refused here rather than defaulted anywhere: the
+    # grading component will mark out of every problem and flag for review if this is missing,
+    # which is a safety net for a mistake and not a way to create an assignment.
+    problems_required = None
+    if policy == "choice" and any(_is_problem_set(pv) for pv in choice_versions):
+        # One assignment, one count. A choice between chapters of different lengths would mark
+        # two students against different denominators under a single problems_required.
+        errors["pack_version_id"] = (
+            "A chapter problem set cannot be offered as a choice: one assignment has one "
+            "number of problems that count."
+        )
+    elif _is_problem_set(pack_version):
+        total = _problem_count(pack_version)
+        raw = (form.get("problems_required") or "").strip()
+        problems_required = int(raw) if raw.isdigit() else None
+        if problems_required is None or not 1 <= problems_required <= total:
+            errors["problems_required"] = (
+                f"Say how many of this chapter's {total} problems count, as a whole number from "
+                f"1 to {total}."
+            )
+
     if errors:
         db.session.rollback()
         return render_template(
@@ -672,6 +719,7 @@ def assignment_create():
         late_until=late_until,
         variant_policy=form.get("variant_policy") or "round_robin",
         prerequisite=_assignment_or_none(form.get("prerequisite")),
+        problems_required=problems_required,
         actor=current_user,
     )
     db.session.commit()

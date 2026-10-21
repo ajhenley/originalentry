@@ -6,12 +6,13 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import abort, current_app, g, render_template
+from flask import abort, current_app, g, render_template, request
 from flask_login import current_user, login_required
 
 from . import messages
 from .extensions import db
 from .models import (
+    KIND_PROBLEM_SET,
     ROLE_ADMIN,
     ROLE_GRADER,
     ROLE_INSTRUCTOR,
@@ -65,6 +66,50 @@ def may_see_section(section_id: int) -> bool:
     return section_id in my_section_ids()
 
 
+#: The routes that belong to a chapter problem set, and to nothing else.
+#:
+#: This is the fence around the only exemption in the application. A problem set relaxes T8.8 (a
+#: signature never reaches the student) and A8 (no answer-key value reaches a student), because a
+#: self-grading problem has to show a student what they misunderstood and, behind a button, the
+#: answer. An exemption that is not fenced is a hole, so these routes 404 in any workspace whose
+#: pack is not a problem set. (A7 is **not** exempted: the screens say "matches", not "correct".)
+PROBLEM_SET_ENDPOINTS = frozenset({
+    "student.problems",
+    "student.problem",
+    "student.problem_submit",
+    "student.problem_reveal",
+})
+
+#: The ``/w/`` routes that mean the same thing for either kind of pack.
+#:
+#: Everything *not* in either set is practice-set only, which is the safe default: a route added
+#: later cannot leak into a problem set by being forgotten. ``tests/guards/test_problem_set_fence``
+#: lists the practice-only routes explicitly so the classification stays a decision somebody made.
+SHARED_WORKSPACE_ENDPOINTS = frozenset({
+    "student.overview",         # the landing page for either kind of work
+    "student.how_to",           # how to use the application
+    "student.reference_index",  # the reference material
+    "student.reference",
+    "student.marks",            # marks release applies to both
+    "student.submit",           # a student hands a problem set in too
+    "student.submit_confirm",
+})
+
+
+def _fence(content_pack) -> None:
+    """404 a route that does not belong to this workspace's kind of pack, in both directions.
+
+    Here rather than on each route because ``workspace_view`` is the only way into a ``/w/`` URL,
+    and a fence with twenty-nine copies is a fence with twenty-nine chances to forget one.
+    """
+    endpoint = request.endpoint or ""
+    if endpoint in SHARED_WORKSPACE_ENDPOINTS:
+        return
+    wants_problem_set = endpoint in PROBLEM_SET_ENDPOINTS
+    if wants_problem_set != (content_pack.kind == KIND_PROBLEM_SET):
+        abort(404)
+
+
 def workspace_view(view):
     """Load the workspace by public id, enforce ownership, resolve the company slug, and set
     ``g.workspace`` / ``g.company`` / ``g.read_only``. Returns 404 (not 403) for a workspace the
@@ -96,8 +141,13 @@ def workspace_view(view):
         cp = db.session.get(ContentPack, pv.content_pack_id)
         company = build_company(pv, cp)
 
+        # After the ownership checks, so a foreign caller is still refused before the kind of
+        # pack is even consulted -- a probe must not be able to tell the two refusals apart.
+        _fence(cp)
+
         g.workspace = ws
         g.pack_version = pv
+        g.content_pack = cp
         # Which version of the company this is. Companies ship in versions with
         # different figures, and until now nothing on screen said which you had.
         g.variant_code = (

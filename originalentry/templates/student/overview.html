@@ -2,6 +2,31 @@
 {% block heading %}Overview{% endblock %}
 
 {% block workspace %}
+{% if is_problem_set %}
+<p class="max-w-prose text-muted">
+  These are short problems from one chapter. Work any of them, as many times as you like
+  &mdash;{% if required %} your best {{ required }} of {{ problem_count }} count, so doing more can
+  never cost you.{% else %} nothing is lost by trying.{% endif %}
+</p>
+
+<div class="mt-6 grid gap-4 sm:grid-cols-3">
+  <a class="panel p-4"
+     href="{{ url_for('student.problems', workspace=workspace.public_id, company_slug=company.slug) }}">
+    <p class="font-semibold">Problems</p>
+    <p class="text-sm text-muted">{{ started }} of {{ problem_count }} started.</p>
+  </a>
+  <a class="panel p-4"
+     href="{{ url_for('student.reference_index', workspace=workspace.public_id, company_slug=company.slug) }}">
+    <p class="font-semibold">Reference</p>
+    <p class="text-sm text-muted">The chart of accounts and the rules.</p>
+  </a>
+  <a class="panel p-4"
+     href="{{ url_for('student.submit', workspace=workspace.public_id, company_slug=company.slug) }}">
+    <p class="font-semibold">Hand in</p>
+    <p class="text-sm text-muted">When you have done as many as you want to.</p>
+  </a>
+</div>
+{% else %}
 <p class="max-w-prose text-muted">
   You are recording the December cycle for {{ company.name }}. Work through the documents, journalise
   and post, then adjust, build the statements and close. The ledgers and trial balances below are
@@ -37,4 +62,5 @@
   </a>
   {% endfor %}
 </div>
+{% endif %}
 {% endblock %}

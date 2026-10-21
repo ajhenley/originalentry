@@ -199,10 +199,16 @@ def _register_jinja(app: Flask) -> None:
         # The workspace decorator sets these on g; expose them to base/layout templates.
         from flask import g
 
+        from .models import KIND_PROBLEM_SET
+
         return {
             "workspace": getattr(g, "workspace", None),
             "company": getattr(g, "company", None),
             "read_only": getattr(g, "read_only", False),
+            # Which kind of pack this workspace holds, so a layout can offer the right navigation
+            # rather than links decorators._fence would 404.
+            "is_problem_set": getattr(
+                getattr(g, "content_pack", None), "kind", None) == KIND_PROBLEM_SET,
             "variant_code": getattr(g, "variant_code", None),
             "read_only_message": getattr(g, "read_only_message", None),
             "save_messages": messages.save_banner_strings(),

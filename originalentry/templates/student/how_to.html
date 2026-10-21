@@ -22,7 +22,25 @@
 <ol class="mt-8 space-y-6">
   {% set ws = workspace.public_id %}
   {% set slug = company.slug %}
-  {% for step in [
+  {# Every step below opens a screen the fence closes in a problem set, so a chapter gets its own
+     two steps rather than a list of dead ends. #}
+  {% for step in ([
+    {
+      'title': 'Problems: work any of them, as often as you like',
+      'href': url_for('student.problems', workspace=ws, company_slug=slug),
+      'link': 'Open Problems',
+      'body': 'Read the problem and record the entry it calls for. Nothing is lost by getting it
+               wrong: you can try again as many times as you like, and the more you try the more
+               the page tells you about what to look at.',
+    },
+    {
+      'title': 'Hand in when you are done',
+      'href': url_for('student.submit', workspace=ws, company_slug=slug),
+      'link': 'Open Hand in',
+      'body': 'Your best few problems count, so working more can never cost you. Hand in when you
+               have done as many as you want to.',
+    },
+  ] if is_problem_set else [
     {
       'title': 'Documents: decide what each one needs',
       'href': url_for('student.documents', workspace=ws, company_slug=slug),
@@ -81,7 +99,7 @@
       'link': 'Open Submit',
       'body': 'Submitting makes everything read-only. If you hand in early by accident, your
                instructor can give the books back to you.',
-    }] %}
+    }]) %}
   <li class="border-l-2 border-rule pl-4">
     <p class="label-meta">Step {{ loop.index }}</p>
     <h2 class="mt-1 text-xl">{{ step.title }}</h2>

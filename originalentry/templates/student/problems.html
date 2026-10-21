@@ -1,0 +1,47 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}Problems{% endblock %}
+
+{% block workspace %}
+<p class="mb-4 text-sm text-muted">
+  {% if required %}
+    Your best {{ required }} of these {{ problems|length }} problems count. Work as many as you
+    like, as many times as you like &mdash; doing more can never cost you.
+  {% else %}
+    Work as many of these problems as you like, as many times as you like.
+  {% endif %}
+</p>
+
+<div class="panel overflow-x-auto" role="region" tabindex="0" aria-label="Problems">
+  <table class="data-table">
+    <caption>The chapter's problems, in order</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="text-left">Problem</th>
+        <th scope="col" class="text-left">What it asks</th>
+        <th scope="col" class="text-left">Where you are</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in problems %}
+      <tr>
+        <td>
+          <a class="underline"
+             href="{{ url_for('student.problem', workspace=workspace.public_id,
+                              company_slug=company.slug, ref=p.ref) }}">{{ p.ref }}</a>
+        </td>
+        <td class="text-sm">{{ p.stem|truncate(110) }}</td>
+        <td>
+          {# No mark, running or otherwise: a student sees nothing about marks until the
+             instructor releases them, and a problem set is not the exception. #}
+          {% if p.revealed %}Answer shown
+          {% elif p.matched %}Matches the expected entry
+          {% elif p.attempts == 1 %}One attempt so far
+          {% elif p.attempts %}{{ p.attempts }} attempts so far
+          {% else %}<span class="text-notice">Not started</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

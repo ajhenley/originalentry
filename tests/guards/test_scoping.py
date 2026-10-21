@@ -78,6 +78,15 @@ PLACEHOLDERS = {"key": "sales", "ref": "D01", "entry_id": "1", "statement_type":
 # chokepoint below.
 ADMISSION_BLIND = {
     "student.document_image": "the fixture pack is on paper: there is no image to serve",
+    # The fixture pack is a practice set, and decorators._fence 404s every problem-set route in
+    # one -- which is the point of the fence, not a scoping refusal. Both directions of the fence
+    # are walked properly, against a real chapter workspace, in test_problem_set_fence.py; and
+    # the refusal half below still walks these four, because workspace_view aborts for a foreign
+    # caller *before* the fence is consulted.
+    "student.problems": "the fixture pack is a practice set: the fence 404s this by design",
+    "student.problem": "the fixture pack is a practice set: the fence 404s this by design",
+    "student.problem_submit": "the fixture pack is a practice set: the fence 404s this by design",
+    "student.problem_reveal": "the fixture pack is a practice set: the fence 404s this by design",
 }
 # And the same route is vacuous in the *refusal* direction: it 404s on assignment.mode != "screen"
 # whatever the scoping says, so its 404 in the foreign-teacher walk is not evidence that scoping

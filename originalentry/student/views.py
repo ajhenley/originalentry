@@ -36,6 +36,7 @@ from ..ledger import STAGE_KINDS, balances, subsidiary_proof, trial_balance
 from ..ledger.engine import TrialBalanceRow
 from ..ledger.snapshot import load_snapshot
 from ..models import (
+    KIND_PROBLEM_SET,
     Account,
     Assignment,
     ContentPack,
@@ -53,6 +54,7 @@ from ..models import (
 )
 from ..presentation import kind_label
 from ..services import WriteRefused, multicompany, workspace_write
+from ..services import problems as problem_service
 from ..services.activity import record_refused_save
 from ..services.assignments import JoinRefused, join_with_code
 from ..services.checkpoints import checkpoint_state, record_attempt
@@ -301,6 +303,19 @@ def choose_submit(assignment: str):
 @workspace_view
 def overview():
     docs = _documents(g.pack_version.id)
+    # A chapter problem set lands on the same route and needs a different page: its four tiles all
+    # point at screens the fence 404s, and its opening line describes a cycle this content has no
+    # part of.
+    if g.content_pack.kind == KIND_PROBLEM_SET:
+        assignment = db.session.get(Assignment, g.workspace.assignment_id)
+        rows = problem_service.chapter_problems(db.session, g.workspace)
+        return render_template(
+            "student/overview.html",
+            triaged=0, total=len(docs),
+            problem_count=len(rows),
+            required=assignment.problems_required if assignment else None,
+            started=sum(1 for row in rows if row.started),
+        )
     triaged = len(current_dispositions(db.session, g.workspace))
     return render_template("student/overview.html", triaged=triaged, total=len(docs))
 
@@ -664,6 +679,80 @@ def _guard_writable():
         flash(g.read_only_message or "These books are read-only. Your work is saved.")
         return False
     return True
+
+
+# ── chapter problems ────────────────────────────────────────────────────────────────────
+#
+# Reachable only in a problem-set workspace: decorators._fence 404s all four in a practice set,
+# because this is where T8.8 and A8 are relaxed. A7 is not relaxed -- the screens say "matches",
+# never "correct" -- which tests/guards/test_problem_set_fence.py asserts directly.
+
+
+@bp.get("/w/<workspace>/<company_slug>/problems")
+@workspace_view
+def problems():
+    assignment = db.session.get(Assignment, g.workspace.assignment_id)
+    return render_template(
+        "student/problems.html",
+        problems=problem_service.chapter_problems(db.session, g.workspace),
+        required=assignment.problems_required if assignment else None,
+    )
+
+
+@bp.get("/w/<workspace>/<company_slug>/problems/<ref>")
+@workspace_view
+def problem(ref):
+    detail = problem_service.problem_detail(db.session, g.workspace, ref)
+    if detail is None:
+        abort(404)
+    return render_template("student/problem.html", problem=detail, errors=[],
+                           levels=problem_service.LEVELS,
+                           accounts=problem_service.chart(db.session, g.workspace))
+
+
+@bp.post("/w/<workspace>/<company_slug>/problems/<ref>", endpoint="problem_submit")
+@workspace_view
+def problem_submit(ref):
+    if problem_service.problem_detail(db.session, g.workspace, ref) is None:
+        abort(404)
+    if not _guard_writable():
+        return redirect(url_for("student.problem", workspace=g.workspace.public_id,
+                                company_slug=g.company.slug, ref=ref))
+
+    result = problem_service.submit(db.session, g.workspace, ref, request.form,
+                                    actor=current_user)
+    if not result.accepted:
+        # A refusal costs nothing -- not the attempt, not the entry already standing -- so the
+        # page is re-rendered rather than redirected away. No rollback: `submit` wrote nothing to
+        # roll back, and rolling back here would discard anything else the request had done.
+        return render_template(
+            "student/problem.html",
+            problem=problem_service.problem_detail(db.session, g.workspace, ref),
+            errors=[message for _field, message in result.errors],
+            levels=problem_service.LEVELS,
+            accounts=problem_service.chart(db.session, g.workspace),
+        ), 422
+
+    db.session.commit()
+    return redirect(url_for("student.problem", workspace=g.workspace.public_id,
+                            company_slug=g.company.slug, ref=ref))
+
+
+@bp.post("/w/<workspace>/<company_slug>/problems/<ref>/answer", endpoint="problem_reveal")
+@workspace_view
+def problem_reveal(ref):
+    if problem_service.problem_detail(db.session, g.workspace, ref) is None:
+        abort(404)
+    if not _guard_writable():
+        return redirect(url_for("student.problem", workspace=g.workspace.public_id,
+                                company_slug=g.company.slug, ref=ref))
+
+    # The only path to the answer. A8 is relaxed here and nowhere else, and never by the attempt
+    # count on its own.
+    problem_service.reveal(db.session, g.workspace, ref, actor=current_user)
+    db.session.commit()
+    return redirect(url_for("student.problem", workspace=g.workspace.public_id,
+                            company_slug=g.company.slug, ref=ref))
 
 
 @bp.get("/w/<workspace>/<company_slug>/journals")
@@ -1169,6 +1258,21 @@ def marks():
 @workspace_view
 def submit():
     docs = _documents(g.pack_version.id)
+    # A chapter problem set has no documents to triage, nothing to post and no statements: the
+    # page counts problems instead, and its "still to post" section is hidden.
+    if g.content_pack.kind == KIND_PROBLEM_SET:
+        assignment = db.session.get(Assignment, g.workspace.assignment_id)
+        rows = problem_service.chapter_problems(db.session, g.workspace)
+        return render_template(
+            "student/submit.html",
+            triaged=0, total=len(docs), entry_count=0,
+            statements_started=0, statements_total=0,
+            submitted=(g.workspace.status == "submitted"),
+            unposted=[], anything_recorded=any(row.started for row in rows),
+            problems_started=sum(1 for row in rows if row.started),
+            problems_total=len(rows),
+            problems_required=assignment.problems_required if assignment else None,
+        )
     triaged = len(current_dispositions(db.session, g.workspace))
     entry_count = db.session.execute(
         db.select(db.func.count()).select_from(JournalEntry).where(

@@ -411,6 +411,40 @@ def test_a_restart_by_a_demoted_owner_leaves_the_copy_live(session, teacher, ass
     assert session.get(Workspace, old_id).archived_at is None
 
 
+def test_a_resume_by_a_demoted_owner_is_refused_too(session, teacher, assignment):
+    """The two entry points must not disagree about the same account.
+
+    ``open_practice`` returns a live copy early, which is what makes a second click a resume
+    rather than a reset -- but that early return sat *above* the role check, so for a demoted
+    owner it was the whole of the gate. The restart above refuses them with
+    ``PracticeOwnerNotStaff`` while resuming handed back a workspace whose ``staff_practice``
+    flag lets its owner write past the deadline at both write gates, and they are a student now:
+    exactly the bypass Task 1's missing role check in ``is_own_practice`` was accepted on
+    condition of preventing. The only thing refusing them was ``staff_view`` on the route, so any
+    direct caller -- a CLI command, a fixture, Task 6's migration -- inherited no gate at all.
+
+    Demotion to student, which is not the same thing as being taken off the section: a teacher
+    removed from a section they still teach nothing on keeps their practice copy, because that is
+    a staffing question and this is a role one.
+
+    Nothing is destroyed by the refusal, for the same reason the restart leaves the copy alone.
+    It is not theirs to work and it is certainly not theirs to lose.
+    """
+    old = open_practice(session, assignment, teacher)
+    old_id = old.id
+    teacher.role = ROLE_STUDENT
+    session.flush()
+
+    with pytest.raises(practice.PracticeOwnerNotStaff):
+        open_practice(session, assignment, teacher)
+
+    session.expire_all()
+    still = session.get(Workspace, old_id)
+    assert still.archived_at is None, "a refused resume cost the copy it would not hand back"
+    assert still.staff_practice is True, "the refusal unflagged the copy"
+    assert [ws.id for ws in _live(session, assignment, teacher)] == [old_id]
+
+
 def test_restart_opens_a_copy_when_there_is_none_yet(session, teacher, assignment):
     """Start over on an assignment with no copy is still a copy, not a crash: the console offers
     both actions and a double click on either must land somewhere usable."""

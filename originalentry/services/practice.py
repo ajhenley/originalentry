@@ -35,6 +35,13 @@ one name, and refuses an account that is not staff. A workspace with ``staff_pra
 ``student_id`` is a student's would let that student write past the deadline at both gates, and
 this is the only code that could ever create one.
 
+And **both** entry points ask it, not only the one that writes. ``open_practice`` returns a live
+copy early, which is what makes a second click a resume rather than a reset; with the role check
+only in the writer, that early return handed a demoted owner their copy back while
+``restart_practice`` refused the same account. ``_refuse_non_staff_owner`` is therefore called
+above the early return as well as from the writer -- it costs no query, so a resume pays nothing
+for it -- and the sentence above is true of every way into this module rather than of one of them.
+
 **Two assignment shapes are refused, with a reason a screen can print.** A student-choice
 assignment pins no pack version, and a manual-variant assignment hands out no variant
 (``variant_for`` returns None for ``MANUAL``), after which every write is refused with
@@ -162,6 +169,28 @@ def practice_copy(session: Session, assignment: Assignment, teacher) -> Workspac
     return found if is_own_practice(found, teacher) else None
 
 
+def _refuse_non_staff_owner(owner) -> None:
+    """Raise unless ``owner`` is a member of staff. The precondition on the flag, in one place.
+
+    Its own function because it is asked at **two** moments that are otherwise unrelated: before
+    anything is written, and -- since it is a property of the account and not of the assignment or
+    the copy -- before a live copy is handed back to resume. ``open_practice`` returns early for a
+    live copy, so without this call above that return the resume path had no role check at all and
+    a demoted owner could carry on writing to a workspace whose ``staff_practice`` flag bypasses
+    the deadline at both gates. The route refused them; nothing else did, so a CLI command, a
+    fixture or a migration calling this module directly inherited no gate.
+
+    Costs no query: the role is on the account the caller already holds. That is the whole reason
+    it can sit above the early return while the rest of ``_refuse_unless_practicable`` -- which
+    does cost a ``variant_for`` -- stays where it is, below it, where only a *new* copy pays for
+    it. A resume has nothing new to check about the assignment; it has everything to check about
+    the person.
+    """
+    if getattr(owner, "role", None) not in STAFF_ROLES:
+        # Not a PracticeRefused: see PracticeOwnerNotStaff for why a route must not swallow it.
+        raise PracticeOwnerNotStaff(STAFF_ONLY)
+
+
 def _refuse_unless_practicable(session: Session, assignment: Assignment, owner) -> int:
     """Raise unless a practice copy of ``assignment`` can be opened for ``owner``; else the variant.
 
@@ -175,9 +204,7 @@ def _refuse_unless_practicable(session: Session, assignment: Assignment, owner) 
     Every check is a property of the assignment and the account, not of the copy, so asking twice
     costs one ``variant_for`` query and answers the same both times.
     """
-    if getattr(owner, "role", None) not in STAFF_ROLES:
-        # Not a PracticeRefused: see PracticeOwnerNotStaff for why a route must not swallow it.
-        raise PracticeOwnerNotStaff(STAFF_ONLY)
+    _refuse_non_staff_owner(owner)
     if assignment.fixed_pack_version_id is None:
         raise PracticeRefused(NO_PINNED_VERSION)
 
@@ -230,7 +257,17 @@ def open_practice(session: Session, assignment: Assignment, teacher, *, actor=No
     practice copy can be made of, and for an account whose live workspace on this assignment is
     their own student work. An account that is not staff raises ``PracticeOwnerNotStaff``, which
     a route must not swallow.
+
+    **The role is checked before the resume, not only before the write.** The early return below
+    is what makes a second click a resume rather than a reset, and it used to sit above every
+    check -- so a demoted owner was handed their copy back and could carry on writing to a
+    workspace whose flag bypasses the deadline at both gates, while ``restart_practice`` refused
+    the same account outright. Two entry points disagreeing about one person is the shape this
+    feature has already paid for twice, and the only thing refusing them was ``staff_view`` on
+    the route: a CLI command, a fixture or a migration calling this function inherited no gate.
+    The check costs no query, so the resume path pays nothing for it.
     """
+    _refuse_non_staff_owner(teacher)
     existing = _live_copy(session, assignment, teacher)
     if existing is not None:
         if not is_own_practice(existing, teacher):

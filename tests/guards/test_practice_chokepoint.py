@@ -14,33 +14,49 @@ written next year has nobody to remind it. So there is **one** query --
 ``class_workspace_clause`` for a site that needs its own joins and extra columns, and this guard
 insists that every class-level question goes through one of the three.
 
-**What counts as a cohort read.** A statement that queries ``Workspace.assignment_id`` and does
-*not* also filter ``student_id`` *to a particular person*. A per-person query names the student,
-so a practice copy only ever matches its own owner and must NOT be excluded -- excluding it is how
-a teacher loses the way back into their own copy.
+**What the scan reports.** Any statement that queries workspaces by assignment --
+``Workspace.assignment_id`` in any form, or ``filter_by(assignment_id=...)`` -- unless it goes
+through the chokepoint, sits in an ``EXEMPT`` module, or sits in a function named in
+``PER_PERSON``. Nothing is inferred about the query itself. The default is **report**.
 
-"To a particular person" is the whole of the distinction, and asking for the words
-``student_id`` is not enough to draw it: four of the nine cohort reads say
-``Workspace.student_id == User.id`` to *join* the student's name onto the row, which filters
-nobody. The first version of this guard matched the text and reported seven of the nine -- the
-progress table, the grading roster and the archived-books list, three of the screens a teacher
-actually looks at, all passed it clean. So the comparison is read from the syntax tree instead:
-``Workspace.student_id == User.id`` compares the column to another model's column and is a join;
-``== student.id`` or ``== current_user.id`` names a person and is a filter.
+**Why the default is report, and not "report unless this looks like a cohort read".** Three
+earlier rounds of this guard tried to decide, from the syntax tree, whether a statement pinned a
+single person or a single row, and so could be excused. Each round closed the previous round's
+hole, each time in the too-permissive direction:
 
-**Why the scan looks for ``Workspace.assignment_id`` in any form and not for
-``Workspace.assignment_id ==``.** ``services/purge.py`` writes
-``Workspace.assignment_id.in_(assignment_ids or [0])`` and ``staff/views.py`` names the column in
-a ``select``/``group_by`` pair with no comparison at all. An ``==``-only pattern would see
-neither, so ``test_every_exempt_module_really_queries_workspaces`` would pass vacuously for purge
--- and that test is the only thing keeping the exemption honest.
+1. asking whether ``student_id`` was *mentioned* excused ``Workspace.student_id == User.id``, a
+   join that filters nobody, and with it the progress table, the grading roster and the
+   archived-books list -- three of the screens a teacher actually looks at;
+2. asking whether a ``public_id`` keyword appeared anywhere excused two cohort reads that reach a
+   class through the *assignment's* public id;
+3. asking only whether the column was pinned excused ``public_id != ws.public_id`` ("the rest of
+   the class"), ``public_id > cursor`` (a paginated roster) and ``student_id != current_user.id``
+   -- the last of which still admits a **co-instructor's** practice copy, because a practice copy
+   is per-owner and nothing limits an assignment to one teacher.
 
-**One shape the scan deliberately does not treat as a cohort read:**
-``staff/views._workspace_or_404`` matches on ``filter_by(public_id=..., assignment_id=...)``. It
-is keyed by ``public_id``, so it returns one named workspace rather than a cohort, and it is how a
-teacher reaches their own copy from the console. It never becomes an ``ast.Attribute`` on
-``Workspace`` either, so the scan does not see it; that is noted here so the omission is a
-decision somebody made rather than a hole somebody left.
+And a fourth set was open after round 3, each shape the *same SQL* as one round 3 had just closed:
+``~(Workspace.student_id == current_user.id)``, ``not_(Workspace.public_id == ws.public_id)``,
+``or_(mine, the_whole_class)``, a pin sitting in an ``order_by`` or a nested subquery, a name bound
+to a subquery one line earlier and passed to ``in_``, and a cohort leg ``union``ed onto a
+per-person one.
+
+Every one of those predicates was an ``ast.walk`` existence check -- *does some node in this
+statement look like a pin?* -- where the safe question is a property of the statement's whole
+top-level boolean expression: *does this filter restrict the result to one row or one person?*
+That depends on polarity, on position, and on values the tree cannot see. Enumerating operators
+does not converge; an allowlist of audited call sites converges by construction, and it is the
+pattern this guard already uses for ``EXEMPT`` and ``WALKERS``, and the pattern
+``test_scoping.py`` uses for its own ``EXEMPT``/``ADMISSION_BLIND`` lists.
+
+**Keyed by name, never by line number.** A line number drifts and a drifted entry silently excuses
+the wrong statement, which is the failure mode of the whole class of mechanism this round removed.
+``test_every_per_person_entry_is_a_live_per_person_query`` is what keeps an entry honest -- in the
+idiom of ``test_scoping.py::test_every_exempt_name_is_a_real_route`` -- and it holds each entry to
+**exactly one** such query in its function, so a second query appearing inside an allowlisted
+function is somebody's decision rather than a free ride.
+``test_every_per_person_entry_is_load_bearing`` is the other half: it removes each entry in turn
+and requires the site to be reported without it, because asserting that a site is exempt *with*
+its entry is the mechanism restating itself and can never fail.
 
 Source inspection, in the idiom of
 ``test_scoping.py::test_every_scoped_console_route_goes_through_one_of_the_two_lookups``: what
@@ -68,11 +84,38 @@ WALKERS = ("services/diagnostics.py", "services/mastery.py", "services/progress.
            # exactly what that test exists to surface.
            "services/multicompany.py")
 
-#: Queries that are not cohort reads, and why. A per-person query filters student_id, so a
-#: practice copy only ever matches its owner; the two write paths have their own decisions.
+#: Whole modules that are not cohort reads, and why. Both are write paths with their own decisions.
 EXEMPT = {
     "services/purge.py": "retention deletion must reach every row or it orphans FK records",
     "packs/migrate.py": "a migration archives practice copies (Task 6), it does not report them",
+}
+
+#: The audited per-person call sites: ``(module, function)`` -> which person or row it pins.
+#:
+#: A per-person query names one student or one workspace, so a practice copy only ever matches its
+#: own owner and must **not** be excluded -- excluding it is how a teacher loses the way back into
+#: their own copy. Every entry here was read off the function it names, and the reason says which
+#: person or row that function restricts to. Six sites, all of them small named functions.
+#:
+#: Adding an entry is the serious act in this file, and the only way to excuse a query from the
+#: chokepoint. It means: *I read this function and the query cannot return a row belonging to
+#: anybody but the named person.* An entry is not a way to quiet a red suite -- see the assertion
+#: message in ``test_every_cohort_read_goes_through_the_chokepoint`` for the two repairs that are
+#: not this one.
+PER_PERSON = {
+    ("services/assignments.py", "prerequisite_met"):
+        "pins student_id to the student whose prerequisite is being judged",
+    ("services/assignments.py", "open_workspace"):
+        "pins student_id to the student whose live workspace is being opened",
+    ("services/multicompany.py", "choose_company"):
+        "pins student_id to the student making the choice",
+    ("student/views.py", "home"):
+        "pins student_id to current_user; assignment_id appears only as a join condition",
+    ("student/views.py", "_live_workspace"):
+        "pins student_id to current_user, for one assignment",
+    ("staff/views.py", "_workspace_or_404"):
+        "pins public_id to the one workspace a teacher clicked, which is how they open their own "
+        "practice copy from the console",
 }
 
 #: The chokepoint, and the only three spellings a cohort read may reach it by. `class_workspaces`
@@ -94,17 +137,6 @@ def _is_workspace_column(node: ast.AST, column: str) -> bool:
             and isinstance(node.value, ast.Name) and node.value.id == "Workspace")
 
 
-def _is_model_column(node: ast.AST) -> bool:
-    """``User.id``, ``Assignment.id`` -- another mapped column, so a comparison to it is a join.
-
-    Judged by the capital letter, which is what tells a model class from an instance in this
-    codebase's own idiom: ``User.id`` is a column and ``student.id``, ``current_user.id``,
-    ``assignment.id`` are values. A join condition filters nobody; a value does.
-    """
-    return (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
-            and node.value.id[:1].isupper())
-
-
 def _filter_by_keywords(node: ast.AST) -> dict[str, ast.AST]:
     """The keywords of a ``filter_by(...)`` call, by name.
 
@@ -124,113 +156,17 @@ def _filter_by_keywords(node: ast.AST) -> dict[str, ast.AST]:
 
 def _queries_an_assignment(node: ast.AST) -> bool:
     """Either spelling of "by assignment": ``Workspace.assignment_id`` or
-    ``filter_by(assignment_id=...)``."""
+    ``filter_by(assignment_id=...)``.
+
+    The detection side is deliberately **wide**, and stays wide now that the exemptions no longer
+    try to narrow it. ``services/purge.py`` writes ``Workspace.assignment_id.in_(ids or [0])`` and
+    ``staff/views.py`` names the column in a ``select``/``group_by`` pair with no comparison at
+    all; an ``==``-only pattern would see neither, and
+    ``test_every_exempt_module_really_queries_workspaces`` would then pass vacuously for purge --
+    and that test is the only thing keeping purge's exemption honest.
+    """
     return (_is_workspace_column(node, "assignment_id")
             or "assignment_id" in _filter_by_keywords(node))
-
-
-def _is_none(node: ast.AST) -> bool:
-    """``None`` written out, which in a query means IS NULL and so pins nothing to anybody."""
-    return isinstance(node, ast.Constant) and node.value is None
-
-
-def _pins_column(node: ast.AST, column: str) -> ast.AST | None:
-    """What ``Workspace.<column>`` is pinned **equal** to here, or None if it is not pinned.
-
-    ``==`` and nothing else, and this is the correction at the heart of this predicate. Every
-    exemption in this file used to ask "is this column *mentioned*?", where the question that
-    makes an exemption safe is "is this column pinned to **one value**?" Those come apart on every
-    other operator, and the gap exempted real cohort reads::
-
-        Workspace.public_id != ws.public_id    # the rest of the class
-        Workspace.public_id > cursor           # keyset pagination of a roster
-        Workspace.student_id != current_user.id # the class except me
-
-    The last one is the worst of the three: it still admits a *co-instructor's* practice copy,
-    because a practice copy is per-owner and nothing limits an assignment to one teacher.
-
-    An earlier docstring here reasoned that ``Workspace.public_id ==`` "needs no such care -- it
-    names the model itself". That inference was wrong, and worth leaving on the record: naming the
-    model establishes *which* key column, never that the statement is keyed to one row.
-
-    A chained comparison (``a == b == c``) is not a pin either, so a single operator is required.
-    """
-    if not (isinstance(node, ast.Compare) and _is_workspace_column(node.left, column)):
-        return None
-    if len(node.ops) != 1 or not isinstance(node.ops[0], ast.Eq):
-        return None
-    return node.comparators[0]
-
-
-def _names_a_student(statement: ast.AST) -> bool:
-    """Whether this statement pins ``Workspace.student_id`` to a particular person."""
-    for node in ast.walk(statement):
-        pinned = _pins_column(node, "student_id")
-        if pinned is not None and not _is_model_column(pinned):
-            return True
-        # ``Workspace.student_id.in_(ids)`` -- a named set of people, not a cohort. A *subquery*
-        # argument is a different animal: ``in_(select(User.id))`` is every student there is, so
-        # the exemption stops at a call. A list, a tuple or a local name of ids still exempts,
-        # which is the real idiom (``staff/views.py:1098``).
-        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                and node.func.attr == "in_"
-                and _is_workspace_column(node.func.value, "student_id")
-                and not any(isinstance(arg, ast.Call) for arg in node.args)):
-            return True
-        student = _filter_by_keywords(node).get("student_id")
-        if student is not None and not _is_model_column(student) and not _is_none(student):
-            return True
-    return False
-
-
-def _names_one_workspace(statement: ast.AST) -> bool:
-    """Whether this statement is keyed by a **workspace's own** ``public_id``.
-
-    ``staff/views._workspace_or_404`` is written
-    ``filter_by(public_id=..., assignment_id=..., archived_at=None)``: it returns the one workspace
-    a teacher clicked on, which is how they reach their own practice copy from the console, and a
-    question about one named row cannot be a question about a class. That exemption was always
-    meant to be outside this guard's business, but until ``filter_by`` became visible, saying so
-    in prose was enough.
-
-    **The breadth of it was a hole, and the same class of hole this guard exists to close.** A
-    first version returned True for a ``public_id`` keyword *anywhere* in the statement, which
-    exempted two cohort reads that reach a class through some **other** model's public id::
-
-        select(Workspace).where(
-            Workspace.assignment_id.in_(select(Assignment.id).filter_by(public_id=pid)))
-        select(Workspace).join(Assignment, ...).filter_by(public_id=pid)
-
-    Reaching a class by its assignment's public id is how a URL does it throughout this codebase,
-    so both are plausible spellings; both were silently exempt; both are pinned below now.
-
-    So a ``public_id`` keyword only exempts when it sits in the **same** ``filter_by`` call as the
-    ``assignment_id`` this scan matched on -- the actual shape of ``_workspace_or_404``. A keyword
-    does not name its model, and that co-location is the only thing that ties the ``public_id`` to
-    the workspace rather than to whatever was joined or sub-selected last. Requiring instead that
-    the call sit on a ``select(Workspace)`` would not do: ``select(Workspace).join(Assignment)
-    .filter_by(public_id=...)`` does sit on one, and filters the Assignment.
-
-    A ``Workspace.public_id`` comparison exempts only when it is an **equality**: see
-    ``_pins_column``, where the same correction had to be made for ``student_id``. "The class
-    except this one workspace" and "the roster after this cursor" are cohort reads written with
-    the very same column.
-
-    The conservative direction is deliberate. ``select(Workspace).filter_by(public_id=pid)
-    .where(Workspace.assignment_id == x)`` -- the two keys in separate calls -- would be reported
-    although it is a single-row lookup. Nothing in the tree writes that, and if somebody does, the
-    guard says so and they merge the keys or route through the chokepoint. A false report is
-    noise; a false exemption is the failure this whole design is against.
-    """
-    for node in ast.walk(statement):
-        keywords = _filter_by_keywords(node)
-        public, assignment = keywords.get("public_id"), keywords.get("assignment_id")
-        if (public is not None and assignment is not None
-                and not _is_none(public) and not _is_none(assignment)):
-            return True
-        if _pins_column(node, "public_id") is not None:
-            return True
-    return False
 
 
 def _practice_conditions(path: pathlib.Path) -> bool:
@@ -248,30 +184,54 @@ def _practice_conditions(path: pathlib.Path) -> bool:
 
 
 class Query(NamedTuple):
-    """One statement that queries ``Workspace.assignment_id``, and where to find it."""
+    """One statement that queries workspaces by assignment, and where to find it."""
 
     line: int
+    function: str | None
     source: str
     statement: ast.stmt
 
     def __str__(self) -> str:
-        return f"{self.line}  {self.source.splitlines()[0].strip()}"
+        where = self.function or "<module>"
+        return f"{where}:{self.line}  {self.source.splitlines()[0].strip()}"
+
+
+def _module_key(path: pathlib.Path) -> str:
+    """How ``PER_PERSON`` and ``EXEMPT`` spell this file, or its bare name if it is outside the
+    package -- which is how the tmp_path cases below get judged with nothing allowlisted."""
+    try:
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.name
+
+
+def _enclosing_function(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> str | None:
+    """The innermost ``def`` this node sits in, which is how an allowlist entry is addressed.
+
+    The innermost one, so a closure cannot borrow its enclosing function's entry. ``None`` for a
+    statement in a module body, and ``None`` matches no entry.
+    """
+    current: ast.AST | None = node
+    while current is not None:
+        if isinstance(current, ast.FunctionDef | ast.AsyncFunctionDef):
+            return current.name
+        current = parents.get(current)
+    return None
 
 
 def _assignment_queries(path: pathlib.Path) -> list[Query]:
-    """Every statement in this file that queries ``Workspace.assignment_id``.
-
-    One record per enclosing *statement*: the statement is the unit a query is written in --
-    ``session.scalars(select(Workspace).where(...))`` is one statement across six lines -- and it
-    is the unit in which the ``student_id`` filter sits beside the ``assignment_id`` one. Judging
-    a single line instead would read ``Workspace.assignment_id == assignment.id,`` as a cohort
-    read in every per-person query in the codebase.
-    """
+    """Every statement in this file that queries workspaces by assignment."""
     return _assignment_queries_in(path.read_text(), filename=str(path))
 
 
 def _assignment_queries_in(text: str, *, filename: str = "<source>") -> list[Query]:
-    """The same scan over source text, so a test can hand it one real function's source."""
+    """The same scan over source text, so a test can hand it one function's source.
+
+    One record per enclosing *statement*: the statement is the unit a query is written in --
+    ``session.scalars(select(Workspace).where(...))`` is one statement across six lines -- and it
+    is the unit a reviewer reads when deciding whether a site belongs in ``PER_PERSON``. Judging a
+    single line instead would read ``Workspace.assignment_id == assignment.id,`` on its own.
+    """
     tree = ast.parse(text, filename=filename)
     parents = _parents(tree)
     found: dict[int, Query] = {}
@@ -284,7 +244,8 @@ def _assignment_queries_in(text: str, *, filename: str = "<source>") -> list[Que
         if statement is None:  # pragma: no cover - a module body is always made of statements
             continue
         found[statement.lineno] = Query(
-            statement.lineno, ast.get_source_segment(text, statement) or "", statement)
+            statement.lineno, _enclosing_function(statement, parents),
+            ast.get_source_segment(text, statement) or "", statement)
     return [found[line] for line in sorted(found)]
 
 
@@ -300,30 +261,50 @@ def _asks_about_a_cohort(path: pathlib.Path) -> bool:
         call in path.read_text() for call in CHOKEPOINT_CALLS)
 
 
-def _cohort_reads(path: pathlib.Path) -> list[Query]:
-    """The subset that asks a class-level question: nothing in it names a particular student."""
-    return [q for q in _assignment_queries(path)
-            if not _names_a_student(q.statement) and not _names_one_workspace(q.statement)]
+def _cohort_reads(path: pathlib.Path, *, audited: dict | None = None) -> list[Query]:
+    """The queries in this file that are nobody's audited per-person lookup.
+
+    Which is to say: everything the scan found, less the statements sitting in a function named in
+    the allowlist. No judgement is made about the query's own text -- that judgement is what three
+    rounds of holes were made of, and it now lives in the allowlist, where a person made it once
+    and a test keeps it live.
+
+    ``audited`` defaults to ``PER_PERSON`` and is a parameter only so a test can ask what the scan
+    would say with one entry taken away, which is the only way to show an entry is load-bearing:
+    with the entry in place the site is exempt *by construction*, so asserting that proves nothing.
+    """
+    module = _module_key(path)
+    audited = PER_PERSON if audited is None else audited
+    return [q for q in _assignment_queries(path) if (module, q.function) not in audited]
 
 
-def _offenders(path: pathlib.Path) -> list[Query]:
+def _offenders(path: pathlib.Path, *, audited: dict | None = None) -> list[Query]:
     """Cohort reads in this file that do not go through the chokepoint."""
-    return [q for q in _cohort_reads(path)
+    return [q for q in _cohort_reads(path, audited=audited)
             if not any(call in q.source for call in CHOKEPOINT_CALLS)]
 
 
+def _functions_named(path: pathlib.Path, name: str) -> list[ast.FunctionDef | ast.AsyncFunctionDef]:
+    """Every ``def`` of this name in the file, at any depth. More than one is ambiguous: the scan
+    would exempt both, and the allowlist entry cannot say which it audited."""
+    tree = ast.parse(path.read_text(), filename=str(path))
+    return [node for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name == name]
+
+
 def test_every_walker_is_a_real_file():
-    """A walker naming no file guards nothing, and an exempt name matching no file excuses
-    nothing. Rename a module and this fails, rather than the lists quietly ceasing to mean what
-    they say."""
-    missing = sorted(name for name in set(WALKERS) | set(EXEMPT) if not (ROOT / name).is_file())
+    """A walker naming no file guards nothing, an exempt name matching no file excuses nothing, and
+    an allowlist entry in a module that does not exist excuses nothing either. Rename a module and
+    this fails, rather than the lists quietly ceasing to mean what they say."""
+    listed = set(WALKERS) | set(EXEMPT) | {module for module, _ in PER_PERSON}
+    missing = sorted(name for name in listed if not (ROOT / name).is_file())
     assert not missing, f"listed modules that do not exist: {missing}"
 
 
 def test_every_cohort_read_goes_through_the_chokepoint():
-    """A module that queries Workspace.assignment_id without also filtering student_id is asking
-    a class-level question, and a class-level question that sees a practice copy puts a teacher's
-    own attempts in a student's gradebook. Source inspection, in the idiom of
+    """A module that queries Workspace.assignment_id outside an audited per-person call site is
+    asking a class-level question, and a class-level question that sees a practice copy puts a
+    teacher's own attempts in a student's gradebook. Source inspection, in the idiom of
     test_scoping.py::test_every_scoped_console_route_goes_through_one_of_the_two_lookups."""
     offenders = []
     for name in WALKERS:
@@ -331,19 +312,21 @@ def test_every_cohort_read_goes_through_the_chokepoint():
             continue
         offenders.extend(f"{name}:{query}" for query in _offenders(ROOT / name))
     assert not offenders, (
-        "cohort reads that do not go through workspaces.class_workspaces:\n  "
+        "workspace-by-assignment queries that neither go through workspaces.class_workspaces nor "
+        "sit in an audited per-person call site:\n  "
         + "\n  ".join(offenders)
         + "\n(a site needing its own joins composes class_workspace_clause(); repeating the "
           "practice condition inline is the thing this guard forbids)"
         # Said here because this is the sentence somebody reads at 5pm with a red suite. If one
-        # of these really is a single-row lookup, the chokepoint is the WRONG repair: it carries
-        # staff_practice.is_(False), so routing a per-person lookup through it 404s a teacher out
-        # of their own practice copy -- the one thing this feature exists to give them. Pin the
-        # row instead: both keys in one filter_by, or an `==` on public_id.
-        + "\nIf one of these is really a single-row or per-person lookup, do NOT route it through "
+        # of these really is a single-row or per-person lookup, the chokepoint is the WRONG repair:
+        # it carries staff_practice.is_(False), so routing a per-person lookup through it 404s a
+        # teacher out of their own practice copy -- the one thing this feature exists to give them.
+        + "\nTwo repairs, and only two. If it is a class-level question, route it through the "
+          "chokepoint. If it is really a per-person or single-row lookup, do NOT route it through "
           "the chokepoint -- that excludes practice copies and locks a teacher out of their own "
-          "copy. Pin the row instead: public_id and assignment_id in ONE filter_by(), or an "
-          "`==` comparison (an `!=`, `>` or `in_(select(...))` pins nothing and is a cohort read)."
+          "copy -- but put it in its own named function and add a PER_PERSON entry saying which "
+          "person or row it pins, having read the whole statement and satisfied yourself that it "
+          "cannot return anybody else's row. An entry is an audit, not a mute button."
     )
 
 
@@ -356,6 +339,91 @@ def test_every_exempt_module_really_queries_workspaces():
     assert not hollow, (
         "exemptions excusing no cohort read -- delete them or the next one hides behind them: "
         + ", ".join(hollow)
+    )
+
+
+def test_every_per_person_entry_is_a_live_per_person_query():
+    """Guards the allowlist, which is now the only thing that excuses a query.
+
+    In the idiom of ``test_scoping.py::test_every_exempt_name_is_a_real_route``: an entry naming a
+    function that has been renamed or deleted excuses nothing, and would sit here reading like
+    cover long after it stopped being any. So an entry must name a function that exists, is defined
+    exactly once, sits in a module this guard walks and does not exempt wholesale, and still holds
+    **exactly one** workspace-by-assignment query.
+
+    Exactly one, rather than at least one, is the part that keeps the entry's granularity honest:
+    the entry is addressed to a function but was written about a statement, and a second query
+    appearing in the same function would inherit the excuse without anybody reading it. If that
+    second query is a class-level question it belongs at the chokepoint; if it is genuinely a
+    second per-person lookup it belongs in its own named function with its own entry and its own
+    reason. Either way somebody classifies it, which is the whole point.
+    """
+    problems = []
+    for (module, function), why in sorted(PER_PERSON.items()):
+        where = f"{module}::{function}"
+        if module in EXEMPT:
+            problems.append(f"{where} -- the whole module is already EXEMPT, so this excuses "
+                            "nothing; delete one of the two")
+            continue
+        if module not in WALKERS:
+            problems.append(f"{where} -- not a module this guard walks, so this excuses nothing")
+            continue
+        path = ROOT / module
+        if not path.is_file():  # pragma: no cover - test_every_walker_is_a_real_file says it first
+            problems.append(f"{where} -- no such module")
+            continue
+        definitions = _functions_named(path, function)
+        if not definitions:
+            problems.append(f"{where} -- no such function ({why})")
+            continue
+        if len(definitions) > 1:
+            lines = [node.lineno for node in definitions]
+            problems.append(f"{where} -- defined {len(definitions)} times, at lines {lines}; the "
+                            "entry cannot say which one it audited and the scan would exempt both")
+            continue
+        queries = [q for q in _assignment_queries(path) if q.function == function]
+        if not queries:
+            problems.append(f"{where} -- no longer queries workspaces by assignment, so it needs "
+                            f"no exemption ({why})")
+        elif len(queries) > 1:
+            lines = [q.line for q in queries]
+            problems.append(f"{where} -- now holds {len(queries)} such queries, at lines {lines}; "
+                            f"the entry was written about one of them ({why})")
+    assert not problems, (
+        "PER_PERSON entries that are not live per-person queries:\n  " + "\n  ".join(problems)
+        + "\nAn entry that excuses nothing is worse than no entry: it reads like cover."
+    )
+
+
+def test_every_per_person_entry_is_load_bearing():
+    """Each entry really is what excuses its site, read off the real code.
+
+    The obvious test here -- "assert the six sites are not reported" -- is a tautology, and writing
+    it was my first mistake this round: ``_cohort_reads`` drops allowlisted functions by
+    construction, so that assertion is the mechanism restating itself and could never fail. A green
+    guard over the one failure the spec calls unrecoverable is the thing this file warns about most.
+
+    The claim that can fail is the inverse: take the entry away and the site **is** reported. That
+    says the entry carries weight today, so an entry that has quietly stopped mattering -- because
+    the function was rewritten to go through the chokepoint, say -- shows up here instead of sitting
+    in the list looking like cover. Together with
+    ``test_every_per_person_entry_is_a_live_per_person_query``, which holds each entry to exactly
+    one live query, that is the whole of what keeps the allowlist from decaying.
+
+    And the direction that matters most is the one these six protect: a reported per-person site
+    pushes the next developer towards the chokepoint, which carries ``staff_practice.is_(False)``,
+    and a teacher would be 404'd out of their own practice copy.
+    """
+    idle = []
+    for (module, function), why in sorted(PER_PERSON.items()):
+        without = {key: text for key, text in PER_PERSON.items() if key != (module, function)}
+        reported = [q for q in _offenders(ROOT / module, audited=without)
+                    if q.function == function]
+        if not reported:
+            idle.append(f"{module}::{function} ({why})")
+    assert not idle, (
+        "PER_PERSON entries that excuse nothing -- with the entry removed the scan still does not "
+        "report the site, so the entry is carrying no weight and should go:\n  " + "\n  ".join(idle)
     )
 
 
@@ -403,10 +471,10 @@ def test_the_chokepoint_is_the_only_place_the_practice_condition_is_written():
 
 # ── guards the guard ───────────────────────────────────────────────────────────────────
 
-#: Every spelling of a cohort read that would really be used -- the two in the codebase today
-#: plus the obvious third. The ``.in_`` and ``group_by`` shapes are the reason this scan looks for
-#: the column in any form: an ``==``-only pattern sees neither, and would have left purge.py's
-#: exemption excusing a query it could not find.
+#: Every spelling of a cohort read that would really be used. The first group is the record of what
+#: rounds 1 to 3 found leaking: each was exempt in silence, each is a shape somebody would write,
+#: and each is kept as a regression case. Under the allowlist they do not merely report because an
+#: operator was enumerated -- they report because nothing excuses them, which is the stronger claim.
 COHORT_SPELLINGS = (
     "rows = session.scalars(select(Workspace).where(Workspace.assignment_id == assignment.id))",
     "ids = session.scalars(select(Workspace.id)"
@@ -414,29 +482,27 @@ COHORT_SPELLINGS = (
     "counts = session.execute(db.select(Workspace.assignment_id, db.func.count())"
     ".group_by(Workspace.assignment_id))",
     "query = select(Workspace).filter(Workspace.assignment_id == found.id)",
-    # The shape the first version of this guard let through: a cohort read that *joins* the
-    # student's name onto each row. Three of the nine -- the progress table, the grading roster
-    # and the archived-books list -- are written exactly like this.
+    # Round 1. A cohort read that *joins* the student's name onto each row. Three of the nine --
+    # the progress table, the grading roster and the archived-books list -- are written like this,
+    # and the first version of this guard passed all three because the words "student_id" appeared.
     "rows = session.execute(select(Workspace, User).join(User, Workspace.student_id == User.id)"
     ".where(Workspace.assignment_id == assignment.id))",
-    # ``filter_by`` names the column without naming the model, so it is invisible to every check
-    # built on attribute access. Review found this spelling passing all three list tests in
+    # Round 1. ``filter_by`` names the column without naming the model, so it is invisible to every
+    # check built on attribute access. Review found this spelling passing all three list tests in
     # silence, which is worse than a missing guard: the walker list did not flag it either, so a
     # new module could have carried it.
     "rows = db.session.scalars(db.select(Workspace)"
     ".filter_by(assignment_id=assignment.id, archived_at=None)).all()",
-    # Reaching the class through the *assignment's* public id. Both of these were exempted by a
-    # ``public_id`` keyword that belonged to another model, which is the hole review found in the
-    # fix for the hole above. Neither the INNOCENT case nor the real _workspace_or_404 exercised a
-    # nested lookup, because both are flat.
+    # Round 2. Reaching the class through the *assignment's* public id -- which is how a URL does
+    # it throughout this codebase. Both were exempted by a ``public_id`` keyword that belonged to
+    # another model, the hole review found in the fix for the hole above.
     "rows = session.scalars(select(Workspace).where("
     "Workspace.assignment_id.in_(select(Assignment.id).filter_by(public_id=pid)))).all()",
     "rows = session.execute(select(Workspace)"
     ".join(Assignment, Workspace.assignment_id == Assignment.id)"
     ".filter_by(public_id=pid)).all()",
-    # Mentioning a key column is not being keyed to one row. Each of these is a cohort read
-    # written with the very column that used to exempt it, and each was exempt in silence until
-    # the exemptions started asking about the *operator* rather than the column.
+    # Round 3. Mentioning a key column is not being keyed to one row. Each of these is a cohort
+    # read written with the very column that used to exempt it.
     "rest = session.scalars(select(Workspace).where("
     "Workspace.assignment_id == assignment.id, Workspace.public_id != ws.public_id)).all()",
     "page = session.scalars(select(Workspace).where("
@@ -447,36 +513,53 @@ COHORT_SPELLINGS = (
     "Workspace.assignment_id == assignment.id, Workspace.student_id != current_user.id)).all()",
     "nobody = session.scalars(db.select(Workspace).filter_by("
     "assignment_id=assignment.id, student_id=None)).all()",
-    # ``in_`` of a subquery is every student there is, not a named set of people.
     "everyone = session.scalars(select(Workspace).where("
     "Workspace.assignment_id == assignment.id, Workspace.student_id.in_(select(User.id)))).all()",
+    # Round 4, and the reason the inferential exemptions are gone. Every shape below is the *same
+    # SQL* as one of the shapes above, written with an ``==`` that an ``ast.walk`` existence check
+    # finds and reads as a pin. The first two are literally the round-3 spellings under a negation.
+    "mine = session.scalars(select(Workspace).where(Workspace.assignment_id == assignment.id,"
+    " ~(Workspace.student_id == current_user.id))).all()",
+    "rest = session.scalars(select(Workspace).where(Workspace.assignment_id == assignment.id,"
+    " not_(Workspace.public_id == ws.public_id))).all()",
+    # Polarity again, the other way: "mine, OR anybody who has handed in" is a cohort read with a
+    # genuine per-person pin inside it.
+    "both = session.scalars(select(Workspace).where(Workspace.assignment_id == assignment.id)"
+    ".where(or_(Workspace.student_id == current_user.id,"
+    " Workspace.submitted_at.is_not(None)))).all()",
+    # Position. The pin is in an ``order_by`` -- floating your own row to the top of a roster --
+    # and in a nested subquery, and neither narrows the rows the statement returns.
+    "roster = session.scalars(select(Workspace).where(Workspace.assignment_id == assignment.id)"
+    ".order_by(Workspace.student_id == current_user.id)).all()",
+    "peers = session.scalars(select(Workspace).where(Workspace.assignment_id == assignment.id,"
+    " Workspace.pack_version_id == select(Workspace.pack_version_id).where("
+    "Workspace.student_id == current_user.id).scalar_subquery())).all()",
+    # A value the tree cannot see: ``enrolled`` is a subquery bound one line earlier, so an
+    # ``in_`` that refuses a literal ``select(...)`` argument but accepts a name is no defence.
+    "enrolled = select(User.id).where(User.section_id == assignment.section_id)\n"
+    "everyone = session.scalars(select(Workspace).where("
+    "Workspace.assignment_id == assignment.id, Workspace.student_id.in_(enrolled))).all()",
+    # And a per-person leg with a cohort leg welded onto it, in one statement.
+    "rows = session.scalars(select(Workspace).where(Workspace.assignment_id == assignment.id,"
+    " Workspace.student_id == current_user.id)"
+    ".union(select(Workspace).where(Workspace.assignment_id == assignment.id))).all()",
 )
 
-#: And the ones that must not be reported. The first two are per-person, the third goes through
-#: the chokepoint, and the fourth composes its filter.
+#: And the ones that must not be reported. There are only three, and none of them is an inference
+#: about a query's text: two go through the chokepoint, and the third is not a query at all.
+#: Everything the old ``INNOCENT_SPELLINGS`` list held besides these was a per-person *shape* fed
+#: to a predicate that no longer exists; a real per-person site is excused by name now, and
+#: ``test_every_per_person_entry_is_load_bearing`` asserts that against the six live functions.
 INNOCENT_SPELLINGS = (
-    "ws = session.scalars(select(Workspace).where(Workspace.assignment_id == assignment.id,"
-    " Workspace.student_id == student.id)).one_or_none()",
-    "rows = session.execute(select(Workspace, Assignment)"
-    ".join(Assignment, Workspace.assignment_id == Assignment.id)"
-    ".where(Workspace.student_id == current_user.id))",
     "rows = class_workspaces(session, assignment)",
     "rows = session.execute(select(Workspace, User).join(User)"
     ".where(*class_workspace_clause(assignment)))",
-    # The same filter_by spelling, per-person.
-    "ws = db.session.scalars(db.select(Workspace)"
-    ".filter_by(assignment_id=assignment.id, student_id=current_user.id)).one_or_none()",
-    # ``staff/views._workspace_or_404``: one named row, which is how a teacher opens their own
-    # practice copy from the console. Reporting it would push somebody into excluding practice
-    # copies from the one query that has to find them.
-    "ws = db.session.scalars(db.select(Workspace)"
-    ".filter_by(public_id=public_id, assignment_id=assignment.id, archived_at=None))",
-    # Task 6 has to be able to *make* a practice copy. A constructor is a write, not a query.
+    # Task 6 has to be able to *make* a practice copy, and a constructor is a write, not a query.
+    # This is a case about the detection side -- ``_queries_an_assignment`` matches an
+    # ``assignment_id`` keyword only inside ``filter_by`` -- and it is the one direction of the
+    # detection side that an allowlist cannot cover, because a constructor sits in whatever
+    # function Task 6 writes it in.
     "ws = Workspace(assignment_id=assignment.id, student_id=teacher.id, staff_practice=True)",
-    # A named set of people still exempts: this is the real idiom, and tightening ``in_`` to
-    # refuse a *subquery* must not refuse a list of ids.
-    "rows = session.execute(select(Workspace.student_id, func.count()).where("
-    "Workspace.assignment_id == assignment.id, Workspace.student_id.in_(ids)))",
 )
 
 #: What the one-home scan must catch, and must not. Both spellings of a second definition, and
@@ -496,8 +579,8 @@ def test_the_scan_would_catch_a_cohort_read_in_any_of_its_spellings(tmp_path):
     """Guards the guard, which otherwise cannot fail.
 
     A green guard over the one failure the spec calls unrecoverable is worse than no guard,
-    because nobody looks again. Every spelling below is one somebody would plausibly write; the
-    scan has to report all four.
+    because nobody looks again. Every spelling below is one somebody would plausibly write, and
+    every one of them is a shape that was exempt in silence at some point in this guard's history.
     """
     for source in COHORT_SPELLINGS:
         offender = tmp_path / "offender.py"
@@ -505,26 +588,35 @@ def test_the_scan_would_catch_a_cohort_read_in_any_of_its_spellings(tmp_path):
         assert _offenders(offender), f"the scan did not catch: {source}"
 
 
-def test_the_real_single_workspace_lookup_is_still_exempt():
-    """The exemption has to keep working on the code it was written for.
+def test_the_allowlist_is_addressed_by_name_and_not_by_position(tmp_path):
+    """The allowlist's own mechanism, in both directions.
 
-    Read off ``staff.views._workspace_or_404`` itself rather than a copy of its shape: the two
-    tmp_path lists pin spellings somebody might write, and this pins the one somebody did. If that
-    function is ever rewritten, this follows it -- and if it starts looking like a cohort read,
-    that is a real finding rather than a stale fixture. A teacher reaching their own practice copy
-    from the console must never be an offender.
+    An entry excuses the queries in the function it names, in the module it names, and nothing
+    else. Two things are being pinned: that a module-and-function key really does reach into a
+    function body at all, and that the same query text in a function the allowlist does not name
+    is still reported. The second is what makes an entry a statement about audited code rather
+    than about a shape -- the property the three rounds of inferential exemptions never had.
     """
-    import inspect
-    import textwrap
+    module = tmp_path / "views.py"
+    module.write_text(
+        "def audited():\n"
+        "    return session.scalars(select(Workspace).where(\n"
+        "        Workspace.assignment_id == assignment.id,\n"
+        "        Workspace.student_id == current_user.id)).one_or_none()\n"
+        "\n"
+        "def unaudited():\n"
+        "    return session.scalars(select(Workspace).where(\n"
+        "        Workspace.assignment_id == assignment.id,\n"
+        "        Workspace.student_id == current_user.id)).one_or_none()\n"
+    )
+    found = {q.function for q in _assignment_queries(module)}
+    assert found == {"audited", "unaudited"}, f"the scan did not place both queries: {found}"
 
-    from originalentry.staff import views
-
-    source = textwrap.dedent(inspect.getsource(views._workspace_or_404))
-    statement = next(q.statement for q in _assignment_queries_in(source))
-
-    assert _names_one_workspace(statement), (
-        "_workspace_or_404 no longer reads as a single-row lookup; it would now be reported as a "
-        "cohort read, and excluding practice copies from it is how a teacher loses their own copy"
+    audited = {(_module_key(module), "audited"): "test fixture"}
+    reported = {q.function for q in _offenders(module, audited=audited)}
+    assert reported == {"unaudited"}, (
+        "an entry must excuse the function it names and no other; "
+        f"reported {sorted(reported)}"
     )
 
 
@@ -571,9 +663,11 @@ def test_the_clause_cannot_widen_to_every_assignment_by_accident():
 
 
 def test_the_scan_does_not_cry_wolf(tmp_path):
-    """The other direction, and the one that would break teaching rather than privacy: reporting
-    a per-person query would push somebody into excluding practice copies from it, and a teacher
-    could no longer reach their own copy."""
+    """The direction that would break teaching rather than privacy: reporting a query that must
+    see a practice copy pushes somebody into excluding practice copies from it, and a teacher could
+    no longer reach their own copy. The six real sites are covered by
+    ``test_every_per_person_entry_is_load_bearing``; these are the spellings nobody has written
+    yet."""
     for source in INNOCENT_SPELLINGS:
         innocent = tmp_path / "innocent.py"
         innocent.write_text(source + "\n")

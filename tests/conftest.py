@@ -6,19 +6,36 @@ It lives at the top of ``tests/`` because the golden tests need it too: A3 is pr
 against the pure engine and once against a workspace read back out of the database.
 """
 
+import os
+import sys
+
 import pytest
 from flask import g
 from flask.testing import FlaskClient
-from originalentry.app import create_app
+from originalentry.app import _load_dotenv, create_app
+from originalentry.config import load_config
 from originalentry.extensions import db
 from sqlalchemy.orm import Session
+
+from tests.database_target import banner, resolve
 
 pytestmark = pytest.mark.db
 
 
 @pytest.fixture(scope="session")
 def app():
-    app = create_app()
+    # .env is loaded first and deliberately overrides the ambient environment (app._load_dotenv),
+    # so exporting DATABASE_URL would be silently ignored. The database is chosen here instead and
+    # handed to create_app as an explicit config, which dotenv cannot reach.
+    _load_dotenv()
+    target = resolve(dict(os.environ))
+    if target.is_production:
+        # Loud, every run, and never fatal: refusing would block every test until a development
+        # branch exists. Silence is the thing being fixed -- the suite has always run against
+        # production and never said so.
+        print(banner(target), file=sys.stderr)
+    app = create_app(config=load_config(
+        {**os.environ, "DATABASE_URL": target.url, "DATABASE_URL_DIRECT": target.url_direct}))
     # Safety net: the tests must never send a real email, whatever EMAIL_BACKEND says in .env.
     # The auth tests still override this to "memory" to read what would have been sent.
     app.extensions["originalentry_config"].EMAIL_BACKEND = "memory"

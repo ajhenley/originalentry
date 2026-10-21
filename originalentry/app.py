@@ -22,7 +22,12 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 def _load_dotenv() -> None:
     """Load ``.env`` into the process env for local dev and tests (no python-dotenv dependency).
-    Never overrides a value already set, and does nothing in production."""
+
+    **Overrides** values already in the environment, and does nothing in production. The override
+    is deliberate -- see the comment on the assignment below -- and it means an exported
+    DATABASE_URL does not take effect, which is why the test harness selects its database through
+    ``load_config(env=...)`` rather than by exporting one (tests/database_target.py).
+    """
     if os.environ.get("APP_ENV") == "production":
         return
     path = _REPO_ROOT / ".env"

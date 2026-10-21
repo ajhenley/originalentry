@@ -39,6 +39,12 @@ class StudentWork:
     dispositions: dict[str, str] = field(default_factory=dict)  # document ref -> choice
     disposition_reasons: dict[str, str] = field(default_factory=dict)
     statements: dict[str, tuple[StatementRow, ...]] = field(default_factory=dict)
+    #: How many of a chapter problem set's problems count. None for every practice set, whose
+    #: components divide their points across all of them instead of selecting.
+    problems_required: int | None = None
+    #: Problem refs whose answer the student chose to be shown. They stay practisable and stop
+    #: counting toward the mark.
+    revealed: frozenset[str] = frozenset()
 
     def live_entries(self):
         """Entries that still stand: voided ones are kept but never graded."""

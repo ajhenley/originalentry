@@ -182,11 +182,19 @@ def test_the_teacher_who_makes_a_section_can_still_use_it(client, session, owner
     assert client.get(f"/staff/sections/{section.id}/availability").status_code == 200
 
 
+#: The upload form's own id. Asserted on instead of the words "Upload a pack", which also appear
+#: in the empty-catalogue sentence -- so the old assertion passed only because the production
+#: database always had packs in it, and failed the first time the suite ran against an empty
+#: development branch. A control is a control; prose is prose.
+UPLOAD_CONTROL = 'id="pack"'
+
+
 def test_the_catalogue_upload_is_admin_only(client, session, owner):
     """Cohort-wide, so admin-only -- and the control is hidden rather than left to 404."""
     client.sign_in(owner)
     page = client.get("/staff/catalogue").get_data(as_text=True)
-    assert "Upload a pack" not in page
+    assert UPLOAD_CONTROL not in page
+    assert "/staff/catalogue" in page, "the page did not render at all"
 
     refused = client.post("/staff/catalogue", data={})
     assert refused.status_code == 404
@@ -194,7 +202,20 @@ def test_the_catalogue_upload_is_admin_only(client, session, owner):
     owner.role = "admin"
     session.commit()
     client.sign_in(owner)
-    assert "Upload a pack" in client.get("/staff/catalogue").get_data(as_text=True)
+    assert UPLOAD_CONTROL in client.get("/staff/catalogue").get_data(as_text=True)
+
+
+def test_an_empty_catalogue_does_not_tell_a_teacher_to_upload_a_pack(client, session, owner):
+    """It used to. The empty-state sentence said "Upload a pack the generator made" to everybody,
+    which is an instruction a teacher cannot follow -- the control is admin-only and the POST
+    404s. Found by running the suite against an empty database for the first time."""
+    client.sign_in(owner)
+
+    page = client.get("/staff/catalogue").get_data(as_text=True)
+
+    assert UPLOAD_CONTROL not in page
+    assert "Upload a pack" not in page, "told a teacher to do something only an admin can do"
+    assert "administrator" in page.lower(), "did not say who can add one"
 
 
 def test_an_archived_section_of_yours_is_still_yours(client, session, owner):

@@ -50,7 +50,13 @@
 {% endif %}
 
 {% if not companies %}
-<p class="text-muted">The catalogue is empty. Upload a pack the generator made.</p>
+{# Told everybody to "Upload a pack" -- an instruction a teacher cannot follow, since the control
+   above is admin-only and the POST 404s. It also made the admin-only test pass on a populated
+   database and fail on an empty one, because the test matched the phrase rather than the form. #}
+<p class="max-w-prose text-muted">
+  {%- if is_admin %}The catalogue is empty. Upload a pack the generator made.
+  {%- else %}The catalogue is empty. An administrator adds packs to it.{% endif -%}
+</p>
 {% else %}
 {% for company in companies %}
 <section class="mb-6" aria-labelledby="company-{{ company.slug }}">

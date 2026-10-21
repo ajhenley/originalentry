@@ -78,6 +78,11 @@ ROOT = pathlib.Path(__file__).resolve().parents[2] / "originalentry"
 WALKERS = ("services/diagnostics.py", "services/mastery.py", "services/progress.py",
            "services/marks_export.py", "services/grades.py", "services/assignments.py",
            "staff/views.py", "student/views.py", "packs/migrate.py", "services/purge.py",
+           # The practice lifecycle (Task 3). It asks one question about workspaces by
+           # assignment -- "does this one teacher already hold a live copy of it?" -- which is a
+           # per-person read, and the opposite of a cohort one: it exists to *find* a practice
+           # copy, so it must never be routed through the chokepoint.
+           "services/practice.py",
            # Not in the task brief's literal, and found by the completeness test below rather
            # than by anybody's memory: `choose_company` queries (assignment, student), which is
            # a per-person read and so needs no exclusion -- but a module nobody classified is
@@ -95,7 +100,7 @@ EXEMPT = {
 #: A per-person query names one student or one workspace, so a practice copy only ever matches its
 #: own owner and must **not** be excluded -- excluding it is how a teacher loses the way back into
 #: their own copy. Every entry here was read off the function it names, and the reason says which
-#: person or row that function restricts to. Six sites, all of them small named functions.
+#: person or row that function restricts to. Seven sites, all of them small named functions.
 #:
 #: Adding an entry is the serious act in this file, and the only way to excuse a query from the
 #: chokepoint. It means: *I read this function and the query cannot return a row belonging to
@@ -113,6 +118,11 @@ PER_PERSON = {
         "pins student_id to current_user; assignment_id appears only as a join condition",
     ("student/views.py", "_live_workspace"):
         "pins student_id to current_user, for one assignment",
+    ("services/practice.py", "_live_copy"):
+        "pins student_id to the one teacher asking for their own practice copy, for one "
+        "assignment; it must see an unflagged row too, because an account that worked the "
+        "assignment as a student already occupies the live slot and that is what the opener "
+        "refuses on",
     ("staff/views.py", "_workspace_or_404"):
         "pins public_id to the one workspace a teacher clicked, which is how they open their own "
         "practice copy from the console",
@@ -398,8 +408,8 @@ def test_every_per_person_entry_is_a_live_per_person_query():
 def test_every_per_person_entry_is_load_bearing():
     """Each entry really is what excuses its site, read off the real code.
 
-    The obvious test here -- "assert the six sites are not reported" -- is a tautology, and writing
-    it was my first mistake this round: ``_cohort_reads`` drops allowlisted functions by
+    The obvious test here -- "assert the allowlisted sites are not reported" -- is a tautology,
+    and writing it was my first mistake this round: ``_cohort_reads`` drops allowlisted functions by
     construction, so that assertion is the mechanism restating itself and could never fail. A green
     guard over the one failure the spec calls unrecoverable is the thing this file warns about most.
 
@@ -549,7 +559,7 @@ COHORT_SPELLINGS = (
 #: about a query's text: two go through the chokepoint, and the third is not a query at all.
 #: Everything the old ``INNOCENT_SPELLINGS`` list held besides these was a per-person *shape* fed
 #: to a predicate that no longer exists; a real per-person site is excused by name now, and
-#: ``test_every_per_person_entry_is_load_bearing`` asserts that against the six live functions.
+#: ``test_every_per_person_entry_is_load_bearing`` asserts that against the functions it names.
 INNOCENT_SPELLINGS = (
     "rows = class_workspaces(session, assignment)",
     "rows = session.execute(select(Workspace, User).join(User)"
@@ -665,7 +675,7 @@ def test_the_clause_cannot_widen_to_every_assignment_by_accident():
 def test_the_scan_does_not_cry_wolf(tmp_path):
     """The direction that would break teaching rather than privacy: reporting a query that must
     see a practice copy pushes somebody into excluding practice copies from it, and a teacher could
-    no longer reach their own copy. The six real sites are covered by
+    no longer reach their own copy. The real sites are covered by
     ``test_every_per_person_entry_is_load_bearing``; these are the spellings nobody has written
     yet."""
     for source in INNOCENT_SPELLINGS:

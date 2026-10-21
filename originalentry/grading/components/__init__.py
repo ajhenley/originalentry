@@ -8,6 +8,7 @@ about weights (Part I §1, no rubric editing in the app).
 from .books import posting_completeness, subsidiary_agreement
 from .cycle import adjustment_amounts, adjustment_form, closing
 from .documents import entry_accuracy, journal_selection, triage
+from .problems import problems_best_n
 from .statements import statements_figures, statements_structure
 
 COMPONENTS = {
@@ -21,6 +22,7 @@ COMPONENTS = {
     "statements_structure": statements_structure,
     "statements_figures": statements_figures,
     "closing": closing,
+    "problems_best_n": problems_best_n,
 }
 
 __all__ = ["COMPONENTS"]

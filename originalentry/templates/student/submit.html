@@ -8,6 +8,22 @@
 </p>
 {% else %}
 <div class="max-w-prose">
+  {# A chapter problem set has no documents to triage, nothing to post and no statements: the
+     fence 404s all three screens, so the checklist would be three counts of nothing and the
+     "still to post" links below would be dead ends. #}
+  {% if is_problem_set %}
+  <p class="text-muted">
+    Before you hand in, check you have worked as many problems as you want to. After you hand in,
+    this work becomes read-only.
+  </p>
+
+  <dl class="mt-4 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
+    <dt class="font-semibold">Problems started</dt><dd>{{ problems_started }} of {{ problems_total }}</dd>
+    {% if problems_required %}
+    <dt class="font-semibold">How many count</dt><dd>your best {{ problems_required }}</dd>
+    {% endif %}
+  </dl>
+  {% else %}
   <p class="text-muted">
     Before you submit, check that you have handled every document and recorded and posted your
     entries. After you submit, these books become read-only.
@@ -18,8 +34,9 @@
     <dt class="font-semibold">Entries recorded</dt><dd>{{ entry_count }}</dd>
     <dt class="font-semibold">Statements started</dt><dd>{{ statements_started }} of {{ statements_total }}</dd>
   </dl>
+  {% endif %}
 
-  {% if unposted %}
+  {% if unposted and not is_problem_set %}
   <section class="callout callout--attention mt-6" role="status" aria-labelledby="to-post">
     <h2 id="to-post">Still to post</h2>
     <p class="mt-1 text-sm">

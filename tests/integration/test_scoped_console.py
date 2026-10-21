@@ -205,17 +205,40 @@ def test_the_catalogue_upload_is_admin_only(client, session, owner):
     assert UPLOAD_CONTROL in client.get("/staff/catalogue").get_data(as_text=True)
 
 
-def test_an_empty_catalogue_does_not_tell_a_teacher_to_upload_a_pack(client, session, owner):
-    """It used to. The empty-state sentence said "Upload a pack the generator made" to everybody,
-    which is an instruction a teacher cannot follow -- the control is admin-only and the POST
-    404s. Found by running the suite against an empty database for the first time."""
+def test_a_teacher_is_never_told_to_upload_a_pack(client, session, owner):
+    """It used to be. The empty-state sentence said "Upload a pack the generator made" to
+    everybody, which is an instruction a teacher cannot follow -- the control is admin-only and
+    the POST 404s. Found by running the suite against an empty database for the first time.
+
+    This half holds whatever the catalogue contains, so it runs against the real page.
+    """
     client.sign_in(owner)
 
     page = client.get("/staff/catalogue").get_data(as_text=True)
 
     assert UPLOAD_CONTROL not in page
     assert "Upload a pack" not in page, "told a teacher to do something only an admin can do"
+
+
+def test_an_empty_catalogue_tells_a_teacher_who_can_add_one(client, session, owner, monkeypatch):
+    """The other half, which needs the catalogue to be *empty*.
+
+    It used to read that from the database, which made it a test of whether anybody had imported
+    anything -- it passed on a fresh branch and failed the moment a chapter pack was imported into
+    the shared development database, and it would fail in production for the same reason. The
+    empty state is a property of the view and the template, so the catalogue is emptied here
+    instead of hoping the database is.
+    """
+    from originalentry.staff import views as staff_views
+
+    monkeypatch.setattr(staff_views, "_catalogue_rows", lambda: [])
+    client.sign_in(owner)
+
+    page = client.get("/staff/catalogue").get_data(as_text=True)
+
+    assert "The catalogue is empty" in page, "the empty state did not render"
     assert "administrator" in page.lower(), "did not say who can add one"
+    assert "Upload a pack" not in page, "told a teacher to do something only an admin can do"
 
 
 def test_an_archived_section_of_yours_is_still_yours(client, session, owner):

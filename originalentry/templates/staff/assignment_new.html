@@ -80,9 +80,37 @@
       {# values is a form MultiDict, so its ids are strings; entry.id is an int. #}
       <option value="{{ entry.id }}"
                 {% if values.get('pack_version_id') == entry.id|string %}selected{% endif %}>
-        {{ entry.label }}</option>
+        {% if entry.is_problem_set %}
+          {{ entry.chapter_label }} &middot; {{ entry.textbook }}
+          &middot; {{ entry.problem_count }} problems &middot; v{{ entry.label.split('v')[-1] }}
+        {% else %}{{ entry.label }}{% endif %}</option>
       {% endfor %}
     </select>
+
+    {# A chapter problem set is marked out of the best N, so an assignment from one has to say
+       what N is. Shown with every chapter's ceiling, because being refused at 422 is a worse way
+       to learn how many problems a chapter has. #}
+    {% set chapters = catalogue | selectattr('is_problem_set') | list %}
+    {% if chapters %}
+    <div class="mt-3">
+      <label class="field-label" for="problems_required">
+        For a chapter of problems: how many count
+      </label>
+      <input id="problems_required" name="problems_required" type="number" min="1"
+             class="field field--figure mt-1 w-28"
+             value="{{ values.get('problems_required', '') }}"
+             aria-describedby="problems_required_help">
+      <p id="problems_required_help" class="mt-1 text-sm text-muted">
+        A student's best this many problems count, so working more can never cost them.
+        {% for entry in chapters %}
+        {{ entry.chapter_label }} has {{ entry.problem_count }} problems.
+        {% endfor %}
+      </p>
+      {% if errors.get('problems_required') %}
+      <p class="mt-1 text-sm text-notice" role="alert">{{ errors['problems_required'] }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
 
     <label class="mt-3 flex items-center gap-2 text-sm">
       <input type="radio" name="company_policy" value="choice"
@@ -126,6 +154,9 @@
     </div>
 
     <div>
+      {% if errors.get('variant_policy') %}
+      <p class="mt-1 text-sm text-notice" role="alert">{{ errors['variant_policy'] }}</p>
+      {% endif %}
       <label class="field-label" for="variant_policy">Variants</label>
       <select id="variant_policy" name="variant_policy"
               class="field mt-1 w-auto">

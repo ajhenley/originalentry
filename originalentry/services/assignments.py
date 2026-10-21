@@ -95,6 +95,7 @@ def create_assignment(
     variant_policy: str = ROUND_ROBIN,
     guided_mode: bool = True,
     prerequisite: Assignment | None = None,
+    problems_required: int | None = None,
     actor=None,
 ) -> Assignment:
     """A fixed assignment names one company (``pack_version``); a choice assignment offers a list
@@ -116,6 +117,10 @@ def create_assignment(
         late_until=late_until if late_policy == LATE_ACCEPT else None,
         guided_mode=guided_mode,
         prerequisite_assignment_id=prerequisite.id if prerequisite else None,
+        # Null for every practice set. Required for a chapter problem set, and validated by the
+        # caller against the chapter's own problem count -- never defaulted here, because a
+        # denominator nobody chose rescales every mark in the section silently.
+        problems_required=problems_required,
     )
     session.add(assignment)
     session.flush()
@@ -168,6 +173,10 @@ def clone_assignment(
         late_until=moved(assignment.late_until),
         prerequisite_assignment_id=assignment.prerequisite_assignment_id,
         guided_mode=assignment.guided_mode,
+        # Cloning is a creation path, so it carries the chapter's count too. Without this the
+        # clone held NULL and problems_best_n marked the section out of every problem in the
+        # chapter -- the silent rescale the spec forbids, reached from a button in the console.
+        problems_required=assignment.problems_required,
         cloned_from_id=assignment.id,
     )
     session.add(clone)

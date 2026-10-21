@@ -29,6 +29,13 @@ from sqlalchemy.orm import Mapped, deferred, mapped_column, relationship
 
 from ..extensions import db
 
+# What a pack is for. A practice set is the full accounting cycle for one company; a problem set is
+# a chapter of short, independent journal-entry problems. They share every content table -- the
+# difference is which screens and which rubric component apply, so it is a column, not a hierarchy.
+KIND_PRACTICE_SET = "practice_set"
+KIND_PROBLEM_SET = "problem_set"
+PACK_KINDS = (KIND_PRACTICE_SET, KIND_PROBLEM_SET)
+
 
 class ContentPack(db.Model):
     __tablename__ = "content_pack"
@@ -37,6 +44,13 @@ class ContentPack(db.Model):
     slug: Mapped[str] = mapped_column(String(80), unique=True)
     company_name: Mapped[str] = mapped_column(String(200))
     course_tags: Mapped[list] = mapped_column(JSONB, default=list)
+    kind: Mapped[str] = mapped_column(String(20), default=KIND_PRACTICE_SET,
+                                      server_default=KIND_PRACTICE_SET)
+    # Chapter metadata, for a problem set only: what the chapter picker lists and what names the
+    # row in the mastery view. Null for every practice set.
+    textbook: Mapped[str | None] = mapped_column(String(200))
+    chapter_label: Mapped[str | None] = mapped_column(String(80))
+    chapter_ordinal: Mapped[int | None] = mapped_column(Integer)
 
 
 class PackVersion(db.Model):

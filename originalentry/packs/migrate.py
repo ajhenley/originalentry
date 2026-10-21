@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..models import (
@@ -140,6 +140,22 @@ def migrate_assignment(
         raise MigrationRefused(f"There is no version {to_version} of this company.")
     if to_pv.version <= old_pv.version:
         raise MigrationRefused("Migrate forward: the target must be a newer version.")
+
+    # A chapter problem set is marked out of the best N of its problems. Migrating to a version
+    # with fewer problems would leave N above the ceiling: problems_best_n's chosen set shortens
+    # while the denominator does not, so the whole section is silently marked out of a total it
+    # can no longer reach. Same rule as assignment creation, a different entry point.
+    if assignment.problems_required is not None:
+        available = session.scalar(
+            select(func.count()).select_from(SourceDocument).where(
+                SourceDocument.pack_version_id == to_pv.id)
+        )
+        if assignment.problems_required > available:
+            raise MigrationRefused(
+                f"This assignment counts the best {assignment.problems_required} problems and "
+                f"version {to_version} has only {available}. Change how many count first, or "
+                f"migrate to a version with at least that many problems."
+            )
 
     # Natural-key translation tables, old id -> new id.
     acc_old = _id_to_key(session, Account, old_pv.id, "number")

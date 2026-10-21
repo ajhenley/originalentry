@@ -17,8 +17,10 @@ from ..ledger.snapshot import load_snapshot
 from ..models import (
     Account,
     AnswerKey,
+    Assignment,
     Disposition,
     PackVersion,
+    ProblemAttempt,
     SourceDocument,
     StatementDraft,
     StatementLine,
@@ -31,12 +33,29 @@ from .models import GradeResult, StatementRow, StudentWork
 
 def load_work(session: Session, workspace: Workspace) -> StudentWork:
     choices, reasons = _dispositions(session, workspace)
+    assignment = session.get(Assignment, workspace.assignment_id)
     return StudentWork(
         snapshot=load_snapshot(session, workspace),
         dispositions=choices,
         disposition_reasons=reasons,
         statements=_statements(session, workspace),
+        problems_required=assignment.problems_required if assignment else None,
+        revealed=_revealed(session, workspace),
     )
+
+
+def _revealed(session: Session, workspace: Workspace) -> frozenset[str]:
+    """Problems whose answer this student asked to see.
+
+    Read here rather than in the component so the engine stays pure in the work: `grade()` never
+    touches a session, and a revealed problem has to be a fact about the work by the time it runs.
+    """
+    return frozenset(session.scalars(
+        select(ProblemAttempt.document_ref).where(
+            ProblemAttempt.workspace_id == workspace.id,
+            ProblemAttempt.answer_shown_at.is_not(None),
+        )
+    ).all())
 
 
 def grade_workspace(session: Session, workspace: Workspace) -> GradeResult:

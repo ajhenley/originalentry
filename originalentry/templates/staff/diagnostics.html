@@ -167,6 +167,11 @@
   {% endif %}
 </section>
 
+{# Hidden for a chapter problem set, not blanked: the answer key carries a triage value for every
+   problem only because validator V10 requires one, so this tally would report every problem "not
+   handled" for every student -- which reads as a cohort in trouble rather than a column that does
+   not apply. A section rendering empty reads as an outage, so it goes entirely. #}
+{% if not is_problem_set %}
 <section class="mb-8" aria-labelledby="triage">
   <h2 id="triage" class="mb-2">Documents handled differently from the key</h2>
   {% set misses = diagnostics.triage | selectattr('total') | list %}
@@ -199,6 +204,7 @@
   </div>
   {% endif %}
 </section>
+{% endif %}
 
 <section aria-labelledby="time">
   <h2 id="time" class="mb-2">Time on task</h2>

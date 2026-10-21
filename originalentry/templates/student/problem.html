@@ -1,0 +1,188 @@
+{% extends "layouts/workspace.html" %}
+{% block heading %}Problem {{ problem.ref }}{% endblock %}
+
+{% block workspace %}
+<div class="space-y-4">
+
+  <div class="panel">
+    <p>{{ problem.stem }}</p>
+  </div>
+
+  {% if errors %}
+  {# A refused submission costs nothing: no attempt, and the entry already standing is untouched.
+     The figures stay in the form so a typo is one keystroke to fix. #}
+  <div class="callout callout--attention mb-4" role="alert">
+    <p class="font-semibold">This entry was not recorded.</p>
+    <ul class="mt-1 list-disc pl-5">
+      {% for message in errors %}<li>{{ message }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if not problem.gradable %}
+  {# No answer key for this workspace: the instructor has not handed out a version yet. Saying so
+     is the only honest option -- with nothing to compare against, "matches" and "does not match"
+     are both inventions, and the reveal button would forfeit the problem and show an empty
+     table. #}
+  <p class="callout callout--attention text-sm" role="status">
+    Your instructor has not handed out a version of this work yet, so this page cannot check your
+    entry or show you the one it calls for. You can still record an entry and it will be kept.
+  </p>
+  {% elif problem.revealed %}
+    <p class="text-sm text-muted">
+      You asked to see this entry, so it no longer counts toward your mark. You can still work it
+      as often as you like.
+    </p>
+  {% elif problem.matched %}
+    <p class="text-sm">Your entry matches the expected entry.</p>
+  {% elif problem.shape %}
+    {# Level 1 says what KIND of thing is wrong and never which line, so a student has to look at
+       their own work. Level 2 and above adds the lines below. #}
+    <p class="text-sm">
+      {% if problem.shape == 'balance' %}
+        The debits and the credits in your entry do not come to the same figure.
+      {% elif problem.shape == 'account' %}
+        At least one account here is not one this transaction touches.
+      {% elif problem.shape == 'direction' %}
+        The accounts are the ones this transaction touches; at least one is on the other side
+        from where this transaction puts it.
+      {% elif problem.shape == 'amount' %}
+        The accounts and the sides are the ones this transaction touches; at least one figure is
+        not the figure.
+      {% endif %}
+    </p>
+  {% endif %}
+
+  {% if problem.level >= levels.lines and problem.marked_lines and not problem.matched %}
+  <div class="panel overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
+      <caption class="text-left">Your entry, line by line</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="text-left">Account</th>
+          <th scope="col" class="text-left">Side</th>
+          <th scope="col" class="text-right">Amount</th>
+          <th scope="col" class="text-left">In this entry</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in problem.marked_lines %}
+        <tr>
+          <td>{{ line.account }}</td>
+          <td>{{ line.side }}</td>
+          <td class="text-right">{{ line.cents | money }}</td>
+          <td>{% if line.in_the_key %}Yes{% else %}<span class="text-notice">No</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if problem.signatures %}
+  {# T8.8 is exempted here, behind the fence and only from the second attempt: the sentence is
+     prose the pack's author wrote about a misconception, which is the point of the feature. #}
+  <div class="callout callout--attention">
+    <p class="font-semibold">One thing to look at</p>
+    <ul class="mt-1 list-disc pl-5">
+      {% for sentence in problem.signatures %}<li>{{ sentence }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if problem.answer %}
+  {# A8 is exempted only here, and only because the student pressed the button. #}
+  <div class="panel overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
+      <caption class="text-left">The entry this transaction calls for</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="text-left">Account</th>
+          <th scope="col" class="text-left">Side</th>
+          <th scope="col" class="text-right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in problem.answer %}
+        <tr>
+          <td>{{ line.account }}</td>
+          <td>{{ line.side }}</td>
+          <td class="text-right">{{ line.cents | money }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if not read_only %}
+  <form method="post" class="panel space-y-4"
+        action="{{ url_for('student.problem_submit', workspace=workspace.public_id,
+                           company_slug=company.slug, ref=problem.ref) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="w-full border-collapse text-sm">
+      <caption class="text-left">Your entry</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="text-left">Account</th>
+          <th scope="col" class="text-right">Debit</th>
+          <th scope="col" class="text-right">Credit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {# Six rows, matching problems.chapter.MAX_ENTRY_LINES: the validator refuses a longer
+           entry at import, so every problem that imports can be answered here. #}
+        {% for i in range(1, 7) %}
+        <tr>
+          <td>
+            <label class="sr-only" for="line-{{ i }}-account">Account on line {{ i }}</label>
+            {# The figures survive a refusal. A refused submission costs no attempt, and retyping
+               six rows after one mistyped figure would be the same injury by another route. #}
+            <select id="line-{{ i }}-account" name="line-{{ i }}-account" class="field mt-1">
+              <option value=""></option>
+              {% for account in accounts %}
+              <option value="{{ account.number }}"
+                {% if typed.get('line-' ~ i ~ '-account') == account.number %}selected{% endif %}>
+                {{ account.number }} &mdash; {{ account.name }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="text-right">
+            <label class="sr-only" for="line-{{ i }}-debit">Debit on line {{ i }}</label>
+            <input id="line-{{ i }}-debit" name="line-{{ i }}-debit" inputmode="decimal"
+                   value="{{ typed.get('line-' ~ i ~ '-debit', '') }}"
+                   class="field field--figure w-28">
+          </td>
+          <td class="text-right">
+            <label class="sr-only" for="line-{{ i }}-credit">Credit on line {{ i }}</label>
+            <input id="line-{{ i }}-credit" name="line-{{ i }}-credit" inputmode="decimal"
+                   value="{{ typed.get('line-' ~ i ~ '-credit', '') }}"
+                   class="field field--figure w-28">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="flex flex-wrap gap-4">
+      <button type="submit" class="btn btn--primary">Record this entry</button>
+    </div>
+  </form>
+
+  {# Also requires a key: with none, pressing this forfeited the problem's contribution to the
+     mark and then showed an empty table, with no way back. #}
+  {% if not problem.revealed and problem.gradable %}
+  <form method="post"
+        action="{{ url_for('student.problem_reveal', workspace=workspace.public_id,
+                           company_slug=company.slug, ref=problem.ref) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="text-sm text-muted">
+      If you would rather see the entry this transaction calls for, you can. This problem then
+      stops counting toward your mark, and you can keep working it.
+    </p>
+    <button type="submit" class="btn btn--outline">Show me this entry</button>
+  </form>
+  {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

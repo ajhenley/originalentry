@@ -64,6 +64,10 @@ class Assignment(db.Model):
     cloned_from_id: Mapped[int | None] = mapped_column(ForeignKey("assignment.id"))
     marks_released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # How many of a chapter problem set's problems count toward the mark. Null for every practice
+    # set, which is why it cannot be NOT NULL; required for a problem set, enforced at creation
+    # rather than in the schema for exactly that reason.
+    problems_required: Mapped[int | None] = mapped_column(Integer)
 
     __table_args__ = (
         # A fixed policy requires a pack version; accept_late requires late_until > due_at (D4).
@@ -313,6 +317,35 @@ class CheckpointAttempt(db.Model):
 
     __table_args__ = (
         UniqueConstraint("workspace_id", "checkpoint_key", "attempt_no"),
+    )
+
+
+class ProblemAttempt(db.Model):
+    """One student's history with one chapter problem.
+
+    Server-side on purpose: the feedback a student is shown escalates with the attempt count, and a
+    counter the browser owns is one a student could reset by reloading -- which would turn
+    progressive disclosure into pressing submit twice. One row per (workspace, problem), so the
+    count never depends on which of two rows was read first.
+    """
+
+    __tablename__ = "problem_attempt"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspace.id"))
+    document_ref: Mapped[str] = mapped_column(String(40))
+    # Submissions that were accepted. A submission refused for being out of balance does not
+    # increment this: an attempt lost to a typo is a defect, not a cost of practising.
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Set once, by the explicit reveal endpoint only. A revealed problem stays practisable and
+    # stops counting toward the mark.
+    answer_shown_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "document_ref", name="uq_problem_attempt_workspace_ref"),
+        # Every problem screen reads one workspace's rows together.
+        Index("ix_problem_attempt_workspace", "workspace_id"),
     )
 
 

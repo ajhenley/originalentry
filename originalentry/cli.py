@@ -30,6 +30,7 @@ def register_cli(app: Flask) -> None:
     staff = AppGroup("staff", help="Staff accounts.")
     auth = AppGroup("auth", help="Break-glass sign-in and revocation.")
     packs = AppGroup("packs", help="Content packs.")
+    problems = AppGroup("problems", help="Chapter problem sets.")
 
     @staff.command("add")
     @click.argument("email")
@@ -144,6 +145,36 @@ def register_cli(app: Flask) -> None:
                 raise SystemExit(1) from refused
         db.session.commit()
         click.echo(f"Imported pack version id {version.id}.")
+
+    @problems.command("import")
+    @click.argument("chapter_path")
+    def problems_import(chapter_path: str) -> None:
+        """Import a chapter of short problems from its YAML file (one file, one command)."""
+        from .models import ContentPack
+        from .packs.importing import PackImportRefused
+        from .problems.chapter import ChapterRefused
+        from .problems.importing import ChapterImportRefused, import_chapter
+
+        with open(chapter_path, encoding="utf-8") as fh:
+            text = fh.read()
+        try:
+            version = import_chapter(db.session, text, actor=None)
+        except (ChapterRefused, ChapterImportRefused) as refused:
+            db.session.rollback()
+            click.echo(f"Refused, {len(refused.problems)} problem(s):", err=True)
+            for problem in refused.problems:
+                click.echo(f"  {problem}", err=True)
+            raise SystemExit(1) from refused
+        except PackImportRefused as refused:
+            db.session.rollback()
+            click.echo("Refused by the pack validator:", err=True)
+            for problem in refused.problems:
+                click.echo(f"  [{problem.rule}] {problem.path}: {problem.message}", err=True)
+            raise SystemExit(1) from refused
+        db.session.commit()
+        pack = db.session.get(ContentPack, version.content_pack_id)
+        click.echo(f"Imported {pack.slug} version {version.version} "
+                   f"({len(version.manifest['documents'])} problems).")
 
     @packs.command("migrate")
     @click.option("--assignment", "assignment_pub", required=True, help="Assignment public id.")
@@ -542,6 +573,7 @@ def register_cli(app: Flask) -> None:
     app.cli.add_command(staff)
     app.cli.add_command(auth)
     app.cli.add_command(packs)
+    app.cli.add_command(problems)
     app.cli.add_command(grade)
     app.cli.add_command(export)
     app.cli.add_command(seed)

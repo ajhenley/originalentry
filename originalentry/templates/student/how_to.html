@@ -13,16 +13,40 @@
 {% block workspace %}
 <header class="max-w-prose">
   <p class="text-lg text-muted">
+    {% if is_problem_set %}
+    These are short problems from one chapter, each asking for a single journal entry. You work
+    out the entry; the app checks the mechanical things, keeps what you record, and tells you more
+    about what to look at each time you try. It never fills anything in for you.
+    {% else %}
     You are keeping this company's books for {{ company.period_label }}. You do the bookkeeping;
     the app checks the mechanical things, keeps what you record, and works out the ledgers and
     the trial balance from it. It never fills anything in for you.
+    {% endif %}
   </p>
 </header>
 
 <ol class="mt-8 space-y-6">
   {% set ws = workspace.public_id %}
   {% set slug = company.slug %}
-  {% for step in [
+  {# Every step below opens a screen the fence closes in a problem set, so a chapter gets its own
+     two steps rather than a list of dead ends. #}
+  {% for step in ([
+    {
+      'title': 'Problems: work any of them, as often as you like',
+      'href': url_for('student.problems', workspace=ws, company_slug=slug),
+      'link': 'Open Problems',
+      'body': 'Read the problem and record the entry it calls for. Nothing is lost by not
+               getting it first time: you can try again as many times as you like, and the more
+               you try the more the page tells you about what to look at.',
+    },
+    {
+      'title': 'Hand in when you are done',
+      'href': url_for('student.submit', workspace=ws, company_slug=slug),
+      'link': 'Open Hand in',
+      'body': 'Your best few problems count, so working more can never cost you. Hand in when you
+               have done as many as you want to.',
+    },
+  ] if is_problem_set else [
     {
       'title': 'Documents: decide what each one needs',
       'href': url_for('student.documents', workspace=ws, company_slug=slug),
@@ -81,7 +105,7 @@
       'link': 'Open Submit',
       'body': 'Submitting makes everything read-only. If you hand in early by accident, your
                instructor can give the books back to you.',
-    }] %}
+    }]) %}
   <li class="border-l-2 border-rule pl-4">
     <p class="label-meta">Step {{ loop.index }}</p>
     <h2 class="mt-1 text-xl">{{ step.title }}</h2>
@@ -95,16 +119,27 @@
   <h2 class="text-xl">What the app does and does not do</h2>
   <dl class="mt-3 space-y-3 text-muted">
     <div>
+      {% if is_problem_set %}
+      {# The opposite of the practice-set promise, and deliberately so: commenting on the accounts
+         and figures is what makes a chapter problem self-grading. #}
+      <dt class="font-semibold text-ink">It tells you more each time you try</dt>
+      <dd>The first time, it says what kind of thing to look at and not which line &mdash; that
+        part is yours. After that it marks each line against the entry the transaction calls for,
+        and says what the misunderstanding usually is. The answer itself is one button away, and
+        taking it costs only that problem.</dd>
+      {% else %}
       <dt class="font-semibold text-ink">It refuses, it does not hint</dt>
       <dd>A refusal is always mechanical: an entry that does not balance, a journal without a
         column for that account, a deadline that has passed. It never comments on the accounts
         you chose or the figures you entered.</dd>
+      {% endif %}
     </div>
     <div>
       <dt class="font-semibold text-ink">It keeps what you type</dt>
       <dd>Entries are saved as you record them, and kept in this browser as well, so a dropped
         connection does not cost you an entry.</dd>
     </div>
+    {% if not is_problem_set %}
     <div>
       <dt class="font-semibold text-ink">It works out only what follows</dt>
       <dd>The ledgers, the trial balance and the totals are derived from your own entries and
@@ -115,17 +150,26 @@
       <dd>Companies come in versions with different figures, so a classmate's numbers will not
         match yours even where the method is identical.</dd>
     </div>
+    {% endif %}
   </dl>
 </section>
 
 <section class="mt-8 max-w-prose">
   <h2 class="text-xl">When you are stuck</h2>
   <p class="mt-2 text-muted">
+    {% if is_problem_set %}
+    Read the problem again before changing an entry; most of what looks like an app problem is a
+    detail in the wording. The <a class="underline"
+      href="{{ url_for('student.reference_index', workspace=ws, company_slug=slug) }}">Reference</a>
+    holds the chart of accounts these problems use. After that, ask your instructor: they can see
+    where you are.
+    {% else %}
     Read the document again before changing an entry; most of what looks like an app problem is
     a detail on the paper. The <a class="underline"
       href="{{ url_for('student.reference_index', workspace=ws, company_slug=slug) }}">Reference</a>
     holds this company's chart of accounts. After that, ask your instructor: they can see where
     you are and what the app last refused.
+    {% endif %}
   </p>
 </section>
 {% endblock %}

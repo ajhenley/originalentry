@@ -30,6 +30,7 @@ KNOWN_COMPONENTS = frozenset(
         "statements_structure",
         "statements_figures",
         "closing",
+        "problems_best_n",
     }
 )
 

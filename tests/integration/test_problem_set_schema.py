@@ -127,7 +127,9 @@ def test_an_assignment_carries_how_many_problems_count(session, workspace):
 
 def test_a_pack_carries_its_textbook_and_chapter(session):
     """What the chapter picker lists and what Block A names. Null for a practice set."""
-    pack = ContentPack(slug="openstax-fa-ch3", company_name="Chapter 3 problems",
+    # Not a slug any real chapter uses: packs/chapters/openstax-fa-ch3.yaml is imported into the
+    # development branch, and claiming its slug here collides with the unique constraint.
+    pack = ContentPack(slug="test-only-chapter-metadata", company_name="Chapter 3 problems",
                        kind=KIND_PROBLEM_SET, textbook="OpenStax Financial Accounting",
                        chapter_label="Chapter 3", chapter_ordinal=3)
     session.add(pack)

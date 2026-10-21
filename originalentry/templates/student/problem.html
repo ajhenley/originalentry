@@ -62,7 +62,8 @@
           <th scope="col" class="text-left">Account</th>
           <th scope="col" class="text-left">Side</th>
           <th scope="col" class="text-right">Amount</th>
-          <th scope="col" class="text-left">In this entry</th>
+          {# Says which entry: "In this entry: No" scans as "not in yours", which is backwards. #}
+          <th scope="col" class="text-left">In the entry this calls for</th>
         </tr>
       </thead>
       <tbody>
@@ -71,7 +72,12 @@
           <td>{{ line.account }}</td>
           <td>{{ line.side }}</td>
           <td class="text-right">{{ line.cents | money }}</td>
-          <td>{% if line.in_the_key %}Yes{% else %}<span class="text-notice">No</span>{% endif %}</td>
+          <td>
+            {%- if not line.in_the_key %}<span class="text-notice">No</span>
+            {%- elif line.figure_matches %}Yes
+            {%- else %}Yes &mdash; <span class="text-notice">different figure</span>
+            {%- endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

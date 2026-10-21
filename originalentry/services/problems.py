@@ -290,12 +290,22 @@ class ProblemRow:
 
 @dataclass(frozen=True)
 class LineMark:
-    """One line of the student's entry, and whether the key has it. Level 2 and above only."""
+    """One line of the student's entry, and how it stands against the key. Level 2 and above.
+
+    Three states, not two. ``in_the_key`` compares the account and the side only, so a line with
+    the right account on the right side and the wrong amount used to read as an unqualified match
+    -- beside a message saying a figure was off. ``figure_matches`` separates those two cases, and
+    is None for a line the key does not have at all.
+
+    It records *that* the figure differs, never what the key's figure is: A8 is relaxed only
+    behind the reveal button, and level 2 is below it.
+    """
 
     account: str
     side: str
     cents: int
     in_the_key: bool
+    figure_matches: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -369,11 +379,17 @@ def _submitted_for(session: Session, workspace: Workspace, document_ref: str) ->
 
 
 def _as_lines(merged: dict, *, against: dict | None = None) -> tuple[LineMark, ...]:
-    return tuple(
-        LineMark(account=account, side=side, cents=cents,
-                 in_the_key=(against is None or (account, party, side) in against))
-        for (account, party, side), cents in sorted(merged.items())
-    )
+    marks = []
+    for (account, party, side), cents in sorted(merged.items()):
+        line_key = (account, party, side)
+        in_the_key = against is None or line_key in against
+        figure_matches = (
+            None if against is None or line_key not in against
+            else against[line_key] == cents
+        )
+        marks.append(LineMark(account=account, side=side, cents=cents,
+                              in_the_key=in_the_key, figure_matches=figure_matches))
+    return tuple(marks)
 
 
 def chapter_problems(session: Session, workspace: Workspace) -> list[ProblemRow]:

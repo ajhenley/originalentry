@@ -428,3 +428,76 @@ def test_the_reference_chart_hides_the_synthetic_accounts_too(client, world):
     assert "Cash" in text, "the chart is empty, so this proves nothing"
     assert "Retained Earnings" not in text
     assert "Income Summary" not in text
+
+
+# ── the per-line column says which entry it means ──────────────────────────────────────
+
+#: P3-01's accounts and sides as the key has them, with the cash figure wrong. Balanced, so it is
+#: accepted, and every line is an account and side the transaction does touch.
+RIGHT_LINES_WRONG_FIGURE = {
+    "line-1-account": "150", "line-1-debit": "4700.00", "line-1-credit": "",
+    "line-2-account": "101", "line-2-debit": "", "line-2-credit": "1700.00",
+    "line-3-account": "201", "line-3-debit": "", "line-3-credit": "3000.00",
+}
+
+
+def _lines_table(text: str) -> str:
+    start = text.find("Your entry, line by line")
+    assert start != -1, "the per-line table did not render"
+    return text[start:start + 600]
+
+
+def test_the_per_line_column_says_which_entry_it_is_talking_about(client, world):
+    """"In this entry: No" reads as "not in yours", which is backwards -- it means the entry the
+    transaction calls for. Seen on screen rather than in a test, which is why it took a browser
+    to notice."""
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+    _post(client, ws, slug, "P3-01", WRONG_ACCOUNT)
+    _post(client, ws, slug, "P3-01", WRONG_ACCOUNT)
+
+    table = _lines_table(_text(client.get(_url(ws, slug, "P3-01"))))
+
+    assert "In this entry" not in table, "the ambiguous header is still there"
+    assert "calls for" in table, "the header does not say which entry it means"
+
+
+def test_a_right_account_with_a_wrong_figure_is_not_simply_yes(client, world):
+    """It used to be: in_the_key compared the account and side only, so a line with the right
+    account on the right side and the wrong amount read "Yes" beside a message saying a figure
+    was off. The column now says which."""
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+    _post(client, ws, slug, "P3-01", RIGHT_LINES_WRONG_FIGURE)
+    _post(client, ws, slug, "P3-01", RIGHT_LINES_WRONG_FIGURE)
+
+    table = _lines_table(_text(client.get(_url(ws, slug, "P3-01"))))
+
+    assert "different figure" in table, "a wrong amount on a right account reads as unqualified"
+
+
+def test_the_per_line_column_never_shows_the_figure_the_key_has(client, world):
+    """A8 is relaxed only behind the reveal button. Saying a figure differs is not saying what it
+    is, and 1,800.00 is the figure this entry calls for on that line."""
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+    _post(client, ws, slug, "P3-01", RIGHT_LINES_WRONG_FIGURE)
+    _post(client, ws, slug, "P3-01", RIGHT_LINES_WRONG_FIGURE)
+
+    text = _text(client.get(_url(ws, slug, "P3-01")))
+
+    assert "The entry this transaction calls for" not in text, "the answer table rendered"
+    assert "1,800.00" not in text, "the key's own figure reached the student at level 2"
+
+
+def test_a_line_the_transaction_does_not_touch_still_says_no(client, world):
+    """Guards the three above from the inside: if every line now read the same, the column would
+    say nothing."""
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+    _post(client, ws, slug, "P3-01", WRONG_ACCOUNT)
+    _post(client, ws, slug, "P3-01", WRONG_ACCOUNT)
+
+    table = _lines_table(_text(client.get(_url(ws, slug, "P3-01"))))
+
+    assert "No" in table

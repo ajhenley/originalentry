@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from ..grading.models import GradeResult, result_to_dict
 from ..models import Assignment, GradeComment, GradeOverride, GradeRun, Workspace
+from ..workspaces import class_workspace_clause
 
 # How a workspace was handed in, at the moment it was graded (tension 10, I3.8).
 OPEN = "open"
@@ -211,8 +212,7 @@ def _section_workspaces(session: Session, assignment: Assignment):
     return (
         select(Workspace)
         .where(
-            Workspace.assignment_id == assignment.id,
-            Workspace.archived_at.is_(None),
+            *class_workspace_clause(assignment),
             # A student still waiting on a hand-assigned variant (I1.3) has been given no
             # figures. Marking them zero out of a hundred would be a lie about work nobody
             # could have done, so they are not gradable until their instructor hands one out.
@@ -230,8 +230,7 @@ def ungraded_count(session: Session, assignment: Assignment) -> int:
         select(func.count())
         .select_from(Workspace)
         .where(
-            Workspace.assignment_id == assignment.id,
-            Workspace.archived_at.is_(None),
+            *class_workspace_clause(assignment),
             Workspace.variant_id.is_not(None),
             ~select(GradeRun.id)
             .where(GradeRun.workspace_id == Workspace.id)

@@ -28,6 +28,7 @@ from ..models import (
     Workspace,
 )
 from ..packs import schema
+from ..workspaces import class_workspaces
 from .grades import active_overrides, from_hundredths, latest_run
 
 BUCKET_HOURS = (1, 2, 4, 8, 12)
@@ -175,13 +176,9 @@ def cohort_csv(session: Session, assignment: Assignment):
 
 
 def _workspaces(session: Session, assignment: Assignment) -> list[Workspace]:
-    return list(
-        session.scalars(
-            select(Workspace)
-            .where(Workspace.assignment_id == assignment.id, Workspace.archived_at.is_(None))
-            .order_by(Workspace.id)
-        )
-    )
+    """The cohort this screen reports on: every live workspace but the teacher's own practice
+    copy, which would show up here as an extra student who made the designed errors on purpose."""
+    return class_workspaces(session, assignment)
 
 
 def _keys_by_variant(session: Session, assignment: Assignment) -> dict[int, schema.AnswerKey]:

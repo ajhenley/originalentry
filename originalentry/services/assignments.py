@@ -25,6 +25,7 @@ from ..models import (
     Workspace,
 )
 from ..models.work import LATE_ACCEPT, LATE_CLOSED
+from ..workspaces import class_workspace_clause
 from . import staff_actions
 
 # No O/0 or I/1: a code is read aloud in a classroom and typed by forty people.
@@ -307,9 +308,10 @@ def variant_for(session: Session, assignment: Assignment, pack_version_id: int) 
     if assignment.variant_policy == RANDOM:
         return secrets.choice(variants)
 
+    # The cohort, not every row: a teacher's practice copy on this assignment would shift which
+    # variant the next student to join is handed, which is a wrong answer rather than a cosmetic
+    # one.
     taken = session.execute(
-        select(func.count()).select_from(Workspace).where(
-            Workspace.assignment_id == assignment.id, Workspace.archived_at.is_(None)
-        )
+        select(func.count()).select_from(Workspace).where(*class_workspace_clause(assignment))
     ).scalar_one()
     return variants[taken % len(variants)]

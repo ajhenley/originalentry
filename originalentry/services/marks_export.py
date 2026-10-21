@@ -10,7 +10,8 @@ import io
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Assignment, Enrollment, User, Workspace
+from ..models import Assignment, Enrollment, User
+from ..workspaces import class_workspaces
 from .grades import final_marks, submission_status
 
 GENERIC = "generic"
@@ -18,11 +19,7 @@ CANVAS = "canvas"
 
 
 def _rows(session: Session, assignment: Assignment):
-    workspaces = session.scalars(
-        select(Workspace)
-        .where(Workspace.assignment_id == assignment.id, Workspace.archived_at.is_(None))
-        .order_by(Workspace.id)
-    ).all()
+    workspaces = class_workspaces(session, assignment)
     for ws in workspaces:
         student = session.get(User, ws.student_id)
         enrolment = session.scalars(

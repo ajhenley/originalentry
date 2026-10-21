@@ -29,8 +29,8 @@ from ..models import (
     Concept,
     ConceptTag,
     User,
-    Workspace,
 )
+from ..workspaces import class_workspaces
 from .diagnostics import SignatureCount, cohort_diagnostics
 from .grades import SUBMITTED, SUBMITTED_LATE, final_marks, latest_run, submission_status
 
@@ -136,10 +136,7 @@ def _workspaces(session, assignment) -> tuple[list, list]:
     pack's full weights while the student starts over, so a teacher who reopened work to let
     somebody fix it would watch the class's mastery fall.
     """
-    everyone = list(session.scalars(
-        db.select(Workspace).where(
-            Workspace.assignment_id == assignment.id, Workspace.archived_at.is_(None))
-    ).all())
+    everyone = class_workspaces(session, assignment)
     submitted = [w for w in everyone
                  if submission_status(session, w) in (SUBMITTED, SUBMITTED_LATE)]
     return everyone, submitted

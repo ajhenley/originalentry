@@ -27,6 +27,7 @@ from ..models import (
     Workspace,
 )
 from ..models.work import KIND_ADJUSTING, KIND_CLOSING, KIND_REGULAR, TARGET_GENERAL
+from ..workspaces import class_workspace_clause
 from .accommodations import overrides_for
 from .activity import REFUSED_SAVE
 from .checkpoints import DEFAULT_MAX_ATTEMPTS
@@ -95,7 +96,7 @@ def assignment_progress(session: Session, assignment: Assignment) -> list[Progre
         session.execute(
             select(Workspace, User)
             .join(User, Workspace.student_id == User.id)
-            .where(Workspace.assignment_id == assignment.id, Workspace.archived_at.is_(None))
+            .where(*class_workspace_clause(assignment))
             .order_by(User.email)
         ).all()
     )

@@ -84,6 +84,7 @@ from ..services.staffing import (
 )
 from ..services.submit import ReopenRefused, reopen_workspace
 from ..services.variants import VariantRefused, assign_variant, variants_for
+from ..workspaces import class_workspace_clause
 from .key_record import printable_key
 
 BATCH = 10  # workspaces graded per request, so nothing comes near the request limit (I3.7)
@@ -119,6 +120,28 @@ def _assignment_or_404(public_id: str) -> Assignment:
     if assignment is None or not may_see_section(assignment.section_id):
         abort(404)
     return assignment
+
+
+def live_workspace_counts() -> dict[int, int]:
+    """How many class-facing books each assignment has, keyed by assignment id.
+
+    The console's assignment list calls this column *students*, so a teacher's practice copy
+    counted here tells the teacher of three students that they have four -- on the first screen
+    they see, about their own section. One ``group_by`` across every assignment rather than a
+    query per row, which is why it composes ``class_workspace_clause()`` with no assignment
+    rather than calling ``class_workspaces`` per row.
+
+    Module level, and named without an underscore, so the exclusion can be tested directly: the
+    figure reaches the page as one number in one table cell, and asserting on the rendered HTML
+    would be a test about markup rather than about the count.
+    """
+    return dict(
+        db.session.execute(
+            db.select(Workspace.assignment_id, db.func.count())
+            .where(*class_workspace_clause())
+            .group_by(Workspace.assignment_id)
+        ).all()
+    )
 
 
 def _admin_stats() -> dict[str, int]:
@@ -168,13 +191,7 @@ def index():
         ).where(SectionStaff.user_id == current_user.id)
     rows = db.session.execute(query).all()
 
-    counts = dict(
-        db.session.execute(
-            db.select(Workspace.assignment_id, db.func.count())
-            .where(Workspace.archived_at.is_(None))
-            .group_by(Workspace.assignment_id)
-        ).all()
-    )
+    counts = live_workspace_counts()
 
     assignments = [
         {
@@ -243,7 +260,7 @@ def _archived_rows(assignment: Assignment) -> list[dict]:
         .join(User, Workspace.student_id == User.id)
         .join(PackVersion, Workspace.pack_version_id == PackVersion.id)
         .join(ContentPack, PackVersion.content_pack_id == ContentPack.id)
-        .where(Workspace.assignment_id == assignment.id, Workspace.archived_at.is_not(None))
+        .where(*class_workspace_clause(assignment, archived=True))
         .order_by(Workspace.archived_at.desc())
     ).all()
     return [
@@ -268,7 +285,7 @@ def grading(assignment: str):
     for workspace, student in db.session.execute(
         db.select(Workspace, User)
         .join(User, Workspace.student_id == User.id)
-        .where(Workspace.assignment_id == found.id, Workspace.archived_at.is_(None))
+        .where(*class_workspace_clause(found))
         .order_by(User.email)
     ).all():
         marks = final_marks(db.session, workspace)

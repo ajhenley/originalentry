@@ -8,7 +8,14 @@
 {% block workspace %}
 {% if not marks %}
 <p class="max-w-prose text-muted" role="status">
+  {# A practice copy does not wait for release, so on an ungraded one the sentence below would be
+     a false reason: the owner is not waiting for anybody, they have not graded it yet. #}
+  {% if yours_to_grade %}
+  You have not graded this copy yet. Grade your copy from the progress screen, and the marks
+  appear here.
+  {% else %}
   Your marks for this assignment have not been released yet.
+  {% endif %}
 </p>
 {% else %}
 <p class="mb-4 max-w-prose text-sm text-muted">

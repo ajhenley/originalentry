@@ -1252,12 +1252,39 @@ def statement_save(statement_type):
 @bp.get("/w/<workspace>/<company_slug>/marks")
 @workspace_view
 def marks():
-    """Nothing is shown until the instructor releases the section's marks (S6.6, I3.6)."""
+    """Nothing is shown until the instructor releases the section's marks (S6.6, I3.6).
+
+    **Except on a practice copy, for its owner.** Marks are released to a whole class at once,
+    and the person who decides when is the teacher reading this screen: the marks and the
+    evidence on their own copy are what they check *before* releasing a section's. Held to the
+    class's gate, the one screen this feature exists to let them read would be the one screen
+    they could not reach until after the decision it informs.
+
+    Relaxed for that case alone. ``g.own_practice`` is already the owner-only answer
+    ``workspace_view`` refused everybody else on, so a student's screen -- and a colleague's or an
+    admin's view of a student's -- still waits for release.
+
+    **And it asks whether they are still staff, where ``services.write._check_gates`` asks the
+    same question for the same reason.** ``is_own_practice`` carries no role check, deliberately;
+    the conditions that depend on a role are enforced wherever the thing they guard is granted.
+    This is such a place: ``marks_released_at`` is a time gate like ``due_at``, and the deadline
+    skip is withdrawn from an owner demoted after their copy was made rather than carried by the
+    flag. Withdrawn here too, they fall back to the class's gate like any other student reading
+    their own books -- which is also all that stands between a flagged row whose owner is not
+    staff and a mark read before its section's marks were released.
+    """
     assignment = db.session.get(Assignment, g.workspace.assignment_id)
     released = assignment is not None and assignment.marks_released_at is not None
+    # One answer, read twice: it opens the marks below and it chooses the sentence the screen
+    # shows when there are none yet. Asked again in the template it would be asked more loosely
+    # -- ``own_practice`` alone is true of an owner this gate no longer exempts -- and the screen
+    # would tell them they had not graded a copy they had, instead of what it is really waiting
+    # for.
+    yours_to_grade = g.own_practice and current_user.role in STAFF_ROLES
     return render_template(
         "student/marks.html",
-        marks=final_marks(db.session, g.workspace) if released else None,
+        marks=final_marks(db.session, g.workspace) if released or yours_to_grade else None,
+        yours_to_grade=yours_to_grade,
     )
 
 

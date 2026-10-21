@@ -30,6 +30,7 @@ from ..decorators import ADMIN_ROLES, STAFF_ROLES, may_see_section, my_section_i
 from ..decorators_admin import admin_view
 from ..decorators_staff import staff_view
 from ..extensions import db
+from ..grading.workspace import grade_workspace
 from ..models import (
     KIND_PROBLEM_SET,
     ROLE_ADMIN,
@@ -66,6 +67,7 @@ from ..services.grades import (
     final_marks,
     grade_section,
     latest_run,
+    record_run,
     release_marks,
     set_comment,
     set_override,
@@ -1203,6 +1205,61 @@ def practice_restart(assignment: str):
     return _into_my_practice_copy(
         found, restart_practice,
         said="Started over. Your old copy is archived and still readable.")
+
+
+@bp.post("/progress/<assignment>/practice/grade")
+@staff_view
+def practice_grade(assignment: str):
+    """Grade my own copy, and land on the marks screen it just produced.
+
+    The last thing a teacher needs from their own copy. ``grade_section`` goes through the
+    chokepoint and therefore skips a practice copy, which is right -- a cohort run must never
+    produce a ``GradeRun`` for one -- but it also means that without this action the copy can
+    never be graded at all, and the marks screen has nothing to read.
+
+    **It takes no workspace id, and that is the gate.** The only workspace it can reach is the
+    one ``practice_copy`` returns for the signed-in caller, so another teacher's copy, a
+    colleague's, an admin's view of either, and every student's workspace on this assignment are
+    unreachable by construction rather than by a check somebody has to remember. ``None`` is
+    ``abort(404)``, never 403, in keeping with the rest of this module: holding a public id must
+    not confirm that a copy exists -- and there is no public id to hold here, which is also why
+    ``staff/progress.html`` can offer the button without ever naming the copy on a screen about
+    the class.
+
+    **Not through ``_workspace_or_404``, and not through the chokepoint.** That lookup refuses a
+    practice copy on every route it feeds (``PRACTICE_REFUSED_AT_THE_CONSOLE``), because every
+    action behind it is one person acting on another's work;
+    ``PRACTICE_ACCEPTED_AT_THE_CONSOLE`` stays empty for that reason. And the chokepoint carries
+    ``staff_practice.is_(False)``, so routing this through it would hide the very row the action
+    exists to grade. ``practice_copy`` asks the one audited per-person question instead
+    (``services/practice._live_copy``, allowlisted in
+    ``tests/guards/test_practice_chokepoint.py``), which is why no new query is written here.
+
+    **The run is stored exactly as a student's is**, with no column telling them apart. Nothing
+    reads ``GradeRun`` by assignment: ``latest_run`` and ``final_marks`` ask per workspace, and
+    the two cohort readers -- the grading roster and ``ungraded_count`` -- reach runs only through
+    the chokepointed workspace query, which never offers them this row. A flag in the grading
+    history would be a second definition of the same rule in a place nothing consults, and the
+    nine-sites problem this feature's chokepoint exists to avoid.
+
+    Lands on the copy's own marks screen, because that is the screen this action is for: a
+    teacher reads the marks and the evidence there before releasing a section's marks, and
+    ``student.views.marks`` lets the owner of a practice copy past ``marks_released_at`` to do it.
+    """
+    found = _assignment_or_404(assignment)
+    copy = practice_copy(db.session, found, current_user)
+    if copy is None:
+        abort(404)
+
+    run = record_run(db.session, copy, grade_workspace(db.session, copy),
+                     created_by=current_user)
+    # Ids and the assignment, never a figure: the same shape of entry the lifecycle writes when
+    # the copy is opened or started over, so the trail of a practice copy reads as one story.
+    staff_actions.record(db.session, current_user, staff_actions.GRADE_RUN, "workspace", copy.id,
+                         detail={"assignment_id": found.id, "run": run.id})
+    db.session.commit()
+    return redirect(url_for("student.marks", workspace=copy.public_id,
+                            company_slug=_company_slug_of(copy)))
 
 
 @bp.post("/assignments/<assignment>/checkpoints")

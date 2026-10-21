@@ -22,6 +22,16 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="btn btn--outline btn--small">Resume your copy</button>
     </form>
+    {# Grades this copy alone. The cohort run skips it -- a practice copy is never in a class's
+       grading records -- so this is the only way its owner gets a mark, and the only reason they
+       want one: reading their own marks screen before releasing the section's. It carries no
+       workspace id, like the two actions beside it, because the copy's public id has no business
+       on a screen about the class. #}
+    <form method="post"
+          action="{{ url_for('staff.practice_grade', assignment=assignment.public_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn--outline btn--small">Grade your copy</button>
+    </form>
     <form method="post"
           action="{{ url_for('staff.practice_restart', assignment=assignment.public_id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

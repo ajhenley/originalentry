@@ -16,6 +16,7 @@ dependencies = [
     "SQLAlchemy>=2.0,<2.1",
     "psycopg[binary]>=3.1,<4",
     "pydantic>=2.6,<3",
+    "PyYAML>=6,<7",
     "requests>=2.31,<3",
     "gunicorn>=21,<24",
     "sentry-sdk[flask]>=2,<3",

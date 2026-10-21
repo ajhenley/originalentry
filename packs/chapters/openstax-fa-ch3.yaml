@@ -1,0 +1,73 @@
+# Analyzing and Recording Transactions -- short problems.
+#
+# One file per chapter, imported with `flask problems import packs/chapters/openstax-fa-ch3.yaml`.
+# Amounts are in CENTS: $4,800.00 is 480000. The validator reports both forms, because writing
+# dollars here is the mistake this format invites.
+#
+# `concept` must name a concept this installation knows (see migrations c3e71f0a95b4), and it is
+# what each of the problem's signatures is tagged with -- which is how the mistakes block names
+# what a student misunderstood.
+
+textbook: OpenStax Principles of Financial Accounting
+chapter: 3
+chapter_label: Analyzing and Recording Transactions
+slug: openstax-fa-ch3
+
+accounts:
+  - {number: "101", name: Cash, type: asset, normal_balance: debit}
+  - {number: "112", name: Accounts Receivable, type: asset, normal_balance: debit}
+  - {number: "140", name: Supplies, type: asset, normal_balance: debit}
+  - {number: "150", name: Equipment, type: asset, normal_balance: debit}
+  - {number: "201", name: Accounts Payable, type: liability, normal_balance: credit}
+  - {number: "210", name: Unearned Service Revenue, type: liability, normal_balance: credit}
+  - {number: "401", name: Service Revenue, type: revenue, normal_balance: credit}
+  - {number: "620", name: Rent Expense, type: expense, normal_balance: debit}
+
+problems:
+  - ref: P3-01
+    date: 2026-10-05
+    concept: debit_credit
+    stem: >
+      On 5 October the business bought equipment for $4,800, paying $1,800 in cash and
+      agreeing to pay the rest later. Record the entry.
+    entry:
+      - {account: "150", debit: 480000}
+      - {account: "101", credit: 180000}
+      - {account: "201", credit: 300000}
+    signatures:
+      - key: supplies_not_equipment
+        label: >
+          Something bought to use for years recorded as supplies, which are used up within
+          the period
+        detect: {type: entry_line, document: P3-01, account: "140", side: debit}
+
+  - ref: P3-02
+    date: 2026-10-09
+    concept: unearned_revenue
+    stem: >
+      On 9 October a client paid $2,400 in advance for work the business will carry out in
+      November. Record the entry.
+    entry:
+      - {account: "101", debit: 240000}
+      - {account: "210", credit: 240000}
+    signatures:
+      - key: advance_as_revenue
+        label: >
+          Money received before the work is done recorded as revenue, when nothing has been
+          earned yet
+        detect: {type: entry_line, document: P3-02, account: "401", side: credit}
+
+  - ref: P3-03
+    date: 2026-10-14
+    concept: debit_credit
+    stem: >
+      On 14 October the business billed a client $1,650 for services already carried out, to
+      be paid within thirty days. Record the entry.
+    entry:
+      - {account: "112", debit: 165000}
+      - {account: "401", credit: 165000}
+    signatures:
+      - key: billed_as_cash
+        label: >
+          Work billed on account recorded as though the cash had come in, which it has not
+        detect: {type: entry_line, document: P3-03, account: "101", side: debit}

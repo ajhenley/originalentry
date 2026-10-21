@@ -18,6 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import messages
+from ..decorators import STAFF_ROLES
 from ..models import (
     LATE_ACCEPT,
     ROLE_STUDENT,
@@ -60,9 +61,24 @@ def _check_gates(session: Session, workspace: Workspace, actor) -> None:
         # A manual-variant assignment the instructor has not handed out yet (I1.3). Their own copy
         # has nothing to work on either.
         raise WriteRefused(messages.WAITING_FOR_VARIANT)
-    if own_practice:
+    if own_practice and actor.role in STAFF_ROLES:
         # The deadline is the only gate a practice copy skips, and it has to: a teacher preparing
         # next term's assignment works a copy whose window has not opened, or has long closed.
+        #
+        # **And it is the only gate that asks whether they are still staff.** ``is_own_practice``
+        # carries no role check, deliberately -- it is a leaf module with no application imports
+        # and no second opinion about who staff are -- and ``services.practice`` enforces the
+        # precondition on every way into *that* module. Neither reaches here: an owner demoted to
+        # student after their copy was made still answers True, ``workspace_view`` sets
+        # ``is_staff`` False and ``is_owner`` True so nothing is read-only, and the skip below
+        # would let them keep writing past ``due_at`` -- the exact bypass the flag's precondition
+        # exists to prevent, reached by navigating to books they already have.
+        #
+        # Asked here because here is where the skip is *granted*. This function already reads
+        # ``actor.role`` one gate above, so it adds no new opinion about who is staff, and
+        # ``workspaces.py`` stays free of application imports, which is the reason the role check
+        # was left out of it. The skip is all that is withdrawn: they fall through to the deadline
+        # like any other student working their own books, rather than being locked out of them.
         return
     # Local import: accommodations reads the write path's own rules, so importing it at module
     # level would be circular.

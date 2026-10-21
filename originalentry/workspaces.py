@@ -42,6 +42,15 @@ def is_own_practice(workspace, actor) -> bool:
     never turn a good response into an error", so an ``AttributeError`` on ``None.staff_practice``
     would not raise -- it would silently stop the durable audit trail recording anything. The
     actor is guarded the same way, for an anonymous caller or one that was never signed in.
+
+    **No role check, and so no answer about one.** This is a leaf module with no application
+    imports and no second opinion about who is staff, so the two conditions that depend on a role
+    are enforced by the code that acts on this answer, not here: ``services.practice`` refuses to
+    *create* a flagged copy for an account that is not staff, on every way into it, and
+    ``services.write._check_gates`` refuses the deadline skip to an actor who is not staff at the
+    branch where that skip is granted. True here means "this row is this person's own practice
+    copy", which stays true of an owner who was demoted yesterday -- and is exactly why neither
+    caller may treat it as a permission on its own.
     """
     if workspace is None or actor is None:
         return False

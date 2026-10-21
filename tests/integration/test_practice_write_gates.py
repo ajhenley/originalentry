@@ -36,6 +36,7 @@ from originalentry.forms.entries import EntryCommand, LineCommand
 from originalentry.models import (
     KIND_REGULAR,
     ROLE_INSTRUCTOR,
+    ROLE_STUDENT,
     Assignment,
     ContentPack,
     JournalEntry,
@@ -282,6 +283,46 @@ def test_a_practice_copy_ignores_the_deadline(session, teacher, student, practic
 
     with pytest.raises(WriteRefused):
         _record_entry_through(session, student_workspace, student)
+
+
+def test_a_demoted_owner_loses_the_deadline_skip(session, teacher, practice, assignment):
+    """The half of the bypass the service-level role check cannot reach.
+
+    ``open_practice`` and ``restart_practice`` both refuse an owner who is no longer staff, so a
+    demoted teacher can neither open a copy nor start one over. The copy they **already hold** is
+    a different matter and goes nowhere near that module: ``workspace_view`` sets ``is_staff``
+    False and ``is_owner`` True, so ``g.read_only`` is False, and ``_check_gates`` granted the
+    deadline skip on ``own_practice`` alone -- ``is_own_practice`` carries no role check, by
+    design, because it is a leaf module with no second opinion about who is staff. So they
+    navigated to their own copy and kept writing past ``due_at``: exactly the bypass Task 1's
+    missing role check was accepted on condition of preventing.
+
+    The skip is withdrawn where it is **granted**, not in ``is_own_practice``: ``_check_gates``
+    already reads ``actor.role``, so asking whether the actor is still staff at that one branch
+    adds no new opinion and keeps ``workspaces.py`` free of application imports.
+
+    The skip is the only thing withdrawn. They are a student now, and a student with their own
+    books is held to the section's deadline like any other -- not locked out of the books.
+    """
+    from originalentry import messages
+    assignment.due_at = LAST_WEEK
+    session.flush()
+    assert close_for(session, practice) == LAST_WEEK, "the window was never shut"
+    # While they are still staff, so the refusal below cannot pass for the wrong reason: a
+    # deadline that was never really open refuses everybody, demoted or not.
+    _record_entry_through(session, practice, teacher, client_key="before-demotion")
+    assert _entries(session, practice) == 1
+
+    teacher.role = ROLE_STUDENT
+    session.flush()
+
+    with pytest.raises(WriteRefused) as refused:
+        _record_entry_through(session, practice, teacher, client_key="after-demotion")
+
+    assert refused.value.message == messages.READ_ONLY_CLOSED, (
+        "refused, but not for the deadline -- a demoted owner must be held to it, not shut out "
+        "of their own books"
+    )
 
 
 def test_a_practice_copy_is_still_read_only_once_submitted(session, teacher, practice):

@@ -38,9 +38,16 @@ this is the only code that could ever create one.
 And **both** entry points ask it, not only the one that writes. ``open_practice`` returns a live
 copy early, which is what makes a second click a resume rather than a reset; with the role check
 only in the writer, that early return handed a demoted owner their copy back while
-``restart_practice`` refused the same account. ``_refuse_non_staff_owner`` is therefore called
-above the early return as well as from the writer -- it costs no query, so a resume pays nothing
-for it -- and the sentence above is true of every way into this module rather than of one of them.
+``restart_practice`` refused the same account. ``_refuse_non_staff_owner`` is therefore the first
+statement of **both** entry points as well as of the writer -- it costs no query, so a resume pays
+nothing for it -- and the sentence above is true of every way into this module rather than of one
+of them.
+
+**Of this module, and not of the write path.** The claim above is about who can be *given* a
+flagged copy. It says nothing about an owner who already has one and is demoted afterwards: they
+never come back here, they go to ``services.write._check_gates``, which grants the deadline skip
+on ``is_own_practice`` alone. That branch asks whether the actor is still staff, and it has to --
+the skip is granted there, so that is the only place it can be withdrawn.
 
 **Two assignment shapes are refused, with a reason a screen can print.** A student-choice
 assignment pins no pack version, and a manual-variant assignment hands out no variant
@@ -299,6 +306,12 @@ def restart_practice(session: Session, assignment: Assignment, teacher, *,
     place -- see ``_refuse_unless_practicable``.
     """
     actor = actor if actor is not None else teacher
+    # First, and for the same reason ``open_practice`` asks first: one account must get one
+    # answer. Asked after the check below, a non-staff account whose live workspace is unflagged
+    # student work got ``PracticeRefused(WORKED_AS_A_STUDENT)`` here and
+    # ``PracticeOwnerNotStaff`` there -- a printable sentence about assignment policy for what is
+    # an invariant breach. The route refuses the role before either runs; a direct caller does not.
+    _refuse_non_staff_owner(teacher)
     existing = _live_copy(session, assignment, teacher)
     if existing is not None and not is_own_practice(existing, teacher):
         # Start over must not be the way round the refusal above: archiving work done as a student

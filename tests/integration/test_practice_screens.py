@@ -226,40 +226,67 @@ WORKSPACE_PAGES = ("/", "/how-to", "/documents", "/journals", "/journals/general
                    "/reference", "/submit", "/marks", "/print")
 
 
-def _pages_of(client, workspace: str, slug: str) -> dict[str, str]:
-    return {
-        page: _text(client.get(f"/w/{workspace}/{slug}{page}"))
-        for page in WORKSPACE_PAGES
-    }
+def _pages_of(client, workspace: str, slug: str) -> dict[str, tuple[int, str]]:
+    """Every workspace page, as ``{path: (status, visible text)}``.
+
+    The status is returned and asserted on rather than inferred from the body. Flask's 404 page
+    has a non-empty body, so a test that only looks for the *absence* of a string passes on a wall
+    of 404s -- which is the shape ``test_a_students_workspace_carries_no_such_banner`` was in, and
+    the shape the inside-out guard on it could not detect.
+    """
+    pages = {}
+    for page in WORKSPACE_PAGES:
+        response = client.get(f"/w/{workspace}/{slug}{page}")
+        pages[page] = (response.status_code, _text(response))
+    return pages
+
+
+def _other_than(pages: dict[str, tuple[int, str]], wanted: int) -> list[str]:
+    return sorted(f"{page} -> {code}" for page, (code, _) in pages.items() if code != wanted)
+
+
+def _saying_it_is_a_practice_copy(pages: dict[str, tuple[int, str]]) -> list[str]:
+    return sorted(page for page, (_, body) in pages.items()
+                  if messages.OWN_PRACTICE_COPY in body)
 
 
 # ── owner-only, at the lookup ──────────────────────────────────────────────────────────
 
-def test_a_co_teacher_cannot_reach_a_colleagues_practice_copy(client, session, world, copy):
-    """_workspace_or_404 scopes by assignment and section only, and feeds seven console routes.
-    Owner-only is not enforceable from workspace_view alone -- it is not on those routes. 404,
-    never 403."""
-    client.sign_in(world["co_teacher"])
+def _reaches_nothing(client, world, copy, who: str) -> list[str]:
+    """Both surfaces, for one persona who must see nothing of this copy.
 
-    reached = {r: code for r, code in
+    **Two surfaces, and they need separate checks.** The seven console routes reach a workspace
+    through ``staff/views._workspace_or_404``; the thirteen workspace screens reach it through
+    ``decorators.workspace_view``, whose only ownership gate is ``is_owner or is_staff`` -- and
+    ``is_staff`` is True for a colleague who teaches the section and for every admin. Walking only
+    the console, which is what these two tests used to do, left the `/w/` screens open: either of
+    them could read every page of somebody else's practice copy, with ``g.read_only_message``
+    naming its owner. That is the project's first anti-goal, on the very pages this task gives a
+    banner to.
+    """
+    client.sign_in(world[who])
+    reached = [f"{where} -> {code}" for where, code in
                _walk_console(client, world["assignment"].public_id, copy.public_id).items()
-               if code != 404}
+               if code != 404]
+    return reached + _other_than(_pages_of(client, copy.public_id, world["slug"]), 404)
+
+
+def test_a_co_teacher_cannot_reach_a_colleagues_practice_copy(client, session, world, copy):
+    """_workspace_or_404 scopes by assignment and section only, and feeds seven console routes;
+    workspace_view admits anybody who teaches the section. Neither is owner-only on its own. 404,
+    never 403."""
+    reached = _reaches_nothing(client, world, copy, "co_teacher")
 
     assert not reached, "a co-teacher reached a colleague's practice copy:\n  " + "\n  ".join(
-        f"{r} -> {code}" for r, code in sorted(reached.items()))
+        reached)
 
 
 def test_an_admin_cannot_reach_a_teachers_practice_copy(client, session, world, copy):
     """Stricter than the existing rule, and deliberately: an admin sees every section's books, and
     the point of a practice copy is somewhere unobserved."""
-    client.sign_in(world["admin"])
+    reached = _reaches_nothing(client, world, copy, "admin")
 
-    reached = {r: code for r, code in
-               _walk_console(client, world["assignment"].public_id, copy.public_id).items()
-               if code != 404}
-
-    assert not reached, "an admin reached a teacher's practice copy:\n  " + "\n  ".join(
-        f"{r} -> {code}" for r, code in sorted(reached.items()))
+    assert not reached, "an admin reached a teacher's practice copy:\n  " + "\n  ".join(reached)
 
 
 def test_the_owner_is_refused_the_console_actions_too(client, session, world, copy):
@@ -296,13 +323,18 @@ def test_the_same_routes_still_reach_a_students_workspace(client, session, world
 
 
 def test_the_owner_can_reach_their_own_through_the_student_screens(client, session, world, copy):
-    """Which is the whole point of the refusal above: the copy is worked, not marked."""
+    """Which is the whole point of the refusals above: the copy is worked, not marked.
+
+    The other half of owner-only, and the half that breaks teaching rather than privacy: a check
+    that refused everybody would pass both persona tests clean on every route and every page.
+    All thirteen, because the refusal is one line in the shared decorator and a mistake in it
+    takes the whole workspace with it.
+    """
     client.sign_in(world["teacher"])
 
-    opened = client.get(f"/w/{copy.public_id}/{world['slug']}/")
-    journals = client.get(f"/w/{copy.public_id}/{world['slug']}/journals")
+    refused = _other_than(_pages_of(client, copy.public_id, world["slug"]), 200)
 
-    assert (opened.status_code, journals.status_code) == (200, 200)
+    assert not refused, "the owner was refused their own copy:\n  " + "\n  ".join(refused)
 
 
 def test_a_teacher_removed_from_the_section_keeps_their_practice_copy(
@@ -319,6 +351,8 @@ def test_a_teacher_removed_from_the_section_keeps_their_practice_copy(
 
     assert opened.status_code == 200, "a teacher lost their own copy with their section"
     assert messages.OWN_PRACTICE_COPY in _text(opened)
+    assert not _other_than(_pages_of(client, copy.public_id, world["slug"]), 200), \
+        "ownership stopped carrying the copy once the section staffing went"
 
 
 def test_a_student_cannot_reach_a_teachers_practice_copy(client, session, world, copy):
@@ -369,9 +403,10 @@ def test_every_page_of_a_practice_copy_says_what_it_is(client, session, world, c
     read-only slot alone could never have carried it."""
     client.sign_in(world["teacher"])
 
-    silent = sorted(page for page, body in _pages_of(client, copy.public_id, world["slug"]).items()
-                    if messages.OWN_PRACTICE_COPY not in body)
+    pages = _pages_of(client, copy.public_id, world["slug"])
 
+    silent = sorted(set(pages) - set(_saying_it_is_a_practice_copy(pages)))
+    assert not _other_than(pages, 200), "a page did not open, so it says nothing either way"
     assert not silent, "pages of a practice copy that do not say so: " + ", ".join(silent)
 
 
@@ -383,10 +418,14 @@ def test_a_students_workspace_carries_no_such_banner(client, session, world):
     client.sign_in(world["teacher"])
     teacher_sees = _pages_of(client, world["student_workspace"].public_id, world["slug"])
 
-    said = sorted(page for page, body in {**student_sees, **teacher_sees}.items()
-                  if messages.OWN_PRACTICE_COPY in body)
+    said = sorted(set(_saying_it_is_a_practice_copy(student_sees))
+                  | set(_saying_it_is_a_practice_copy(teacher_sees)))
+    # Asserted before the absence, and on the status rather than on a non-empty body: Flask's 404
+    # page is non-empty, so a wall of 404s would satisfy "the banner is absent" and satisfy an
+    # inside-out guard that only asked whether something was rendered.
+    assert not _other_than(student_sees, 200), "the student could not open their own workspace"
+    assert not _other_than(teacher_sees, 200), "the teacher could not read the student's books"
     assert not said, "a student's workspace claimed to be a practice copy: " + ", ".join(said)
-    assert student_sees["/"], "the student's own workspace did not open"
 
 
 def test_an_archived_practice_copy_says_when_it_was_archived(client, session, world, copy):

@@ -445,6 +445,33 @@ def test_a_resume_by_a_demoted_owner_is_refused_too(session, teacher, assignment
     assert [ws.id for ws in _live(session, assignment, teacher)] == [old_id]
 
 
+def test_both_entry_points_refuse_a_non_staff_account_the_same_way(session, student, assignment):
+    """The smaller mirror of the divergence the role check was hoisted to remove.
+
+    An account that is not staff **and** whose live workspace on this assignment is unflagged
+    student work reaches two different answers: ``open_practice`` asks about the role first and
+    raises ``PracticeOwnerNotStaff``, while ``restart_practice`` asked ``is_own_practice`` first
+    and raised ``PracticeRefused(WORKED_AS_A_STUDENT)`` -- a printable sentence about assignment
+    policy for what is an invariant breach on the sole writer of a deadline-bypassing flag.
+
+    Unreachable over HTTP, because ``staff_view`` refuses the role before either runs. Reachable
+    by every direct caller, which is the CLI, the fixtures and Task 6's migration -- the same
+    callers the hoist was made for. One account, one answer.
+    """
+    open_workspace(session, assignment, student)
+
+    with pytest.raises(practice.PracticeOwnerNotStaff):
+        open_practice(session, assignment, student)
+    with pytest.raises(practice.PracticeOwnerNotStaff):
+        restart_practice(session, assignment, student)
+
+    session.expire_all()
+    theirs = _live(session, assignment, student)
+    assert len(theirs) == 1 and theirs[0].staff_practice is False, \
+        "a non-staff account was handed the flag"
+    assert theirs[0].archived_at is None, "a refusal archived work done as a student"
+
+
 def test_restart_opens_a_copy_when_there_is_none_yet(session, teacher, assignment):
     """Start over on an assignment with no copy is still a copy, not a crash: the console offers
     both actions and a double click on either must land somewhere usable."""

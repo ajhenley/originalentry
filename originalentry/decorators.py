@@ -135,6 +135,20 @@ def workspace_view(view):
             db.session.scalar(db.select(Assignment.section_id).filter_by(id=ws.assignment_id)))
         if not (is_owner or is_staff):
             abort(404)
+        # A practice copy is its owner's alone -- not a co-teacher's, not an admin's. The gate
+        # above does not say that: ``is_staff`` is True for anybody who teaches the section and
+        # for every admin, so either of them holding a practice copy's public id read every page
+        # of it, read-only, with ``read_only_message`` below naming its owner. A teacher's own
+        # attempts read as a student's is the first thing this feature is designed against.
+        #
+        # Computed once and reused for ``g.own_practice`` below, so the refusal and the banner can
+        # never answer differently. Before ``_fence``, like the aborts above it, so a probe cannot
+        # tell a copy that is not theirs from a route that does not exist. It does not refuse the
+        # owner, which is what keeps a teacher taken off the section holding their own copy: this
+        # rests on ownership, and ``may_see_section`` is not consulted.
+        own_practice = is_own_practice(ws, current_user)
+        if ws.staff_practice and not own_practice:
+            abort(404)
         if ws.archived_at is not None and not is_staff:
             abort(404)
 
@@ -163,7 +177,8 @@ def workspace_view(view):
         # Standing, on every page of a practice copy, and read by layouts/workspace.html beside
         # the read-only notice rather than inside it: a live practice copy is writable, so the
         # read-only slot is empty exactly when a teacher most needs telling whose books these are.
-        g.own_practice = is_own_practice(ws, current_user)
+        # The same answer the refusal above was made on -- asking twice is how one of them drifts.
+        g.own_practice = own_practice
         g.read_only = (
             (is_staff and not g.own_practice)
             or ws.archived_at is not None

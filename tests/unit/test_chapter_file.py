@@ -351,3 +351,80 @@ def test_the_same_chapter_makes_the_same_zip():
 
     assert (chapter.to_zip(first, {"A": first_key}).getvalue()
             == chapter.to_zip(second, {"A": second_key}).getvalue())
+
+
+# ── the trap this format sets for a human ──────────────────────────────────────────────
+
+def test_a_quoted_amount_is_refused_rather_than_crashing():
+    """The committed example quotes every account number, so quoting the amount beside it is the
+    obvious next habit -- and a string is truthy and not-both, so it slipped past both line guards
+    and reached `debits += debit` as a TypeError. The spec names this exact trap and asks for an
+    error that reports both forms; a traceback from `flask problems import` is not one.
+    """
+    broken = VALID.replace('{account: "150", debit: 480000}', '{account: "150", debit: "480000"}')
+
+    problems = _refusal(broken)
+
+    assert any("480000" in p for p in problems)
+    assert any("whole number of cents" in p for p in problems)
+
+
+def test_an_amount_with_a_thousands_separator_is_refused():
+    """`debit: 4,800` is a YAML string too, and it is what an author writing dollars reaches for."""
+    broken = VALID.replace('{account: "150", debit: 480000}', '{account: "150", debit: "4,800"}')
+
+    assert any("whole number of cents" in p for p in _refusal(broken))
+
+
+def test_a_fractional_amount_is_refused():
+    """Cents are whole. 4800.5 cents is not a figure any ledger can hold, and reporting it as
+    "$48.01" would round the author's mistake out of sight."""
+    broken = VALID.replace('{account: "150", debit: 480000}', '{account: "150", debit: 4800.5}')
+
+    assert any("whole number of cents" in p for p in _refusal(broken))
+
+
+def test_a_negative_amount_is_refused():
+    """A credit written as a negative debit balances arithmetically and is not an entry."""
+    broken = VALID.replace('{account: "101", credit: 180000}', '{account: "101", debit: -180000}')
+
+    assert any("whole number of cents" in p for p in _refusal(broken))
+
+
+def test_the_entry_line_count_is_capped_at_what_the_form_offers():
+    """The spec's anti-goal is a validator that accepts a problem which cannot then be graded. A
+    problem that imports cleanly and cannot be *answered* is the same family, so the limit is
+    stated at authoring time rather than discovered by a student with nowhere to type a line.
+
+    The cap is the form's row count -- six, which holds any ordinary compound entry -- and the
+    message names it. Sizing the grid from the key's own entry instead was rejected: the number of
+    lines is itself a hint, and A8 is not relaxed below the reveal.
+    """
+    long_entry = VALID.replace('''      - {account: "201", debit: 120000}
+      - {account: "101", credit: 120000}''', '''      - {account: "201", debit: 120000}
+      - {account: "150", debit: 10000}
+      - {account: "140", debit: 10000}
+      - {account: "150", debit: 10000}
+      - {account: "140", debit: 10000}
+      - {account: "201", debit: 10000}
+      - {account: "101", credit: 170000}''')
+
+    problems = _refusal(long_entry)
+
+    assert any("P3-02" in p and "lines" in p for p in problems)
+
+
+def test_an_entry_at_the_cap_is_accepted():
+    """Guards the cap from the inside: a cap that refused an ordinary compound entry would refuse
+    half the chapter-3 problems worth setting."""
+    at_cap = VALID.replace('''      - {account: "201", debit: 120000}
+      - {account: "101", credit: 120000}''', '''      - {account: "201", debit: 120000}
+      - {account: "150", debit: 10000}
+      - {account: "140", debit: 10000}
+      - {account: "150", debit: 10000}
+      - {account: "140", debit: 10000}
+      - {account: "101", credit: 160000}''')
+
+    parsed = chapter.parse(at_cap)
+
+    assert len(parsed.problems[1].entry) == chapter.MAX_ENTRY_LINES == 6

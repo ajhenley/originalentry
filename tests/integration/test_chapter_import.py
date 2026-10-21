@@ -273,3 +273,49 @@ def test_the_cli_reports_every_fault_and_imports_nothing(app, session, tmp_path)
     assert "stem" in result.output
     slug = chapter.parse(VALID).slug
     assert session.scalars(select(ContentPack).where(ContentPack.slug == slug)).first() is None
+
+
+# ── the slug is an identity, and identities collide ────────────────────────────────────
+
+def test_a_chapter_cannot_take_over_a_practice_set_s_slug(session):
+    """The most destructive thing on this feature's surface.
+
+    `import_content` reuses the ContentPack it finds by slug, and `_mark_as_a_problem_set` then
+    sets `kind` on that shared row. So a chapter whose slug matched an existing practice set
+    flipped that pack's kind -- and `decorators._fence` immediately 404s Documents, Journals,
+    Ledgers, Statements, the trial balance, Checkpoints and Print for every live workspace pinned
+    to any version of it. Mid-term, for a whole cohort, from one import.
+    """
+    from originalentry.packs import schema as pack_schema
+    from originalentry.packs.importer import import_answer_keys, import_content
+
+    from tests.packs import testco_alpha
+
+    practice = import_content(session, pack_schema.load_pack(testco_alpha.PACK),
+                              source_sha256="slu" + "0" * 61)
+    import_answer_keys(session, practice,
+                       {"A": pack_schema.load_answer_key(testco_alpha.KEY_A)})
+    practice_pack = session.get(ContentPack, practice.content_pack_id)
+    assert practice_pack.kind != KIND_PROBLEM_SET
+
+    colliding = VALID.replace("slug: openstax-fa-ch3\n", "") \
+        if "slug: openstax-fa-ch3" in VALID else VALID
+    colliding = colliding.replace(
+        "textbook: OpenStax Principles of Financial Accounting",
+        f"slug: {practice_pack.slug}\ntextbook: OpenStax Principles of Financial Accounting")
+
+    with pytest.raises(importing.ChapterImportRefused) as refused:
+        importing.import_chapter(session, colliding)
+
+    assert practice_pack.slug in str(refused.value)
+    assert session.get(ContentPack, practice.content_pack_id).kind != KIND_PROBLEM_SET
+
+
+def test_a_chapter_can_still_take_its_own_slug_again(session, imported):
+    """Guards the refusal from the inside: a chapter re-imported as a new version must still be
+    allowed to reuse its own slug, which is the whole versioning story."""
+    corrected = VALID.replace("agreeing to pay the rest later.", "agreeing to pay the balance.")
+
+    second = importing.import_chapter(session, corrected)
+
+    assert second.content_pack_id == imported.content_pack_id

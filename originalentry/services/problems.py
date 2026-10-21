@@ -90,7 +90,15 @@ def matches(expected: dict, submitted: dict) -> bool:
 
     The merge is what makes splitting one line across two not a mistake (T8.3); it happens in
     ``grading.components.documents`` before this sees either side.
+
+    **An empty expectation never matches.** There is no key to compare against when a workspace
+    has no variant (``variant_policy`` "manual" hands none out, so no AnswerKey row is found), and
+    ``{} == {}`` used to answer True -- which told every student that every problem they had not
+    started already matched. Absence of a key is not evidence of a match, the same way absence of
+    a signature is not evidence of understanding.
     """
+    if not expected:
+        return False
     return expected == submitted
 
 
@@ -101,7 +109,12 @@ def shape_of_error(expected: dict, submitted: dict) -> str:
     on the wrong sides, then the right accounts and sides with a wrong figure. An entry that does
     not balance is reported as that first, since nothing else about it can be judged -- ``submit``
     refuses those, so it only arises for an entry recorded another way.
+
+    With no key, there is no shape: saying "account" would have told a student with a perfect
+    entry that one of their accounts did not belong, for ever.
     """
+    if not expected:
+        return SHAPE_MATCHED
     if matches(expected, submitted):
         return SHAPE_MATCHED
 
@@ -297,6 +310,9 @@ class ProblemDetail:
     stem: str
     #: The transaction's date, which the form validates against the pack's period.
     date: str
+    #: False when this workspace has no answer key -- no variant was handed out -- so the screen
+    #: can say why it is quiet instead of inventing a verdict.
+    gradable: bool
     level: int
     attempts: int
     revealed: bool
@@ -420,11 +436,15 @@ def problem_detail(
     expected = _expected_for(key, document_ref)
     submitted = _submitted_for(session, workspace, document_ref)
     matched = matches(expected, submitted)
+    # No key: no marks, no comparison, and nothing to reveal. The screen says so rather than
+    # offering a reveal button that would forfeit the problem and then show an empty table.
+    gradable = bool(expected)
 
     return ProblemDetail(
         ref=document_ref,
         stem=document.get("stem") or "",
         date=document.get("date") or "",
+        gradable=gradable,
         level=level,
         attempts=attempt.attempts if attempt else 0,
         revealed=bool(attempt and attempt.answer_shown_at),
@@ -432,12 +452,15 @@ def problem_detail(
         # Nothing to diagnose before the first attempt, or once it matches.
         shape="" if (matched or not submitted) else shape_of_error(expected, submitted),
         lines=_as_lines(submitted),
-        marked_lines=_as_lines(submitted, against=expected) if level >= LEVEL_LINES else (),
+        marked_lines=(
+            _as_lines(submitted, against=expected)
+            if gradable and level >= LEVEL_LINES else ()
+        ),
         signatures=(
             _signatures_for(session, workspace, key, document_ref)
-            if level >= LEVEL_LINES else ()
+            if gradable and level >= LEVEL_LINES else ()
         ),
-        answer=_as_lines(expected) if level >= LEVEL_ANSWER else (),
+        answer=_as_lines(expected) if gradable and level >= LEVEL_ANSWER else (),
     )
 
 

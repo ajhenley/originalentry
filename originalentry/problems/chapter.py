@@ -35,6 +35,14 @@ RUBRIC_POINTS = 100
 #: variant would need the generator a chapter file deliberately does not have.
 VARIANT = "A"
 
+#: The most lines one problem's entry may have, which is the number of rows the student's form
+#: offers (``templates/student/problem.html``). Capped at authoring time rather than discovered by
+#: a student with nowhere to type the next line: the spec's anti-goal is a validator that accepts
+#: a problem which cannot then be graded, and one that cannot be *answered* is the same family.
+#: Sizing the form from the key's own entry instead was rejected -- the number of lines is itself
+#: a hint, and A8 is not relaxed below the reveal.
+MAX_ENTRY_LINES = 6
+
 #: Dark slate: 10.35:1 against white, well clear of V13's 4.5:1 floor. A problem set's company is
 #: a stub that appears nowhere a student looks, so the colour is ours to fix.
 ACCENT_HEX = "#334155"
@@ -257,6 +265,12 @@ def _entry(raw, ref: str, declared: set[str], faults: list[str]) -> list[Line]:
         return []
     if len(raw) < 2:
         faults.append(f"{ref}: an entry needs at least two lines.")
+    if len(raw) > MAX_ENTRY_LINES:
+        faults.append(
+            f"{ref}: an entry may have at most {MAX_ENTRY_LINES} lines and this one has "
+            f"{len(raw)}. That is how many rows the student's form offers, so a longer entry "
+            f"could be imported and never answered."
+        )
 
     lines: list[Line] = []
     debits = credits = 0
@@ -274,7 +288,8 @@ def _entry(raw, ref: str, declared: set[str], faults: list[str]) -> list[Line]:
                 f"{ref}: entry line {index + 1} uses account {account}, which the chapter's "
                 f"accounts do not declare."
             )
-        debit, credit = node.get("debit"), node.get("credit")
+        debit = _amount(node.get("debit"), ref, index, "debit", faults)
+        credit = _amount(node.get("credit"), ref, index, "credit", faults)
         if debit and credit:
             faults.append(f"{ref}: entry line {index + 1} has both a debit and a credit.")
         elif not debit and not credit:
@@ -289,6 +304,29 @@ def _entry(raw, ref: str, declared: set[str], faults: list[str]) -> list[Line]:
             f"{credits} cents ({money(credits)}) credit. Amounts are in cents."
         )
     return lines
+
+
+def _amount(raw, ref: str, index: int, side: str, faults: list[str]) -> int | None:
+    """One figure, in whole cents, or None with a fault recorded.
+
+    This is the trap the format sets for a human, and it has three mouths. ``debit: "480000"`` is
+    a string -- truthy, and not-both -- so it used to slip past every guard and reach ``debits +=``
+    as an uncaught TypeError, which reached the author as a traceback from
+    ``flask problems import``. ``debit: 4,800`` is a string too, and the obvious habit: the
+    committed example quotes every account number. And ``4800.50`` is a figure no ledger holds,
+    which would have been reported as "$48.01" with the mistake rounded out of sight.
+
+    ``bool`` is excluded deliberately: ``debit: true`` is a YAML boolean and ``True == 1``.
+    """
+    if raw is None:
+        return None
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+        faults.append(
+            f"{ref}: entry line {index + 1}'s {side} is {raw!r}; it must be a whole number of "
+            f"cents, with no quotes, separators or decimal point. $4,800.00 is written 480000."
+        )
+        return None
+    return raw
 
 
 def _signatures(raw, ref: str, faults: list[str]) -> list[Signature]:

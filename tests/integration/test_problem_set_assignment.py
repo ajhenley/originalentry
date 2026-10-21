@@ -329,3 +329,103 @@ def test_a_problem_set_s_marks_reach_the_csv_and_the_mastery_view(client, sessio
         "the chapter's concept does not appear in the mastery view, so problems_best_n's tag is "
         "not reaching it"
     )
+
+
+# ── the other two creation paths ───────────────────────────────────────────────────────
+
+def test_cloning_a_problem_set_assignment_keeps_how_many_count(client, session, assigned):
+    """Cloning last term's assignment is a creation path, and it bypassed assignment_create's
+    validation entirely: the clone carried NULL, which lands in problems_best_n's
+    every-problem-counts branch. That is the "silent fallback rescales a whole section" the spec
+    forbids, reached from a button in the console.
+    """
+    from datetime import timedelta
+
+    from originalentry.services.assignments import clone_assignment
+
+    assignment, _ws, _student = assigned
+    assert assignment.problems_required == 2
+
+    clone = clone_assignment(session, assignment, shift=timedelta(days=7), actor=None)
+
+    assert clone.problems_required == 2
+
+
+def test_the_console_clone_action_keeps_how_many_count(client, session, assigned):
+    """The same thing through the route an instructor actually presses."""
+    assignment, _ws, _student = assigned
+
+    client.post(f"/staff/assignments/{assignment.public_id}/clone", data={"shift_days": "7"})
+
+    clone = session.scalars(
+        select(Assignment).where(Assignment.cloned_from_id == assignment.id)).one()
+    assert clone.problems_required == 2
+
+
+def test_migrating_to_a_shorter_chapter_is_refused(client, session, section, teacher):
+    """problems_required is validated at creation against the chapter's length, and migrating to a
+    newer version with fewer problems left it above the ceiling: ranked[:required] shortens while
+    the denominator does not, so the whole section is marked out of a total it cannot reach.
+    Same spec sentence as the clone, a different entry point.
+    """
+    from originalentry.packs.migrate import MigrationRefused, migrate_assignment
+    from originalentry.problems import importing as chapter_importing
+
+    first = chapter_importing.import_chapter(session, VALID)
+    assignment = Assignment(section_id=section.id, title="Chapter 3", company_policy="fixed",
+                            fixed_pack_version_id=first.id, problems_required=2)
+    session.add(assignment)
+    session.flush()
+
+    # A corrected chapter with one problem instead of two.
+    shorter = VALID[:VALID.index("  - ref: P3-02")] + "\n"
+    second = chapter_importing.import_chapter(session, shorter)
+    assert len(second.manifest["documents"]) == 1
+
+    with pytest.raises(MigrationRefused) as refused:
+        migrate_assignment(session, assignment, second.version, dry_run=True)
+
+    assert "problems" in str(refused.value).lower()
+
+
+def test_migrating_to_a_chapter_that_is_long_enough_is_allowed(client, session, section, teacher):
+    """Guards the refusal from the inside: refusing every migration would also pass it."""
+    from originalentry.packs.migrate import migrate_assignment
+    from originalentry.problems import importing as chapter_importing
+
+    first = chapter_importing.import_chapter(session, VALID)
+    assignment = Assignment(section_id=section.id, title="Chapter 3", company_policy="fixed",
+                            fixed_pack_version_id=first.id, problems_required=2)
+    session.add(assignment)
+    session.flush()
+    second = chapter_importing.import_chapter(
+        session, VALID.replace("agreeing to pay the rest later.", "agreeing to pay the balance."))
+
+    report = migrate_assignment(session, assignment, second.version, dry_run=True)
+
+    assert report is not None
+
+
+# ── a chapter has one variant, so "I will assign them" is meaningless ──────────────────
+
+def test_a_problem_set_assignment_cannot_use_manual_variants(client, session, section,
+                                                             chapter_version):
+    """A chapter pack has exactly one variant, so "I will assign them" hands out nothing:
+    variant_for returns None, the workspace gets variant_id NULL, no answer key matches, and the
+    problem screen then has no key to compare against. Refused at creation rather than guarded in
+    five places downstream.
+    """
+    response = _create(client, section, chapter_version, problems_required="2",
+                       variant_policy="manual")
+
+    assert response.status_code == 422
+    assert _assignment(session, section) is None
+
+
+def test_a_practice_set_assignment_may_still_use_manual_variants(client, session, section,
+                                                                 practice_version):
+    """The policy exists for a reason and multi-variant practice sets keep it."""
+    response = _create(client, section, practice_version, variant_policy="manual")
+
+    assert response.status_code in (302, 303)
+    assert _assignment(session, section).variant_policy == "manual"

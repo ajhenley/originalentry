@@ -68,6 +68,7 @@ def import_chapter(session: Session, text: str, actor=None) -> PackVersion:
             for name in unknown
         ])
 
+    _refuse_a_slug_held_by_another_kind(session, parsed)
     _refuse_an_unchanged_chapter(session, parsed)
 
     pack_source, key_source = chapter.to_pack_source(
@@ -79,6 +80,29 @@ def import_chapter(session: Session, text: str, actor=None) -> PackVersion:
     _tag_signatures(session, parsed, live_concepts=_concept_ids(session))
     session.flush()
     return version
+
+
+def _refuse_a_slug_held_by_another_kind(session: Session, parsed: chapter.Chapter) -> None:
+    """Refuse a chapter whose slug already belongs to a practice set.
+
+    ``import_content`` reuses the ``ContentPack`` it finds by slug, and ``_mark_as_a_problem_set``
+    then sets ``kind`` on that shared row -- so importing a chapter over a practice set's slug
+    flipped that pack's kind, and ``decorators._fence`` immediately 404s Documents, Journals,
+    Ledgers, Statements, the trial balance, Checkpoints and the print record for every live
+    workspace pinned to any version of it. Mid-term, for a whole cohort, from one import.
+
+    A chapter reusing its *own* slug is the ordinary versioning path and stays allowed.
+    """
+    existing = session.scalars(
+        select(ContentPack).where(ContentPack.slug == parsed.slug)).one_or_none()
+    if existing is None or existing.kind == KIND_PROBLEM_SET:
+        return
+    raise ChapterImportRefused([
+        f"{parsed.slug!r} is already the slug of {existing.company_name!r}, which is a "
+        f"{existing.kind.replace('_', ' ')}. Importing over it would change that pack's kind and "
+        f"close the journals and ledgers of every student still working in it. Give this chapter "
+        f"a different slug."
+    ])
 
 
 def _refuse_an_unchanged_chapter(session: Session, parsed: chapter.Chapter) -> None:

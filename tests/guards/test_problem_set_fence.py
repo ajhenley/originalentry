@@ -271,13 +271,18 @@ def test_no_shared_screen_offers_a_link_the_fence_closes(app, client, problem_se
 
 # ── A7 is not exempted ─────────────────────────────────────────────────────────────────
 
-def test_a7_still_holds_on_the_problem_screens(app, client, problem_set):
+def test_a7_still_holds_on_every_screen_a_problem_set_student_can_open(app, client, problem_set):
     """The spec allows A7 to be exempted here. It is not, and this is what keeps that true.
 
     T8.8 and A8 have to go -- a self-grading problem must show the misconception and, behind a
     button, the answer. A7 does not: "matches the expected entry" says everything "correct" would
     say without telling a student they are right or wrong as a person. Keeping it means one fewer
     exemption to fence.
+
+    **Every screen, not just the four new ones.** An earlier version of this test walked only
+    PROBLEM_SET_ENDPOINTS, and a banned word went live on `how_to` -- a shared route, rendered in
+    a problem set, that this test never opened. The fence proves a shared route is *reachable*; it
+    says nothing about what the route then says.
     """
     import re
 
@@ -285,7 +290,9 @@ def test_a7_still_holds_on_the_problem_screens(app, client, problem_set):
     client.sign_in(student)
     banned = re.compile(r"\b(correct|incorrect|right|wrong)\b", re.IGNORECASE)
     rules = [r for r in _workspace_rules(app)
-             if r.endpoint in PROBLEM_SET_ENDPOINTS and "GET" in r.methods]
+             if r.endpoint in (PROBLEM_SET_ENDPOINTS | SHARED_WORKSPACE_ENDPOINTS)
+             and "GET" in r.methods and "section" not in r.arguments]
+    assert len(rules) >= 7, f"only {len(rules)} screens walked; the list cannot have shrunk"
 
     with app.test_request_context():
         for rule in rules:
@@ -296,3 +303,68 @@ def test_a7_still_holds_on_the_problem_screens(app, client, problem_set):
             visible = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body))
             found = banned.search(visible)
             assert not found, f"{rule.endpoint} says {found.group(0)!r} to a student"
+
+
+#: Sentences that are true of a practice set and false of a chapter problem set. A shared screen
+#: saying one of these is not a dead link -- it is a lie, which is worse.
+PRACTICE_SET_PROSE = (
+    "keeping this company's books",
+    "a classmate's numbers will not match yours",
+    "never comments on the accounts you chose",
+    "Read the document again",
+    "handled every document",
+    "recorded and posted",
+)
+
+
+def test_no_shared_screen_describes_the_practice_set_cycle_in_a_problem_set(
+    app, client, problem_set
+):
+    """The counterpart to the dead-link walk, for prose rather than links.
+
+    `_fence` guarantees a shared route is reachable and the link walk guarantees it offers no dead
+    end. Neither guarantees the words fit the pack. A chapter student was being told they were
+    keeping a company's books for December, that the application never comments on the accounts
+    they chose -- which is the problem screen's whole purpose -- and that a classmate's figures
+    would differ from theirs, which for a one-variant chapter is the opposite of true.
+    """
+    import re
+
+    workspace, student = problem_set
+    client.sign_in(student)
+    rules = [r for r in _workspace_rules(app)
+             if r.endpoint in (PROBLEM_SET_ENDPOINTS | SHARED_WORKSPACE_ENDPOINTS)
+             and "GET" in r.methods and "section" not in r.arguments]
+
+    offenders = []
+    with app.test_request_context():
+        for rule in rules:
+            args = {**PLACEHOLDERS["problem_set"], "workspace": workspace.public_id,
+                    "company_slug": _slug(app, workspace)}
+            url = url_for(rule.endpoint, **{k: args[k] for k in rule.arguments})
+            visible = re.sub(r"\s+", " ",
+                             re.sub(r"<[^>]+>", " ", client.get(url).get_data(as_text=True)))
+            for phrase in PRACTICE_SET_PROSE:
+                if phrase.lower() in visible.lower():
+                    offenders.append(f"{rule.endpoint}: {phrase!r}")
+
+    assert not offenders, "practice-set prose in a problem set:\n  " + "\n  ".join(offenders)
+
+
+def test_the_prose_guard_would_notice_a_practice_set_screen(app, client, practice_set):
+    """Guards the guard: these phrases must really be on the practice-set screens, or the test
+    above is asserting the absence of text that exists nowhere."""
+    import re
+
+    workspace, student = practice_set
+    client.sign_in(student)
+
+    with app.test_request_context():
+        slug = _slug(app, workspace)
+        seen = ""
+        for endpoint in ("student.overview", "student.how_to", "student.submit"):
+            url = url_for(endpoint, workspace=workspace.public_id, company_slug=slug)
+            seen += re.sub(r"<[^>]+>", " ", client.get(url).get_data(as_text=True))
+
+    found = [p for p in PRACTICE_SET_PROSE if p.lower() in seen.lower()]
+    assert len(found) >= 4, f"only {found} of the practice-set phrases appear anywhere"

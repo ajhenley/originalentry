@@ -319,3 +319,112 @@ def test_the_picker_offers_only_the_chapter_s_own_accounts(client, world):
     assert "101" in text and "150" in text
     assert "Retained Earnings" not in text
     assert "Income Summary" not in text
+
+
+# ── a workspace with no answer key must claim nothing ──────────────────────────────────
+
+@pytest.fixture
+def world_without_a_variant(session):
+    """A workspace whose variant was never handed out.
+
+    `services.assignments.variant_for` returns None when the assignment's variant_policy is
+    "manual", so `variant_id` is NULL and no AnswerKey row matches. Every other fixture in this
+    suite sets variant_id explicitly, which is why this state went unexercised.
+    """
+    from originalentry.extensions import db
+    from originalentry.models import ContentPack, PackVersion
+
+    version = importing.import_chapter(session, VALID)
+    student = User(email="novariant@example.edu", given_name="Ada", family_name="Sowande")
+    section = Section(name="Sec", join_code="nov-join")
+    session.add_all([student, section])
+    session.flush()
+    assignment = Assignment(section_id=section.id, title="Chapter 3", company_policy="fixed",
+                            fixed_pack_version_id=version.id, problems_required=2,
+                            variant_policy="manual")
+    session.add(assignment)
+    session.flush()
+    ws = Workspace(assignment_id=assignment.id, student_id=student.id,
+                   pack_version_id=version.id, variant_id=None, status="in_progress")
+    session.add(ws)
+    session.flush()
+    slug = db.session.get(
+        ContentPack, db.session.get(PackVersion, version.id).content_pack_id).slug
+    return ws, student, slug, assignment
+
+
+def test_untouched_work_is_never_described_as_matching(client, world_without_a_variant):
+    """The cruellest defect on the branch: with no key, `matches({}, {})` was True, so every
+    problem a student had not started told them it matched the expected entry."""
+    ws, student, slug, _assignment = world_without_a_variant
+    client.sign_in(student)
+
+    assert "Matches the expected entry" not in _text(client.get(_list_url(ws, slug)))
+    assert "matches the expected entry" not in _text(client.get(_url(ws, slug, "P3-01"))).lower()
+
+
+def test_a_perfect_entry_is_not_told_its_accounts_do_not_belong(client, world_without_a_variant):
+    """The mirror: with no key to compare against, `shape_of_error` fell through to "account", so
+    a perfect entry was told at least one of its accounts did not belong -- at every attempt."""
+    ws, student, slug, _assignment = world_without_a_variant
+    client.sign_in(student)
+
+    _post(client, ws, slug, "P3-01", RIGHT)
+
+    assert "not one this transaction touches" not in _text(client.get(_url(ws, slug, "P3-01")))
+
+
+def test_the_reveal_button_is_not_offered_when_there_is_no_answer(client, world_without_a_variant):
+    """Pressing it forfeited the problem's contribution to the mark irrevocably and then showed
+    nothing at all, with no way back."""
+    ws, student, slug, _assignment = world_without_a_variant
+    client.sign_in(student)
+
+    assert "Show me this entry" not in _text(client.get(_url(ws, slug, "P3-01")))
+
+
+def test_a_workspace_with_no_variant_says_why_rather_than_going_quiet(
+    client, world_without_a_variant
+):
+    """Guards the three above from the inside: hiding everything would also pass them. The student
+    needs to know why the page says nothing, and that it is not their doing."""
+    ws, student, slug, _assignment = world_without_a_variant
+    client.sign_in(student)
+
+    text = _text(client.get(_url(ws, slug, "P3-01")))
+
+    assert "instructor" in text.lower(), "the page does not say why there is no feedback"
+
+
+# ── a refusal must not throw away what was typed ───────────────────────────────────────
+
+def test_a_refused_submission_keeps_the_figures_that_were_typed(client, world):
+    """The template promises it and how-to-work repeats the promise. Retyping three accounts and
+    three amounts after one mistyped figure is the same injury as losing the attempt."""
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+
+    body = _post(client, ws, slug, "P3-01", TYPO).get_data(as_text=True)
+
+    assert 'value="4800.00"' in body, "the debit the student typed was wiped"
+    assert 'value="180.00"' in body, "the mistyped figure was wiped, so it cannot be corrected"
+    # The option tag spans two lines in the template, so match the attribute pair rather than a
+    # literal substring.
+    assert re.search(r'<option value="150"\s+selected', body), \
+        "the accounts the student chose were wiped"
+
+
+# ── the chart a student reads ──────────────────────────────────────────────────────────
+
+def test_the_reference_chart_hides_the_synthetic_accounts_too(client, world):
+    """`services.problems.chart` keeps 9900 Retained Earnings and 9910 Income Summary out of the
+    problem form, and a test asserts a student never sees them. Reference is the other place a
+    student reads the chart, and it was listing both."""
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+
+    text = _text(client.get(f"/w/{ws.public_id}/{slug}/reference/chart-of-accounts"))
+
+    assert "Cash" in text, "the chart is empty, so this proves nothing"
+    assert "Retained Earnings" not in text
+    assert "Income Summary" not in text

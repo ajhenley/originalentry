@@ -19,7 +19,16 @@
   </div>
   {% endif %}
 
-  {% if problem.revealed %}
+  {% if not problem.gradable %}
+  {# No answer key for this workspace: the instructor has not handed out a version yet. Saying so
+     is the only honest option -- with nothing to compare against, "matches" and "does not match"
+     are both inventions, and the reveal button would forfeit the problem and show an empty
+     table. #}
+  <p class="callout callout--attention text-sm" role="status">
+    Your instructor has not handed out a version of this work yet, so this page cannot check your
+    entry or show you the one it calls for. You can still record an entry and it will be kept.
+  </p>
+  {% elif problem.revealed %}
     <p class="text-sm text-muted">
       You asked to see this entry, so it no longer counts toward your mark. You can still work it
       as often as you like.
@@ -61,7 +70,7 @@
         <tr>
           <td>{{ line.account }}</td>
           <td>{{ line.side }}</td>
-          <td class="text-right">{{ (line.cents / 100)|round(2) }}</td>
+          <td class="text-right">{{ line.cents | money }}</td>
           <td>{% if line.in_the_key %}Yes{% else %}<span class="text-notice">No</span>{% endif %}</td>
         </tr>
         {% endfor %}
@@ -98,7 +107,7 @@
         <tr>
           <td>{{ line.account }}</td>
           <td>{{ line.side }}</td>
-          <td class="text-right">{{ (line.cents / 100)|round(2) }}</td>
+          <td class="text-right">{{ line.cents | money }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -121,25 +130,33 @@
         </tr>
       </thead>
       <tbody>
-        {% for i in range(1, 5) %}
+        {# Six rows, matching problems.chapter.MAX_ENTRY_LINES: the validator refuses a longer
+           entry at import, so every problem that imports can be answered here. #}
+        {% for i in range(1, 7) %}
         <tr>
           <td>
             <label class="sr-only" for="line-{{ i }}-account">Account on line {{ i }}</label>
+            {# The figures survive a refusal. A refused submission costs no attempt, and retyping
+               six rows after one mistyped figure would be the same injury by another route. #}
             <select id="line-{{ i }}-account" name="line-{{ i }}-account" class="field mt-1">
               <option value=""></option>
               {% for account in accounts %}
-              <option value="{{ account.number }}">{{ account.number }} &mdash; {{ account.name }}</option>
+              <option value="{{ account.number }}"
+                {% if typed.get('line-' ~ i ~ '-account') == account.number %}selected{% endif %}>
+                {{ account.number }} &mdash; {{ account.name }}</option>
               {% endfor %}
             </select>
           </td>
           <td class="text-right">
             <label class="sr-only" for="line-{{ i }}-debit">Debit on line {{ i }}</label>
             <input id="line-{{ i }}-debit" name="line-{{ i }}-debit" inputmode="decimal"
+                   value="{{ typed.get('line-' ~ i ~ '-debit', '') }}"
                    class="field field--figure w-28">
           </td>
           <td class="text-right">
             <label class="sr-only" for="line-{{ i }}-credit">Credit on line {{ i }}</label>
             <input id="line-{{ i }}-credit" name="line-{{ i }}-credit" inputmode="decimal"
+                   value="{{ typed.get('line-' ~ i ~ '-credit', '') }}"
                    class="field field--figure w-28">
           </td>
         </tr>
@@ -151,7 +168,9 @@
     </div>
   </form>
 
-  {% if not problem.revealed %}
+  {# Also requires a key: with none, pressing this forfeited the problem's contribution to the
+     mark and then showed an empty table, with no way back. #}
+  {% if not problem.revealed and problem.gradable %}
   <form method="post"
         action="{{ url_for('student.problem_reveal', workspace=workspace.public_id,
                            company_slug=company.slug, ref=problem.ref) }}">

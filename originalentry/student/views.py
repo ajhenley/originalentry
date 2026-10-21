@@ -442,7 +442,13 @@ def reference(section):
     if section == CHART_KEY:
         return render_template(
             "student/reference.html", sections=sections, section=chosen, blocks=[],
-            accounts=_accounts(g.pack_version.id),
+            # The same chart the problem form offers. problems.chapter synthesises a
+            # retained-earnings and an income-summary account to satisfy validator V5, and no
+            # chapter problem touches either: this was the second place a student reads the chart
+            # and it was the one that still listed them.
+            accounts=(problem_service.chart(db.session, g.workspace)
+                      if g.content_pack.kind == KIND_PROBLEM_SET
+                      else _accounts(g.pack_version.id)),
         )
 
     blocks = next(
@@ -706,7 +712,7 @@ def problem(ref):
     if detail is None:
         abort(404)
     return render_template("student/problem.html", problem=detail, errors=[],
-                           levels=problem_service.LEVELS,
+                           levels=problem_service.LEVELS, typed={},
                            accounts=problem_service.chart(db.session, g.workspace))
 
 
@@ -730,6 +736,9 @@ def problem_submit(ref):
             problem=problem_service.problem_detail(db.session, g.workspace, ref),
             errors=[message for _field, message in result.errors],
             levels=problem_service.LEVELS,
+            # What the student typed, so a mistyped figure is one keystroke to fix rather than
+            # six rows to retype. A refusal costs no attempt; it must not cost the work either.
+            typed=request.form,
             accounts=problem_service.chart(db.session, g.workspace),
         ), 422
 

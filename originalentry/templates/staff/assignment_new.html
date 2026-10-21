@@ -154,6 +154,9 @@
     </div>
 
     <div>
+      {% if errors.get('variant_policy') %}
+      <p class="mt-1 text-sm text-notice" role="alert">{{ errors['variant_policy'] }}</p>
+      {% endif %}
       <label class="field-label" for="variant_policy">Variants</label>
       <select id="variant_policy" name="variant_policy"
               class="field mt-1 w-auto">

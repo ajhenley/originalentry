@@ -694,6 +694,16 @@ def assignment_create():
                 f"Say how many of this chapter's {total} problems count, as a whole number from "
                 f"1 to {total}."
             )
+        # A chapter pack has exactly one variant, so "I will assign them" hands out nothing:
+        # variant_for returns None, the workspace gets a null variant, no answer key matches, and
+        # the problem screen then has no entry to compare against. Refused here rather than
+        # guarded in every place downstream that would otherwise have to invent an answer.
+        if (form.get("variant_policy") or "round_robin") != "round_robin":
+            errors["variant_policy"] = (
+                "A chapter of problems has one version, so leave Variants on \u201cIn turn\u201d. "
+                "The other policies hand out a version that does not exist, and a student whose "
+                "version was never handed out cannot be shown anything about their entry."
+            )
 
     if errors:
         db.session.rollback()

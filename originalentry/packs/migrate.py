@@ -17,8 +17,15 @@ A teacher's own practice copy is **archived** rather than migrated. It is not pa
 work and must not be part of the class's feasibility union: one throwaway entry referencing an
 account the new version drops would otherwise refuse a whole section's migration, with nothing on
 screen to say the blocking work was the teacher's own. Nor can it be left behind, pinned live to a
-version no student has. Archived, nothing is destroyed -- the copy stays readable on the version it
-was worked on -- the live slot is freed, and the teacher opens a fresh copy on the new version.
+version no student has. Archived, nothing is destroyed: the row and the work in it are kept on the
+version they were worked on, the live slot is freed, and the teacher opens a fresh copy on the new
+version. Kept is not the same as reachable, and the difference is worth stating here rather than
+being discovered -- ``decorators.workspace_view`` closes an archived workspace to anybody it does
+not see as staff *for that section*, which is what it has always done for a student's replaced
+books. So the owner reads this copy back only while they still teach the section: an owner since
+demoted, or since taken off it, gets a 404 on their own archived copy even though ownership is what
+governs a **live** one. Nothing is lost -- the rows are there, and a fresh copy is one click -- but
+do not write that this stays readable, because for those two owners it does not.
 That is why this module sits in ``EXEMPT`` in ``tests/guards/test_practice_chokepoint.py``: a
 migration transforms, and a report helper that silently excluded practice copies here would leave
 them on a dead version. (``services/purge.py`` is exempt for the mirror-image reason: retention

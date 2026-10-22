@@ -107,12 +107,25 @@ def _register_audit(app: Flask) -> None:
 
     A teacher's own practice copy is the one workspace a staff request may be in and still not be
     recorded: practice traffic is workspace traffic, which this trail keeps out by design (see
-    ``audit.should_audit``). The answer is read off ``g.workspace``, which
-    ``decorators.workspace_view`` sets and nothing else does, so it is absent on every request
-    that is not a page of somebody's books -- and ``workspaces.is_own_practice`` is null-safe on
-    both arguments for exactly this call site. That matters more here than anywhere: an
-    ``AttributeError`` raised inside this hook would be swallowed by the ``except`` below, and the
-    whole durable trail would silently stop recording.
+    ``audit.should_audit``).
+
+    The answer is **read off ``g.own_practice``, not asked again.** ``decorators.workspace_view``
+    has already decided it, two statements after it sets ``g.workspace`` and after every one of
+    its aborts, so the two can never disagree. Asking ``workspaces.is_own_practice`` here instead
+    would read ``workspace.staff_practice``, and this hook runs after the view has committed:
+    outside the tests ``expire_on_commit`` is True, the row is expired by now, and that attribute
+    costs a refresh SELECT. The argument is evaluated before ``should_audit`` is entered, so every
+    student saving an entry line paid that query for this hook to learn the flag is False and then
+    reject the request on role two branches later -- the busiest write in the application, for an
+    answer a bool already held. ``tests/conftest.py`` binds its Session with
+    ``expire_on_commit=False``, so no behavioural test in the suite can see that cost; the guard
+    that holds this is structural, in ``tests/integration/test_practice_screens.py``.
+
+    ``getattr`` with a default of False, because this hook runs for every response and most
+    requests are not a page of anybody's books. False means "record it", so the one way to get
+    here with ``g.workspace`` set and ``g.own_practice`` unset -- a 500 raised inside the eighteen
+    lines between the two assignments -- over-records rather than under-records. That is the right
+    direction for a trail nothing can refill, and it is why the default is not True.
 
     Logging never breaks a response: a failure to write the row is rolled back and swallowed. The
     row is committed on its own, after the view has committed its work.
@@ -121,7 +134,6 @@ def _register_audit(app: Flask) -> None:
     from flask_login import current_user
 
     from .services import audit
-    from .workspaces import is_own_practice
 
     @app.after_request
     def _audit(response):
@@ -129,7 +141,7 @@ def _register_audit(app: Flask) -> None:
             role = getattr(current_user, "role", None) if current_user.is_authenticated else None
             if not audit.should_audit(
                 request.blueprint, request.endpoint, role, current_user.is_authenticated,
-                own_practice=is_own_practice(getattr(g, "workspace", None), current_user),
+                own_practice=getattr(g, "own_practice", False),
             ):
                 return response
             audit.record(

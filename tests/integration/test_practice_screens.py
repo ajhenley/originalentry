@@ -822,3 +822,39 @@ def test_a_students_books_are_still_recorded_when_staff_read_them(client, sessio
     trail = _durable_trail(session, world["teacher"])
     assert [action for action in trail if action.startswith("student.")], \
         f"a staff read of a student's workspace left no durable record: {trail}"
+
+
+def test_the_request_hook_reads_the_decision_rather_than_re_deriving_it():
+    """The hook must read ``g.own_practice``, not call ``is_own_practice`` a second time.
+
+    Both answer the same question -- ``decorators.workspace_view`` sets ``g.workspace`` two
+    statements above ``g.own_practice``, after every abort -- so this is not a correctness claim.
+    It is a cost claim, and the suite cannot make it any other way.
+
+    Re-deriving reads ``workspace.staff_practice``. In production the session commits inside the
+    view and ``expire_on_commit`` defaults to True, so by the time an ``after_request`` hook runs
+    the row is expired and that attribute costs a refresh SELECT. The hook runs on *every*
+    response, and the argument is evaluated before ``should_audit`` is entered -- so every student
+    saving an entry line paid that query for the hook to learn the flag is False and then reject
+    the request on role two branches later. Entry lines are the busiest write in the application.
+    Reading the bool off ``g`` costs nothing and is the same answer.
+
+    No behavioural test in this suite can see that: ``tests/conftest.py`` binds its Session with
+    ``expire_on_commit=False``, so the attribute is never expired here and the SELECT never
+    happens, whichever way the hook is written. That is also why it shipped. The claim is
+    therefore made structurally, against the syntax tree, and the two tests above remain the
+    proof that the carve-out still *works* -- this one only says what it must not cost.
+
+    The default matters and is asserted by inspection, not here: ``getattr(g, "own_practice",
+    False)`` over-records if a 500 is raised in the eighteen lines between the two assignments,
+    and over-recording is the safe direction for a trail that nothing can refill.
+    """
+    from originalentry import app as app_module
+
+    source = inspect.getsource(app_module._register_audit)
+
+    assert not _calls(source, "is_own_practice"), (
+        "the audit hook re-derives the practice decision instead of reading g.own_practice, "
+        "which costs one refresh SELECT on every request that has a workspace -- including "
+        "every student's, which should_audit rejects on role anyway"
+    )

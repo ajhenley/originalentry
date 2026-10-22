@@ -1,0 +1,210 @@
+# The Adjustment Process -- short problems.
+#
+# One file per chapter, imported with `flask problems import packs/chapters/openstax-fa-ch4.yaml`.
+# Amounts are in CENTS: $1,200.00 is 120000. The validator reports both forms, because writing
+# dollars here is the mistake this format invites.
+#
+# `concept` must name a concept this installation knows (see migrations c3e71f0a95b4), and it is
+# what each of the problem's signatures is tagged with -- which is how the mistakes block names
+# what a student misunderstood.
+#
+# Every problem is dated 31 October: an adjusting entry belongs to the period it adjusts, and
+# dating them a day apart would teach the wrong thing about when the work is done.
+#
+# A signature must detect something the answer does NOT do. V11 refuses a signature the key's own
+# entry matches, because that would report every student for it -- so each one below names an
+# account or an amount a student reaches only by misunderstanding.
+
+textbook: OpenStax Principles of Financial Accounting
+chapter: 4
+chapter_label: The Adjustment Process
+slug: openstax-fa-ch4
+
+accounts:
+  - {number: "101", name: Cash, type: asset, normal_balance: debit}
+  - {number: "112", name: Accounts Receivable, type: asset, normal_balance: debit}
+  - {number: "115", name: Interest Receivable, type: asset, normal_balance: debit}
+  - {number: "130", name: Prepaid Insurance, type: asset, normal_balance: debit}
+  - {number: "131", name: Prepaid Rent, type: asset, normal_balance: debit}
+  - {number: "140", name: Supplies, type: asset, normal_balance: debit}
+  - {number: "150", name: Equipment, type: asset, normal_balance: debit}
+  # Contra assets: an asset by classification, a credit by normal balance. Declared so a student
+  # has somewhere to put depreciation that is not the asset account itself.
+  - {number: "151", name: Accumulated Depreciation - Equipment, type: asset, normal_balance: credit}
+  - {number: "160", name: Vehicles, type: asset, normal_balance: debit}
+  - {number: "161", name: Accumulated Depreciation - Vehicles, type: asset, normal_balance: credit}
+  - {number: "201", name: Accounts Payable, type: liability, normal_balance: credit}
+  - {number: "210", name: Unearned Service Revenue, type: liability, normal_balance: credit}
+  - {number: "212", name: Salaries Payable, type: liability, normal_balance: credit}
+  - {number: "213", name: Interest Payable, type: liability, normal_balance: credit}
+  - {number: "401", name: Service Revenue, type: revenue, normal_balance: credit}
+  - {number: "405", name: Interest Revenue, type: revenue, normal_balance: credit}
+  - {number: "610", name: Insurance Expense, type: expense, normal_balance: debit}
+  - {number: "620", name: Rent Expense, type: expense, normal_balance: debit}
+  - {number: "630", name: Supplies Expense, type: expense, normal_balance: debit}
+  - {number: "640", name: Depreciation Expense, type: expense, normal_balance: debit}
+  - {number: "650", name: Salaries Expense, type: expense, normal_balance: debit}
+  - {number: "660", name: Interest Expense, type: expense, normal_balance: debit}
+
+problems:
+  - ref: P4-01
+    date: 2026-10-31
+    concept: adjusting_entries
+    stem: >
+      On 1 October the business paid $1,200 for twelve months of insurance cover and recorded it
+      as Prepaid Insurance. One month of that cover has been used by 31 October. Record the
+      adjusting entry.
+    entry:
+      - {account: "610", debit: 10000}
+      - {account: "130", credit: 10000}
+    signatures:
+      - key: whole_premium_expensed
+        label: >
+          The whole twelve months of cover expensed in October, when only the month that has
+          passed belongs to this period
+        detect: {type: entry_amount, document: P4-01, account: "610", side: debit, amount: 120000}
+
+  - ref: P4-02
+    date: 2026-10-31
+    concept: adjusting_entries
+    stem: >
+      The Supplies account shows $900. A count on 31 October finds $250 of supplies still on the
+      shelf. Record the adjusting entry.
+    entry:
+      - {account: "630", debit: 65000}
+      - {account: "140", credit: 65000}
+    signatures:
+      - key: counted_rather_than_consumed
+        label: >
+          The amount still on the shelf recorded as the expense, when the expense is the amount
+          that has been used up
+        detect: {type: entry_amount, document: P4-02, account: "630", side: debit, amount: 25000}
+
+  - ref: P4-03
+    date: 2026-10-31
+    concept: depreciation
+    stem: >
+      Equipment that cost $24,000 is expected to last ten years and to be worth nothing at the
+      end of them. The business depreciates it evenly. Record one month of depreciation.
+    entry:
+      - {account: "640", debit: 20000}
+      - {account: "151", credit: 20000}
+    signatures:
+      - key: credited_the_asset_itself
+        label: >
+          Depreciation taken off the equipment account directly, which leaves no record of what
+          the equipment originally cost
+        detect: {type: entry_line, document: P4-03, account: "150", side: credit}
+
+  - ref: P4-04
+    date: 2026-10-31
+    concept: unearned_revenue
+    stem: >
+      On 1 October a client paid $3,600 in advance for six months of work, recorded then as
+      Unearned Service Revenue. One month of that work has been carried out. Record the adjusting
+      entry.
+    entry:
+      - {account: "210", debit: 60000}
+      - {account: "401", credit: 60000}
+    signatures:
+      - key: adjustment_moved_cash
+        label: >
+          Cash recorded again in the adjusting entry, when the money arrived on 1 October and
+          nothing has been received or paid since
+        detect: {type: entry_line, document: P4-04, account: "101", side: debit}
+
+  - ref: P4-05
+    date: 2026-10-31
+    concept: adjusting_entries
+    stem: >
+      Employees earned $1,500 in the last days of October. They will be paid on 3 November.
+      Record the adjusting entry at 31 October.
+    entry:
+      - {account: "650", debit: 150000}
+      - {account: "212", credit: 150000}
+    signatures:
+      - key: accrual_paid_in_cash
+        label: >
+          Cash reduced for wages that have not been paid yet, when what is owed at 31 October is
+          a liability
+        detect: {type: entry_line, document: P4-05, account: "101", side: credit}
+
+  - ref: P4-06
+    date: 2026-10-31
+    concept: adjusting_entries
+    stem: >
+      The business owes $20,000 on a note that carries interest at 6% a year. One month's
+      interest is unpaid at 31 October. Record the adjusting entry.
+    entry:
+      - {account: "660", debit: 10000}
+      - {account: "213", credit: 10000}
+    signatures:
+      - key: a_full_year_of_interest
+        label: >
+          A whole year of interest recorded for one month of borrowing, when the rate is quoted
+          for a year and only a month has passed
+        detect: {type: entry_amount, document: P4-06, account: "660", side: debit, amount: 120000}
+
+  - ref: P4-07
+    date: 2026-10-31
+    concept: adjusting_entries
+    stem: >
+      The business carried out $2,750 of work in October for a client who has not been invoiced
+      yet. Record the adjusting entry at 31 October.
+    entry:
+      - {account: "112", debit: 275000}
+      - {account: "401", credit: 275000}
+    signatures:
+      - key: unbilled_treated_as_unearned
+        label: >
+          Work that has been done but not invoiced recorded as money owed to the client, when the
+          work is finished and it is the client who owes the business
+        detect: {type: entry_line, document: P4-07, account: "210", side: credit}
+
+  - ref: P4-08
+    date: 2026-10-31
+    concept: adjusting_entries
+    stem: >
+      On 1 October the business paid $7,200 for six months of rent in advance and recorded it as
+      Prepaid Rent. One month has passed. Record the adjusting entry.
+    entry:
+      - {account: "620", debit: 120000}
+      - {account: "131", credit: 120000}
+    signatures:
+      - key: expiry_credited_cash
+        label: >
+          Cash credited as the rent expires, when the cash left the business on 1 October and
+          what is being used up is the prepayment
+        detect: {type: entry_line, document: P4-08, account: "101", side: credit}
+
+  - ref: P4-09
+    date: 2026-10-31
+    concept: depreciation
+    stem: >
+      A vehicle cost $31,200. The business expects to use it for four years and then sell it for
+      about $3,600, and depreciates it evenly. Record one month of depreciation.
+    entry:
+      - {account: "640", debit: 57500}
+      - {account: "161", credit: 57500}
+    signatures:
+      - key: residual_ignored
+        label: >
+          The whole cost spread over the four years, when the part expected to be recovered on
+          sale is never used up by the business
+        detect: {type: entry_amount, document: P4-09, account: "640", side: debit, amount: 65000}
+
+  - ref: P4-10
+    date: 2026-10-31
+    concept: adjusting_entries
+    stem: >
+      The business holds a $12,000 note receivable carrying interest at 5% a year. Two months'
+      interest has been earned and not yet received at 31 October. Record the adjusting entry.
+    entry:
+      - {account: "115", debit: 10000}
+      - {account: "405", credit: 10000}
+    signatures:
+      - key: interest_as_service_revenue
+        label: >
+          Interest earned on a note recorded as revenue from services, when the business earned
+          it by lending rather than by working
+        detect: {type: entry_line, document: P4-10, account: "401", side: credit}

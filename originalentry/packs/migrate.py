@@ -13,6 +13,18 @@ number. A ref a student used can therefore survive a rebuild while denoting some
 entirely, which no amount of remapping fixes, so the migration is refused for that too unless
 ``--accept-identity-changes`` says it was deliberate.
 
+A teacher's own practice copy is **archived** rather than migrated. It is not part of the class's
+work and must not be part of the class's feasibility union: one throwaway entry referencing an
+account the new version drops would otherwise refuse a whole section's migration, with nothing on
+screen to say the blocking work was the teacher's own. Nor can it be left behind, pinned live to a
+version no student has. Archived, nothing is destroyed -- the copy stays readable on the version it
+was worked on -- the live slot is freed, and the teacher opens a fresh copy on the new version.
+That is why this module sits in ``EXEMPT`` in ``tests/guards/test_practice_chokepoint.py``: a
+migration transforms, and a report helper that silently excluded practice copies here would leave
+them on a dead version. (``services/purge.py`` is exempt for the mirror-image reason: retention
+deletion must reach **every** row or it orphans records behind foreign keys.) The flag itself is
+never written here -- ``services/practice.py`` is its sole writer -- only ``archived_at``.
+
 Always dry-run first: the report says whether it is feasible and what it would touch. The real
 run remaps in one transaction (the composite foreign keys are deferrable, so the version and the
 id move together) and logs a staff action. Restricted to fixed-company assignments.
@@ -21,6 +33,7 @@ id move together) and logs a staff action. Restricted to fixed-company assignmen
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -40,6 +53,11 @@ from ..models import (
 )
 from ..models import AnswerKey as AnswerKeyRow
 from ..services import staff_actions
+
+# The same action name a student's restart and a teacher's start-over write, imported rather than
+# restated: whoever reads the trail to find a copy that was replaced should not have to know which
+# of the three archived it. ``services.practice`` owns the constant because it owns the lifecycle.
+from ..services.practice import ARCHIVE_WORKSPACE
 from .version_diff import IdentityChange, identity_changes
 
 
@@ -55,6 +73,10 @@ class MigrationReport:
     to_version: int
     workspaces: int = 0
     entry_lines: int = 0
+    #: How many of the teachers' own practice copies this migration archives -- or, on a dry run,
+    #: would archive. Deliberately **not** counted in ``workspaces``: a practice copy does not
+    #: move, and its lines are not in ``entry_lines`` either, because they are not remapped.
+    practice_archived: int = 0
     missing_accounts: list[str] = field(default_factory=list)
     missing_parties: list[str] = field(default_factory=list)
     missing_documents: list[str] = field(default_factory=list)
@@ -167,7 +189,7 @@ def migrate_assignment(
     var_old = _id_to_key(session, Variant, old_pv.id, "code")
     var_new = _key_map(session, Variant, to_pv.id, "code")
 
-    workspaces = list(
+    live = list(
         session.scalars(
             select(Workspace).where(
                 Workspace.assignment_id == assignment.id,
@@ -176,14 +198,28 @@ def migrate_assignment(
             )
         )
     )
+    # The teachers' own copies, separated here -- before the feasibility union below is built out
+    # of ``ws_ids`` -- and archived by the apply paths rather than migrated. Partitioned in Python
+    # off the rows already loaded, deliberately: a second query would mean writing
+    # ``Workspace.staff_practice`` into a site by hand, which is the second copy of the read rule
+    # that ``workspaces.class_workspace_clause`` exists to be the only home of.
+    practice_copies = [w for w in live if w.staff_practice]
+    workspaces = [w for w in live if not w.staff_practice]
     ws_ids = [w.id for w in workspaces]
     report = MigrationReport(from_version=old_pv.version, to_version=to_pv.version,
-                             workspaces=len(workspaces))
+                             workspaces=len(workspaces),
+                             practice_archived=len(practice_copies))
     if not ws_ids:
         # Nothing to remap, but the assignment still has to move: it is what open_workspace reads,
         # so leaving it behind would hand the next student to join the version everyone else has
         # just left. Migrating before anyone has joined is the ordinary case, not an edge one.
+        #
+        # The practice copies are archived here too. An assignment whose only live workspace is a
+        # teacher's own copy is exactly the shape of preparing next term, and it arrives in this
+        # branch rather than the one below -- skip it here and the copy is left live, pinned to a
+        # version the assignment has just left, which is the failure archiving exists to prevent.
         if not dry_run:
+            _archive_practice_copies(session, practice_copies, actor, to_pv)
             _point_assignment_at(session, assignment, to_pv, actor, 0)
             report.applied = True
         return report
@@ -235,6 +271,11 @@ def migrate_assignment(
     if dry_run or not report.feasible:
         return report
 
+    # Past every refusal, so a dry run and an infeasible migration both leave the copy alone. A
+    # teacher's practice copy is their work: archived on the way out of a migration that then did
+    # nothing else, it would be a side effect of a run the operator was told had not happened.
+    _archive_practice_copies(session, practice_copies, actor, to_pv)
+
     # Remap in this one transaction. Deferrable composite FKs let version + id move together.
     def _remap(old_id, old_map, new_map):
         return new_map[old_map[old_id]] if old_id in old_map else None
@@ -270,6 +311,40 @@ def migrate_assignment(
                          accepted_identity=report.changed_identity or None)
     report.applied = True
     return report
+
+
+#: Recorded against each practice copy a migration archives. A reason is required of the other two
+#: archive paths by ``staff_actions.record``'s own signature, and an archived workspace with none
+#: recorded is a row nobody can account for later -- least of all the teacher who comes back to
+#: find their copy closed.
+PRACTICE_ARCHIVED_REASON = (
+    "the assignment was migrated to a newer version of its company; a practice copy is archived "
+    "rather than migrated, and a fresh one can be opened on the new version"
+)
+
+
+def _archive_practice_copies(session: Session, practice_copies: list, actor, to_pv) -> None:
+    """Archive each of the teachers' own practice copies, and record that it happened.
+
+    Nothing is destroyed and nothing is remapped: the copy keeps its ``pack_version_id``, so it
+    still reads as the books that were worked, and it keeps ``staff_practice``, so it is still its
+    owner's and still out of every class-level number. Only ``archived_at`` is written -- the flag
+    has exactly one writer, ``services.practice._new_practice_copy``, and this is not it.
+
+    Flushed, because the partial unique index ``uq_workspace_assignment_student_live`` allows one
+    live workspace per (assignment, student): until the archive reaches the database the teacher's
+    fresh copy has nowhere to go.
+    """
+    if not practice_copies:
+        return
+    archived_at = datetime.now(UTC)
+    for workspace in practice_copies:
+        workspace.archived_at = archived_at
+        staff_actions.record(
+            session, actor, ARCHIVE_WORKSPACE, "workspace", workspace.id,
+            reason=PRACTICE_ARCHIVED_REASON, detail={"to_version": to_pv.version},
+        )
+    session.flush()
 
 
 #: Caps how many refs an accepted-identity-override migration writes into the audit row. The

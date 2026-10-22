@@ -105,20 +105,31 @@ def _register_audit(app: Flask) -> None:
     deliberately not recorded here; their light, purgeable telemetry stays in activity_event
     (services/activity.py), which is the retention split the feature was scoped around.
 
+    A teacher's own practice copy is the one workspace a staff request may be in and still not be
+    recorded: practice traffic is workspace traffic, which this trail keeps out by design (see
+    ``audit.should_audit``). The answer is read off ``g.workspace``, which
+    ``decorators.workspace_view`` sets and nothing else does, so it is absent on every request
+    that is not a page of somebody's books -- and ``workspaces.is_own_practice`` is null-safe on
+    both arguments for exactly this call site. That matters more here than anywhere: an
+    ``AttributeError`` raised inside this hook would be swallowed by the ``except`` below, and the
+    whole durable trail would silently stop recording.
+
     Logging never breaks a response: a failure to write the row is rolled back and swallowed. The
     row is committed on its own, after the view has committed its work.
     """
-    from flask import request
+    from flask import g, request
     from flask_login import current_user
 
     from .services import audit
+    from .workspaces import is_own_practice
 
     @app.after_request
     def _audit(response):
         try:
             role = getattr(current_user, "role", None) if current_user.is_authenticated else None
             if not audit.should_audit(
-                request.blueprint, request.endpoint, role, current_user.is_authenticated
+                request.blueprint, request.endpoint, role, current_user.is_authenticated,
+                own_practice=is_own_practice(getattr(g, "workspace", None), current_user),
             ):
                 return response
             audit.record(

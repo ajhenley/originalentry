@@ -38,6 +38,7 @@ from originalentry import messages
 from originalentry.models import (
     ROLE_ADMIN,
     ROLE_INSTRUCTOR,
+    AuditLog,
     ContentPack,
     PackVersion,
     Section,
@@ -756,3 +757,68 @@ def test_the_table_still_lists_the_student_it_should(session, world, copy):
     rows = [row.student_email for row in assignment_progress(session, world["assignment"])]
 
     assert rows == [world["student"].email]
+
+
+# ── the durable trail ──────────────────────────────────────────────────────────────────
+#
+# ``services.audit.should_audit`` is a pure decision with its own unit tests, and this is the half
+# those cannot see: that the request hook actually asks it about the workspace in hand. Change
+# ``should_audit`` alone and every one of those unit tests still passes while a teacher's practice
+# afternoon is still one never-purged, admin-visible AuditLog row per request, each one labelled
+# ``student.*``. So the claim is made here, against a real request to a real practice copy.
+
+
+def _durable_trail(session, actor) -> list[str]:
+    """The durable AuditLog actions recorded against one account, oldest first.
+
+    Filtered to one account this test created, because the suite runs against a shared development
+    branch and audit_log is the one table nothing purges -- rows from earlier manual testing are
+    certainly in it.
+    """
+    return list(session.scalars(
+        select(AuditLog.action).where(AuditLog.actor_id == actor.id).order_by(AuditLog.id)))
+
+
+def test_a_page_of_a_practice_copy_leaves_no_row_in_the_durable_trail(
+    client, session, world, copy
+):
+    """A teacher working their own copy is workspace traffic, which audit.py keeps out of the
+    durable trail on purpose: the row would be durable, identifying, never purged, visible to
+    every admin in ``staff.activity`` and its CSV export, and it would say the copy exists.
+
+    The console request is the control, and it goes **first**. Without a control, a hook that had
+    stopped recording altogether -- or one swallowing an exception, which it does by design --
+    would read as the carve-out working. And it has to be first because ``tests/conftest.py``
+    holds one app context open for the whole test and Flask reuses it per request, so ``g`` is not
+    cleared between the requests of one test the way it is in production (where every request
+    pushes its own app context). With the practice page first, its ``g.workspace`` would still be
+    set during the console request and the control would be suppressed by the test harness rather
+    than by the code under test.
+    """
+    client.sign_in(world["teacher"])
+    assert _durable_trail(session, world["teacher"]) == [], "the fixture recorded a row already"
+
+    console = client.get(f"/staff/progress/{world['assignment'].public_id}")
+    page = client.get(f"/w/{copy.public_id}/{world['slug']}/")
+
+    assert (page.status_code, console.status_code) == (200, 200), "a request did not land"
+    trail = _durable_trail(session, world["teacher"])
+    assert not [action for action in trail if action.startswith("student.")], \
+        f"the teacher's own practice traffic is in the durable trail: {trail}"
+    assert [action for action in trail if action.startswith("staff.")], \
+        f"the hook recorded nothing at all, so the absence above proves nothing: {trail}"
+
+
+def test_a_students_books_are_still_recorded_when_staff_read_them(client, session, world):
+    """The other direction, and the one that matters if the carve-out over-matches: a teacher
+    reading a *student's* books is a privileged read of somebody else's record, which is exactly
+    what the durable trail exists for. Same blueprint, same endpoint, same role as the test above.
+    """
+    client.sign_in(world["teacher"])
+
+    page = client.get(f"/w/{world['student_workspace'].public_id}/{world['slug']}/")
+
+    assert page.status_code == 200, "the teacher could not read the student's books"
+    trail = _durable_trail(session, world["teacher"])
+    assert [action for action in trail if action.startswith("student.")], \
+        f"a staff read of a student's workspace left no durable record: {trail}"

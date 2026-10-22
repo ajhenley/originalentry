@@ -28,6 +28,68 @@ def test_should_audit_decides_who_is_recorded(blueprint, endpoint, role, authed,
     assert audit.should_audit(blueprint, endpoint, role, authed) is expected
 
 
+# ── a teacher's own practice copy ──────────────────────────────────────────────────────
+#
+# A teacher works their own assignment in a private practice copy, which is an ordinary workspace
+# with a flag. Its traffic is workspace traffic, and the durable trail keeps workspace traffic out
+# by design -- the four tests below are the carve-out and its three edges, because this is the
+# first per-workspace condition in a function otherwise written about blueprints and roles.
+
+
+def test_a_teachers_own_practice_traffic_is_not_durably_audited():
+    """audit.py's own docstring: logging a student's workspace traffic durably "would make a
+    purgeable, PII-light record durable and identifying, which the retention split forbids".
+    Practice traffic is workspace traffic. Hours of practice would otherwise be one never-purged
+    row per request, all labelled student.*, telling admins the copy exists."""
+    # Every role that can own a practice copy: the flag is staff-only, and a grader or an admin
+    # who owns one is as much its owner as the instructor who set the assignment.
+    for role in ("instructor", "grader", "admin"):
+        assert audit.should_audit("student", "student.journal", role, True,
+                                  own_practice=True) is False, role
+
+
+def test_every_other_staff_request_is_still_audited():
+    """Guards the carve-out. This is the first per-workspace condition in a function written as a
+    pure, shared decision, and the blast radius if it over-matches is the whole trail."""
+    # The same role, the same blueprint, the same endpoint -- somebody else's books. The only
+    # difference between this and the test above is whose copy it is.
+    assert audit.should_audit("student", "student.journal", "instructor", True,
+                              own_practice=False) is True
+    # The console, where no /w/ route ran and so nothing set the answer.
+    assert audit.should_audit("staff", "staff.grading", "grader", True,
+                              own_practice=False) is True
+    # And a caller that does not pass it at all gets today's answer. The default is False, so a
+    # call site that has never heard of practice copies keeps recording, which is the safe
+    # direction for a trail: an extra row is noise, a missing one is a gap nothing can refill.
+    assert audit.should_audit("staff", "staff.people", "admin", True) is True
+
+
+def test_a_students_own_traffic_is_still_not_audited():
+    """Unchanged by the carve-out, and asked of both answers.
+
+    A student's own workspace traffic was already activity_event's job, and the new parameter must
+    not become what decides it -- a flagged workspace owned by a student is an invariant breach
+    ``services.practice`` refuses to create on every path, and the trail must not start depending
+    on that refusal holding.
+    """
+    assert audit.should_audit("student", "student.journal", "student", True) is False
+    assert audit.should_audit("student", "student.journal", "student", True,
+                              own_practice=True) is False
+
+
+def test_the_auth_blueprint_is_still_always_audited():
+    """The carve-out sits below the auth branch, deliberately.
+
+    Authentication is recorded for everybody who attempts it, whoever they are and whether or not
+    they succeed -- a failed sign-in has no user yet. A per-workspace condition that could switch
+    that off would be a way to sign in unrecorded, so the ordering is asserted rather than left to
+    the fact that no auth route happens to load a workspace today.
+    """
+    assert audit.should_audit("auth", "auth.sign_in", None, False, own_practice=True) is True
+    assert audit.should_audit("auth", "auth.verify", "instructor", True,
+                              own_practice=True) is True
+
+
 class _Actor:
     id = 7
     email = "instructor@college.edu"

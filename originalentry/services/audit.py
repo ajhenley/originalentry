@@ -5,6 +5,10 @@ tests share, and ``record`` turns an actor plus a few request facts into one row
 request globals are read in the hook (app.py), not here, so this module stays testable without an
 application context.
 
+Retention: the trail is durable and is never purged, which is why it records privileged actors
+and authentication and not a student's own workspace traffic -- see ``should_audit``, whose
+carve-out for a teacher's own practice copy follows from the same split.
+
 Privacy: the IP is hashed the one-way way login_token hashes it (never a raw address), the actor's
 email is snapshotted so the row outlives the account, and ``detail`` is expected to carry ids and
 route parameters only -- the caller must not pass form bodies or typed credentials.
@@ -37,18 +41,36 @@ SKIP_ENDPOINTS = frozenset({"static", "healthz"})
 
 
 def should_audit(blueprint: str | None, endpoint: str | None, role: str | None,
-                 is_authenticated: bool) -> bool:
+                 is_authenticated: bool, *, own_practice: bool = False) -> bool:
     """Whether one request belongs in the durable trail.
 
     True for any request by a signed-in staff/admin user, and for anything under the auth
     blueprint (so a failed or anonymous sign-in attempt is still recorded). False for a student's
     own workspace traffic -- that is activity_event's job, and logging it here would make a
     purgeable, PII-light record durable and identifying, which the retention split forbids.
+
+    ``own_practice`` says this request is the actor's **own practice copy** -- a teacher working
+    the assignment they set, in a workspace only they can see (``workspaces.is_own_practice``).
+    Practice traffic is workspace traffic, so the sentence above applies to it unchanged: hours of
+    practice would otherwise be one never-purged row per request, every one of them labelled
+    ``student.*``, durable, identifying, and visible to every admin in ``staff.activity`` and its
+    CSV export -- which both contradicts the owner-only decision and is the exact record this
+    function already refuses to keep about a student. What the teacher did is still recorded in
+    the purgeable ``activity_event`` trail, which is unaffected.
+
+    The **first per-workspace condition** in a function otherwise written about blueprints and
+    roles, and so the one that has to be read carefully in two directions. It is keyword-only, and
+    it defaults to False: a call site that has never heard of practice copies keeps today's
+    answer, which is the safe direction -- an extra row is noise, a missing one is a gap nothing
+    can refill. And it sits **below** the auth branch, so no workspace condition can ever switch
+    off the recording of an authentication attempt.
     """
     if endpoint in SKIP_ENDPOINTS:
         return False
     if blueprint == AUTH_BLUEPRINT:
         return True
+    if own_practice:
+        return False
     return is_authenticated and role in STAFF_ROLES
 
 

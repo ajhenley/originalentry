@@ -34,11 +34,16 @@
       as often as you like.
     </p>
   {% elif problem.matched %}
-    <p class="text-sm">Your entry matches the expected entry.</p>
+    {# Same sentence it always was; the weight is what changed. It was a bare text-sm line while a
+       refused submission got a callout, so the mechanics outshouted the teaching. #}
+    <div class="callout callout--confirm" role="status">
+      <p class="font-semibold">Your entry matches the expected entry.</p>
+    </div>
   {% elif problem.shape %}
     {# Level 1 says what KIND of thing is wrong and never which line, so a student has to look at
        their own work. Level 2 and above adds the lines below. #}
-    <p class="text-sm">
+    <div class="callout callout--attention" role="status">
+      <p class="font-semibold">
       {% if problem.shape == 'balance' %}
         The debits and the credits in your entry do not come to the same figure.
       {% elif problem.shape == 'account' %}
@@ -50,7 +55,8 @@
         The accounts and the sides are the ones this transaction touches; at least one figure is
         not the figure.
       {% endif %}
-    </p>
+      </p>
+    </div>
   {% endif %}
 
   {% if problem.level >= levels.lines and problem.marked_lines and not problem.matched %}
@@ -62,7 +68,9 @@
           <th scope="col" class="text-left">Account</th>
           <th scope="col" class="text-left">Side</th>
           <th scope="col" class="text-right">Amount</th>
-          {# Says which entry: "In this entry: No" scans as "not in yours", which is backwards. #}
+          {# Says which entry: "In this entry: No" scans as "not in yours", which is backwards.
+             The cells say "Not in it" rather than "No" because a bare yes/no needs the header to
+             mean anything, and the colour used to be the only thing marking which was which. #}
           <th scope="col" class="text-left">In the entry this calls for</th>
         </tr>
       </thead>
@@ -73,9 +81,9 @@
           <td>{{ line.side }}</td>
           <td class="text-right">{{ line.cents | money }}</td>
           <td>
-            {%- if not line.in_the_key %}<span class="text-notice">No</span>
+            {%- if not line.in_the_key %}<span class="font-semibold text-notice">Not in it</span>
             {%- elif line.figure_matches %}Yes
-            {%- else %}Yes &mdash; <span class="text-notice">different figure</span>
+            {%- else %}Yes, <span class="font-semibold text-notice">different figure</span>
             {%- endif %}
           </td>
         </tr>

@@ -43,7 +43,7 @@ PALETTE_PREFIXES = (
 #: scrutiny rather than failing anything. This assertion is what makes a deletion loud.
 EXPECTED_TOKENS = (
     "ink", "paper", "white", "muted", "rule",
-    "notice", "wash", "failure", "tint", "company",
+    "notice", "wash", "failure", "tint", "company", "confirm",
 )
 
 #: Longest-first only for legibility. The order does not affect matching — Python's `re`
@@ -220,6 +220,12 @@ CONTRAST_FLOORS = [
     ("notice", "paper", 4.5),
     ("failure", "white", 4.5),
     ("failure", "paper", 4.5),
+    # Confirm sits on white in .callout--confirm; the other three are pinned because a callout
+    # inherits whatever ground the page it lands on has, and all four are grounds in this app.
+    ("confirm", "white", 4.5),
+    ("confirm", "paper", 4.5),
+    ("confirm", "tint", 4.5),
+    ("confirm", "wash", 4.5),
     ("company", "paper", 4.5),
     ("muted", "tint", 4.5),
     ("ink", "tint", 4.5),

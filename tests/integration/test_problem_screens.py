@@ -492,7 +492,13 @@ def test_the_per_line_column_never_shows_the_figure_the_key_has(client, world):
 
 def test_a_line_the_transaction_does_not_touch_still_says_no(client, world):
     """Guards the three above from the inside: if every line now read the same, the column would
-    say nothing."""
+    say nothing.
+
+    Both states are asserted, because that is the claim. The assertion here used to be
+    ``"No" in table``, which is a substring of "Not in it" -- so it survived the rewording of
+    this very column without noticing, and it never checked that any *other* line read
+    differently. A column that answered the same thing on every row would have passed it.
+    """
     ws, student, slug, _assignment = world
     client.sign_in(student)
     _post(client, ws, slug, "P3-01", WRONG_ACCOUNT)
@@ -500,4 +506,66 @@ def test_a_line_the_transaction_does_not_touch_still_says_no(client, world):
 
     table = _lines_table(_text(client.get(_url(ws, slug, "P3-01"))))
 
-    assert "No" in table
+    assert "Not in it" in table, "a line the transaction does not touch is not marked"
+    assert "Yes" in table, "every line reads the same, so the column distinguishes nothing"
+
+
+# ── how loudly the page says it (A7 holds: none of these words judge the work) ──────────
+
+
+def test_a_matching_entry_is_told_so_prominently(client, world):
+    """The feedback a student most wants was the quietest thing on the page.
+
+    "Your entry matches the expected entry." rendered as a bare ``<p class="text-sm">`` while a
+    *refused* submission -- a mechanical validation failure, nothing to do with the accounting --
+    got a full callout with a bold lead. The weighting was inverted: the mechanics shouted and the
+    teaching whispered. The wording is unchanged; only its prominence is.
+    """
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+
+    _post(client, ws, slug, "P3-01", RIGHT)
+    body = client.get(_url(ws, slug, "P3-01")).get_data(as_text=True)
+
+    assert "callout--confirm" in body, "the matching message is not in a callout at all"
+    block = body[body.find("callout--confirm"):][:400]
+    assert "matches the expected entry" in block, (
+        "there is a confirm callout on the page, but the matching message is not inside it"
+    )
+
+
+def test_the_shape_of_the_error_is_told_prominently(client, world):
+    """The same inversion, on the other side: the shape-of-error sentence was body copy.
+
+    It is the whole of level 1 -- the only thing a student gets on a first attempt -- and it read
+    as ordinary prose beneath the stem. ``callout--attention`` is the existing vocabulary for it:
+    the stylesheet's own comment says notice "asks you to notice a state of the books".
+    """
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+
+    _post(client, ws, slug, "P3-01", WRONG_ACCOUNT)
+    body = client.get(_url(ws, slug, "P3-01")).get_data(as_text=True)
+
+    start = body.find("not one this transaction touches")
+    assert start != -1, "the shape-of-error message did not render"
+    assert "callout--attention" in body[max(0, start - 400):start], (
+        "the shape-of-error message is body copy, not a callout"
+    )
+
+
+def test_the_per_line_column_does_not_rely_on_colour_alone(client, world):
+    """A bare "No" in the notice colour was the entire signal.
+
+    Strip the colour -- a printed page, a high-contrast mode, or simply not distinguishing it --
+    and the column read "No"/"Yes" with nothing saying what it was answering. The words now carry
+    the meaning, so the colour is reinforcement rather than the message.
+    """
+    ws, student, slug, _assignment = world
+    client.sign_in(student)
+    _post(client, ws, slug, "P3-01", WRONG_ACCOUNT)
+    _post(client, ws, slug, "P3-01", WRONG_ACCOUNT)
+
+    table = _lines_table(_text(client.get(_url(ws, slug, "P3-01"))))
+
+    assert "Not in it" in table, "the column still leans on a bare No"

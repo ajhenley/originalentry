@@ -23,6 +23,7 @@
   --color-notice: #805000;    /* also the focus ring: the material's focus colour is this hex */
   --color-wash: #fff2d5;
   --color-failure: #a12b2b;
+  --color-confirm: #166534;    /* 7.13:1 on white, beside failure's 7.25 -- a peer, not louder */
   --color-tint: #eae6de;      /* the material's own #EAE6DE, unnamed there; hover and quiet fills */
 
   --radius: 3px;
@@ -300,7 +301,15 @@
 
   /* Callouts carry a left rule in the colour of what they are about. Muted tells you something,
      notice asks you to notice a state of the books, failure is the app admitting trouble of its
-     own. None of them says anything about whether the work is any good (A7). */
+     own.
+     Confirm is the one that speaks to the work, and it is deliberate rather than an oversight of
+     A7. A7 forbids telling a student their work is correct, incorrect, right or wrong, and no
+     screen does: what confirm marks is that the entry a student wrote matches the entry the
+     transaction calls for, which is a comparison of two entries and not a verdict on the person.
+     The wording stays "matches" everywhere for that reason. It exists because the feedback a
+     student most needs was the quietest thing on the problem screen while a refused submission --
+     pure mechanics -- had a callout of its own: the weighting was inverted, which is a worse
+     failure of A7's spirit than naming the match is. */
   .callout {
     border-left: 3px solid var(--color-muted);
     background: var(--color-white);
@@ -320,6 +329,12 @@
     border-left-color: var(--color-failure);
     background: var(--color-white);
     color: var(--color-failure);
+  }
+
+  .callout--confirm {
+    border-left-color: var(--color-confirm);
+    background: var(--color-white);
+    color: var(--color-confirm);
   }
 
   .callout__label {

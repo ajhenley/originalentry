@@ -279,8 +279,9 @@ def progress(assignment: str):
 #: writable copy is start over.
 PRACTICE_REFUSED_AT_THE_CONSOLE = {
     "staff.grading_detail":
-        "a practice copy is never in a cohort grading run, so this page could only ever show a "
-        "teacher their own empty marks beside four actions that all refuse",
+        "the four actions on this page all refuse for a practice copy, and the marks it exists to "
+        "show are reached by staff.practice_grade, which grades the copy on its own and returns "
+        "the owner to their own marks screen",
     "staff.workspace_archive":
         "archive_and_restart opens the fresh workspace through open_workspace, which sets no "
         "staff_practice: the teacher would get an ordinary workspace they cannot write to. "
@@ -1206,13 +1207,13 @@ def practice_restart(assignment: str):
 
     A separate button from resume, and separately labelled, because the console must never leave
     a teacher guessing which of the two a click is about to do. Nothing is destroyed -- the old
-    copy stays, archived, readable and still flagged as theirs -- so this flashes what happened,
+    copy stays, archived and still flagged as theirs -- so this flashes what happened,
     which is the one thing the page it lands on cannot say.
     """
     found = _assignment_or_404(assignment)
     return _into_my_practice_copy(
         found, restart_practice,
-        said="Started over. Your old copy is archived and still readable.")
+        said="Started over. Your old copy is archived and kept.")
 
 
 @bp.post("/progress/<assignment>/practice/grade")

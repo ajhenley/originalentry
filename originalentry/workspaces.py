@@ -36,20 +36,22 @@ def is_own_practice(workspace, actor) -> bool:
     ``student_id`` is the teacher's own id. It is private to its owner: another teacher, a grader
     and an admin are all just staff looking at somebody else's books, and get False.
 
-    **Null-safe on both arguments, deliberately, though no caller needs it today.** Both callers
-    now hold a real row and a signed-in actor: ``decorators.workspace_view`` is ``@login_required``
-    and has aborted on a missing workspace well above, and ``services.write._check_gates`` is
-    inside a locked write. ``app._register_audit`` used to be the caller that needed the guards --
-    it asks per response, and most responses are not a page of anybody's books -- and it is worth
-    knowing why it is no longer: it reads the decision off ``g.own_practice`` instead, because
-    asking here costs a refresh SELECT once the view's commit has expired the row.
+    **Null-safe on both arguments, and a live caller depends on it.** ``services.practice``'s
+    ``practice_copy`` passes ``_live_copy``'s result straight in -- typed ``Workspace | None`` --
+    and that is the ordinary case, not an edge one: it is None on every console render of an
+    assignment the teacher has no copy of, which is what the screen asks in order to decide
+    between "work this myself" and "resume". Remove the guard and that render raises
+    ``AttributeError`` on ``None.staff_practice``. ``practice.py`` has two more call sites that
+    could pass None and are narrowed by their callers; do not read those as proof the guard is
+    unused.
 
-    The guards stay because of what the two remaining callers are. Both are write gates that must
-    agree, and this returns a bool: a None reaching here would otherwise raise
-    ``AttributeError`` on ``None.staff_practice`` inside a gate, and a caller that swallows
-    exceptions -- the audit hook did, by design, so that logging could never turn a good response
-    into an error -- would turn that into silence rather than a failure. False is the answer that
-    denies the privilege, which is the safe reading for both of them.
+    The actor is guarded for the same reason in the other direction, and both guards return the
+    answer that **denies**, which is the safe reading for the two write gates that consult this.
+    ``app._register_audit`` used to be the caller cited here -- it asks per response, and most
+    responses are not a page of anybody's books -- and it is worth knowing why it no longer is: it
+    reads the decision off ``g.own_practice`` instead, because asking here costs a refresh SELECT
+    once the view's commit has expired the row. That changed which caller makes the guards
+    load-bearing. It did not make them optional.
 
     **No role check, and so no answer about one.** This is a leaf module with no application
     imports and no second opinion about who is staff, so the two conditions that depend on a role

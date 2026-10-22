@@ -24,7 +24,6 @@ A teacher must not be able to write to a student's workspace, nor to another tea
 from __future__ import annotations
 
 import contextlib
-import inspect
 import pathlib
 import re
 from datetime import UTC, date, datetime
@@ -59,6 +58,7 @@ from originalentry.workspaces import is_own_practice
 from sqlalchemy import func, select
 
 from tests.packs import testco_alpha
+from tests.source_scan import calls
 from tests.unit.test_chapter_file import VALID
 
 pytestmark = pytest.mark.db
@@ -362,11 +362,13 @@ def test_is_own_practice_is_true_only_for_the_owner(teacher, other_teacher, prac
 
 
 def test_is_own_practice_survives_a_missing_workspace_and_a_missing_actor(teacher, practice):
-    """Load-bearing, and not obvious. The durable audit hook in ``app._register_audit`` runs on
-    **every** response, including the many requests that never set ``g.workspace``, and it wraps
-    its body in ``except Exception`` because "logging must never turn a good response into an
-    error". An ``AttributeError`` on ``None.staff_practice`` would be swallowed there and the
-    whole audit trail would stop recording, silently.
+    """Load-bearing, and not obvious -- but no longer for the reason first written here.
+
+    The audit hook used to be the caller that needed this; it now reads ``g.own_practice``. The
+    caller that needs it today is ``services.practice.practice_copy``, which passes
+    ``_live_copy``'s ``Workspace | None`` straight in on every console render of an assignment the
+    teacher has no copy of. Without the guard that render raises ``AttributeError`` on
+    ``None.staff_practice`` -- the common case, not an edge one.
     """
     assert is_own_practice(None, teacher) is False
     assert is_own_practice(practice, None) is False
@@ -414,12 +416,32 @@ def test_g_read_only_is_false_on_a_practice_copy_and_true_on_a_students(
     assert on_a_student is True, "the teacher can type in a student's books"
 
 
+#: A gate that only *talks* about the one definition. The control for the guard below, because
+#: that guard asked a question about code and accepted an answer from prose: ``_check_gates``
+#: mentions ``is_own_practice`` in a comment two below the call, so deleting the call and keeping
+#: the comment left the only gate-agreement guard on the branch green.
+_A_GATE_THAT_ONLY_MENTIONS_IT = """
+def _check_gates(session, workspace, actor):
+    # is_own_practice carries no role check, deliberately -- see workspaces.py.
+    return True
+"""
+
+
 def test_neither_gate_decides_it_alone(app):
-    """Source inspection: both ``decorators.workspace_view`` and ``write._check_gates`` must name
-    ``is_own_practice``. One definition, two callers -- a second definition is how they drift."""
+    """Both ``decorators.workspace_view`` and ``write._check_gates`` must **call**
+    ``is_own_practice``. One definition, two callers -- a second definition is how they drift.
+
+    Asked of the syntax tree. The control above is the whole reason: this test used to assert
+    ``"is_own_practice" in inspect.getsource(gate)``, which the comment in ``_check_gates``
+    satisfies on its own. The guard that is supposed to catch the two gates drifting apart could
+    be satisfied by prose while the call it was guarding was gone.
+    """
+    assert not calls(_A_GATE_THAT_ONLY_MENTIONS_IT, "is_own_practice"), (
+        "the check accepts a gate that only mentions the definition in a comment, which is how "
+        "this guard was defeated before"
+    )
     for gate in (decorators.workspace_view, write_service._check_gates):
-        source = inspect.getsource(gate)
-        assert "is_own_practice" in source, (
+        assert calls(gate, "is_own_practice"), (
             f"{gate.__module__}.{gate.__qualname__} decides who may write without consulting the "
             "one definition"
         )

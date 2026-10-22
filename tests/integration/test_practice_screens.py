@@ -61,6 +61,7 @@ from originalentry.staff.views import (
 from sqlalchemy import select
 
 from tests.packs import testco_alpha
+from tests.source_scan import called_name, calls
 
 pytestmark = pytest.mark.db
 
@@ -362,34 +363,10 @@ def test_a_student_cannot_reach_a_teachers_practice_copy(client, session, world,
     assert client.get(f"/w/{copy.public_id}/{world['slug']}/").status_code == 404
 
 
-def _called_name(func: ast.AST) -> str | None:
-    """The bare name a call is written with: ``f(...)`` and ``mod.f(...)`` both answer ``f``."""
-    if isinstance(func, ast.Name):
-        return func.id
-    if isinstance(func, ast.Attribute):
-        return func.attr
-    return None
-
-
-def _calls(source, name: str) -> bool:
-    """Whether this function really **calls** ``name``, read off its syntax tree.
-
-    Not ``name + "(" in inspect.getsource(...)``, which is what this and the handler scan below
-    were written as, and which a docstring can flip. ``staff.practice_grade``'s docstring explains
-    at length why it does *not* go through ``_workspace_or_404`` -- and under a substring check,
-    writing that function's name with its parentheses anywhere in that prose put the route into
-    the set below and printed "routes reaching a workspace with no declared decision:
-    staff.practice_grade". A loud wrong diagnosis is worse than a silent one in a guard whose
-    whole value is being auditable: it is false about the code, and it sends the next person
-    hunting a call that does not exist.
-
-    The question was always structural -- *does this view reach a workspace through that lookup?*
-    -- so it is asked of the tree, where prose cannot be mistaken for code. The same lesson the
-    chokepoint guard spent four rounds learning in ``tests/guards/test_practice_chokepoint.py``.
-    """
-    text = source if isinstance(source, str) else inspect.getsource(source)
-    return any(isinstance(node, ast.Call) and _called_name(node.func) == name
-               for node in ast.walk(ast.parse(textwrap.dedent(text))))
+# The one definition, in tests/source_scan.py -- which explains why it is shared rather than
+# copied. The two local names are kept because the scans below read better with them.
+_called_name = called_name
+_calls = calls
 
 
 def test_the_scan_sees_a_call_and_not_a_docstring():
@@ -824,8 +801,10 @@ def test_a_students_books_are_still_recorded_when_staff_read_them(client, sessio
         f"a staff read of a student's workspace left no durable record: {trail}"
 
 
-def test_the_request_hook_reads_the_decision_rather_than_re_deriving_it():
-    """The hook must read ``g.own_practice``, not call ``is_own_practice`` a second time.
+def test_the_request_hook_does_not_re_derive_the_practice_decision():
+    """The hook must not call ``is_own_practice``. That it *reads* ``g.own_practice`` is proved
+    behaviourally by the two tests above, not here -- this one asserts only the negative, which is
+    the half a syntax tree can answer honestly.
 
     Both answer the same question -- ``decorators.workspace_view`` sets ``g.workspace`` two
     statements above ``g.own_practice``, after every abort -- so this is not a correctness claim.

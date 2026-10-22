@@ -100,9 +100,21 @@ def client(app, session):
     # Clearing it per request re-serialises the token through URLSafeTimedSerializer, whose
     # timestamp has one-second resolution, which would turn the byte-for-byte E1 comparison in
     # tests/integration/test_deactivation.py into a timing coin-flip.
+    # **And everything decorators.workspace_view sets**, for the same reason and a sharper one.
+    # Those keys describe one workspace, and in production they cannot outlive the request that
+    # loaded it. Here they did: a test that opened a page of somebody's books and then requested
+    # anything else answered the second request with the first request's workspace. The audit
+    # carve-out for a teacher's own practice copy is driven entirely by ``g.own_practice``, so a
+    # leaked True silently suppressed the durable row a later request in the same test should have
+    # written -- the harness answering a question the code is supposed to answer. The branch that
+    # introduced it worked around it by ordering the control request first, which is a per-test
+    # workaround the next author has no way to know about. Cleared here instead.
     def _fresh_request_caches() -> None:
         g.pop("_login_user", None)       # flask_login's per-context current_user
         g.pop("_my_section_ids", None)   # decorators.my_section_ids
+        for key in ("workspace", "pack_version", "content_pack", "variant_code", "company",
+                    "own_practice", "read_only", "read_only_message", "switch_targets"):
+            g.pop(key, None)             # decorators.workspace_view, one request's worth
 
     db.session.remove()
     db.session.registry.set(session)

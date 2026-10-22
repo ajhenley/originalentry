@@ -361,13 +361,77 @@ def test_a_student_cannot_reach_a_teachers_practice_copy(client, session, world,
     assert client.get(f"/w/{copy.public_id}/{world['slug']}/").status_code == 404
 
 
-def test_every_route_that_reaches_a_workspace_declares_its_practice_decision(app):
+def _called_name(func: ast.AST) -> str | None:
+    """The bare name a call is written with: ``f(...)`` and ``mod.f(...)`` both answer ``f``."""
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return None
+
+
+def _calls(source, name: str) -> bool:
+    """Whether this function really **calls** ``name``, read off its syntax tree.
+
+    Not ``name + "(" in inspect.getsource(...)``, which is what this and the handler scan below
+    were written as, and which a docstring can flip. ``staff.practice_grade``'s docstring explains
+    at length why it does *not* go through ``_workspace_or_404`` -- and under a substring check,
+    writing that function's name with its parentheses anywhere in that prose put the route into
+    the set below and printed "routes reaching a workspace with no declared decision:
+    staff.practice_grade". A loud wrong diagnosis is worse than a silent one in a guard whose
+    whole value is being auditable: it is false about the code, and it sends the next person
+    hunting a call that does not exist.
+
+    The question was always structural -- *does this view reach a workspace through that lookup?*
+    -- so it is asked of the tree, where prose cannot be mistaken for code. The same lesson the
+    chokepoint guard spent four rounds learning in ``tests/guards/test_practice_chokepoint.py``.
+    """
+    text = source if isinstance(source, str) else inspect.getsource(source)
+    return any(isinstance(node, ast.Call) and _called_name(node.func) == name
+               for node in ast.walk(ast.parse(textwrap.dedent(text))))
+
+
+def test_the_scan_sees_a_call_and_not_a_docstring():
+    """Both directions of the scan above, on stubs, because the guard it feeds cannot show them.
+
+    With the real routes it can only ever say "the set came out right", which is equally true of
+    a scan that reads prose as code -- that is exactly the state this was in. In the idiom of
+    ``test_practice_chokepoint``'s would-catch-a-real-one / does-not-cry-wolf pair.
+    """
+    def calls_it():
+        return _workspace_or_404(None, "")                      # noqa: F821
+
+    def only_talks_about_it():
+        """Not through ``_workspace_or_404(found, id)``, and here is the paragraph saying why."""
+        return None
+
+    assert _calls(calls_it, "_workspace_or_404")
+    assert not _calls(only_talks_about_it, "_workspace_or_404")
+
+
+def test_every_route_reaching_a_workspace_through_the_scoped_lookup_declares_its_decision(app):
     """The decision is a literal mapping, so it is auditable rather than scattered through seven
     route bodies -- and a route added next year has to make the decision rather than inherit one.
 
     Source inspection, in the idiom of this repo's other guards: what matters is which routes
     reach a workspace through the scoped lookup, and no amount of calling six of them says
     anything about the seventh.
+
+    **What the name claims, exactly.** The set is the routes that reach a workspace through
+    ``_workspace_or_404`` -- the lookup whose scope is assignment and section, which is the right
+    scope for a student's books and the wrong one for a teacher's own, and which is therefore the
+    one place the owner-only rule and the per-route decision can live. It is **not** every route
+    that touches a workspace, and the three practice actions are the proof: ``practice_open`` and
+    ``practice_restart`` reach one through ``services.practice``, ``practice_grade`` through
+    ``practice_copy``, and each of the three is pinned to the signed-in caller and takes no
+    workspace id from the request at all. They have nothing to declare because they cannot reach
+    anybody else's copy -- the mapping's question, *does this action mean anything when the owner
+    is the one clicking*, is answered by those routes existing.
+
+    So this guard does not see a route that reaches a workspace by an id from the request without
+    going through the lookup. Nothing in the tree does that today, and such a route would be a
+    second copy of the scoping rule, which is what the lookup exists to prevent -- but the gap is
+    real and is said here rather than left for the name to paper over.
     """
     declared = set(PRACTICE_REFUSED_AT_THE_CONSOLE) | set(PRACTICE_ACCEPTED_AT_THE_CONSOLE)
     overlap = set(PRACTICE_REFUSED_AT_THE_CONSOLE) & set(PRACTICE_ACCEPTED_AT_THE_CONSOLE)
@@ -377,7 +441,7 @@ def test_every_route_that_reaches_a_workspace_declares_its_practice_decision(app
         view = app.view_functions.get(rule.endpoint)
         if view is None or not rule.rule.startswith("/staff/"):
             continue
-        if "_workspace_or_404(" in inspect.getsource(view):
+        if _calls(view, "_workspace_or_404"):
             reached.add(rule.endpoint)
 
     assert not overlap, f"endpoints both refused and accepted: {sorted(overlap)}"
@@ -613,7 +677,7 @@ def test_the_two_refusals_are_not_handled_alike(app):
 
     offenders = []
     for endpoint, view in where.items():
-        if "_into_my_practice_copy(" not in inspect.getsource(view):
+        if not _calls(view, "_into_my_practice_copy"):
             offenders.append(f"{endpoint} does not go through the one handler")
     for caught, called in handlers:
         if "Exception" in caught:

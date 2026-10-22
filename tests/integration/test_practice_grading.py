@@ -42,12 +42,14 @@ from originalentry.models import (
     PackVersion,
     Section,
     SectionStaff,
+    StaffAction,
     User,
     Variant,
     Workspace,
 )
 from originalentry.packs import schema
 from originalentry.packs.importer import import_answer_keys, import_content
+from originalentry.services import staff_actions
 from originalentry.services.assignments import create_assignment
 from originalentry.services.grades import grade_section, record_run, release_marks
 from originalentry.services.practice import open_practice
@@ -152,12 +154,56 @@ def _runs(session, workspace) -> int:
 
 
 def _component_labels(body: str) -> list[str]:
-    """The row headings of the marks table -- the evidence, as the screen shows it."""
+    """The row headings of the marks table."""
     return sorted({
         found.strip()
         for found in re.findall(r'<th scope="row" class="text-left font-normal">([^<]+)', body)
         if found.strip()
     })
+
+
+def _main(body: str) -> str:
+    """The page's own content, without the chrome around it.
+
+    ``base.html`` renders one ``<main>``; the company header, the workspace navigation and the
+    account menu -- which has a form of its own -- all sit outside it. Scoping to it is what lets
+    the assertions below say something about the marks screen rather than about the furniture.
+    """
+    found = re.search(r"<main\b.*?</main>", body, re.DOTALL)
+    assert found is not None, "the page rendered no <main>, so nothing below means anything"
+    return found.group(0)
+
+
+def _marks_rows(body: str) -> list[tuple[str, ...]]:
+    """Every row of the marks table, cell by cell, as the reader sees it.
+
+    The **figures**, not only the headings. Comparing row headings alone compares what the pack
+    named its components, which is the same string on any two pages built from the same pack
+    whether or not they agree about a single mark -- so a heading-only comparison was green for
+    two pages that said different things, and would have been green for a page with an extra
+    control on it. The awarded and out-of cells are the evidence; this is what they read.
+    """
+    rows = []
+    for row in re.findall(r"<tr\b[^>]*>(.*?)</tr>", _main(body), re.DOTALL):
+        cells = tuple(
+            html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", cell))).strip()
+            for cell in re.findall(r"<t[hd]\b[^>]*>(.*?)</t[hd]>", row, re.DOTALL)
+        )
+        if any(cells):
+            rows.append(cells)
+    return rows
+
+
+def _controls(body: str) -> list[str]:
+    """Anything inside the page's own content a reader could press.
+
+    A student's marks screen offers nothing: it is a table and, after release, a comment. The
+    straightforward place to put a "grade your copy" button was this screen, and it was kept off
+    it precisely so that the screen reads as a student's -- which is a claim about markup that
+    only markup can hold. Without this, adding a form or a button here leaves every assertion
+    about "the same components" perfectly green.
+    """
+    return re.findall(r"<(form|button|input)\b", _main(body))
 
 
 # ── grading the copy ───────────────────────────────────────────────────────────────────
@@ -179,6 +225,32 @@ def test_a_teacher_can_grade_their_own_practice_copy(client, session, world, cop
     assert posted.headers["Location"].endswith(_marks_url(copy, world["slug"])), \
         f"graded, but landed at {posted.headers['Location']} rather than on the marks screen"
     assert _runs(session, copy) == 1
+
+
+def test_grading_the_copy_is_recorded_in_the_staff_trail(client, session, world, copy):
+    """One entry per run, against the workspace, ids only -- the shape ``staff_actions`` is for.
+
+    Deleting the two lines that write it leaves every other test in this file green, which is the
+    whole reason this one exists: the entry is behaviour, and behaviour nothing asserts on is
+    behaviour the next edit removes for free. The detail is checked key by key rather than merely
+    present, because D2's rule about this trail is that it carries ids and counts and never a
+    figure from anybody's books -- and a mark is exactly such a figure.
+    """
+    client.sign_in(world["teacher"])
+
+    client.post(_grade_url(world["assignment"]))
+
+    run = session.scalars(select(GradeRun).where(GradeRun.workspace_id == copy.id)).one()
+    entries = session.scalars(
+        select(StaffAction).where(StaffAction.target_table == "workspace",
+                                  StaffAction.target_id == copy.id,
+                                  StaffAction.action == staff_actions.GRADE_RUN)
+    ).all()
+
+    assert len(entries) == 1, f"the staff trail recorded {len(entries)} entries for one run"
+    assert entries[0].actor_id == world["teacher"].id
+    assert entries[0].detail == {"assignment_id": world["assignment"].id, "run": run.id}, \
+        "the entry carries something other than the two ids it is supposed to"
 
 
 def test_a_cohort_run_still_skips_the_copy_it_has_graded(client, session, world, copy):
@@ -282,9 +354,16 @@ def test_the_evidence_reads_as_a_students_would(client, session, world, copy):
     student_sees = client.get(_marks_url(student_workspace, world["slug"]))
 
     assert teacher_sees.status_code == 200 and student_sees.status_code == 200
-    theirs = _component_labels(student_sees.get_data(as_text=True))
-    assert theirs, "the student's own released marks screen listed no components to compare with"
-    assert _component_labels(teacher_sees.get_data(as_text=True)) == theirs
+    theirs = _marks_rows(student_sees.get_data(as_text=True))
+    mine = _marks_rows(teacher_sees.get_data(as_text=True))
+    # Asserted before the comparison: two empty lists are equal, and a pair of 404s or a pair of
+    # unreleased screens would satisfy every line below without either page showing a mark.
+    assert len(theirs) > 2, \
+        f"the student's own released marks screen showed no table to compare with: {theirs}"
+    assert mine == theirs
+    assert not _controls(teacher_sees.get_data(as_text=True)), \
+        "the practice marks screen offers something a student's does not"
+    assert not _controls(student_sees.get_data(as_text=True))
 
 
 # ── whose copy it grades, and whose it cannot ──────────────────────────────────────────

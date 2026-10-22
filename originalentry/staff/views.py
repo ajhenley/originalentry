@@ -302,10 +302,18 @@ PRACTICE_REFUSED_AT_THE_CONSOLE = {
         "deadline of its own is a row that changes nothing",
 }
 
-#: Console routes a practice copy **does** accept from its owner. Empty, and the empty set is the
-#: decision above rather than an oversight: a route listed in neither literal is refused, and
-#: ``tests/integration/test_practice_screens.py`` fails until it is listed in one of them, so a
-#: route added next year has to be classified by somebody rather than inherit either answer.
+#: Of those same routes, the ones a practice copy **does** accept from its owner. Empty, and the
+#: empty set is the decision above rather than an oversight: a route listed in neither literal is
+#: refused, and ``tests/integration/test_practice_screens.py`` fails until it is listed in one of
+#: them, so a route added next year has to be classified by somebody rather than inherit either
+#: answer.
+#:
+#: "Those same routes" is the whole of what either literal decides, and the three practice actions
+#: are outside it: ``practice_open``, ``practice_restart`` and ``practice_grade`` take no workspace
+#: id from the request and reach only the signed-in caller's own copy, so they never pass through
+#: the lookup and there is nothing here to decide about them. ``practice_grade`` is the per-copy
+#: grading action -- a console route that acts on a practice copy and is refused by neither
+#: literal, which is not a contradiction for that reason and only for that reason.
 PRACTICE_ACCEPTED_AT_THE_CONSOLE: frozenset[str] = frozenset()
 
 
@@ -1226,9 +1234,9 @@ def practice_grade(assignment: str):
     ``staff/progress.html`` can offer the button without ever naming the copy on a screen about
     the class.
 
-    **Not through ``_workspace_or_404``, and not through the chokepoint.** That lookup refuses a
-    practice copy on every route it feeds (``PRACTICE_REFUSED_AT_THE_CONSOLE``), because every
-    action behind it is one person acting on another's work;
+    **Not through ``_workspace_or_404(found, clicked_id)``, and not through the chokepoint.** It
+    refuses a practice copy on every route it feeds (``PRACTICE_REFUSED_AT_THE_CONSOLE``),
+    because every action behind it is one person acting on another's work;
     ``PRACTICE_ACCEPTED_AT_THE_CONSOLE`` stays empty for that reason. And the chokepoint carries
     ``staff_practice.is_(False)``, so routing this through it would hide the very row the action
     exists to grade. ``practice_copy`` asks the one audited per-person question instead
